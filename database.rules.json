@@ -1,0 +1,26 @@
+{
+  "rules": {
+    "users": {
+      "$uid": {
+        ".read": "auth != null && auth.uid == $uid",
+        ".write": "auth != null && auth.uid == $uid",
+        
+        "watchProgress": {
+          "$mediaId": {
+            ".validate": "newData.hasChildren(['id', 'type', 'title', 'progress'])"
+          }
+        }
+      }
+    },
+    
+    "notifications": {
+      "$uid": {
+        ".read": "auth != null && auth.uid == $uid",
+        ".write": "auth != null && auth.uid == $uid"
+      }
+    },
+    
+    ".read": false,
+    ".write": false
+  }
+}

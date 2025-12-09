@@ -13,18 +13,22 @@ Route::get('/preview/{type}/{id}', function (string $type, int $id, TMDBService 
     try {
         switch ($type) {
             case 'movie':
-                $data = $tmdb->getMovie($id);
+                $data = $tmdb->getMovieDetails($id);
                 break;
             case 'tv':
             case 'anime':
-                $data = $tmdb->getTvShow($id);
+                $data = $tmdb->getTvShowDetails($id);
                 break;
             default:
                 return response()->json(['error' => 'Invalid type'], 400);
         }
         
+        if (!$data) {
+            return response()->json(['error' => 'Not found'], 404);
+        }
+        
         return response()->json($data);
     } catch (\Exception $e) {
-        return response()->json(['error' => 'Failed to fetch data'], 500);
+        return response()->json(['error' => 'Failed to fetch data: ' . $e->getMessage()], 500);
     }
 });

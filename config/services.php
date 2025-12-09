@@ -58,15 +58,32 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Google OAuth2 (for Gmail SMTP)
+    | Google OAuth2 (for Gmail SMTP and Social Login)
     |--------------------------------------------------------------------------
     */
     'google' => [
         'client_id' => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
-        'redirect_uri' => env('GOOGLE_REDIRECT_URI'),
+        'redirect' => env('GOOGLE_REDIRECT_URI', '/auth/google/callback'),
         'refresh_token' => env('GOOGLE_REFRESH_TOKEN'),
         'email' => env('MAIL_USERNAME', 'viewlix.site@gmail.com'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Firebase Configuration (for frontend JS SDK)
+    |--------------------------------------------------------------------------
+    */
+    'firebase' => [
+        'api_key' => env('FIREBASE_API_KEY'),
+        'auth_domain' => env('FIREBASE_AUTH_DOMAIN'),
+        'database_url' => env('FIREBASE_DATABASE_URL'),
+        'project_id' => env('FIREBASE_PROJECT_ID'),
+        'storage_bucket' => env('FIREBASE_STORAGE_BUCKET'),
+        'messaging_sender_id' => env('FIREBASE_MESSAGING_SENDER_ID'),
+        'app_id' => env('FIREBASE_APP_ID'),
+        'measurement_id' => env('FIREBASE_MEASUREMENT_ID'),
+        'credentials' => storage_path('app/firebase/service-account.json'),
     ],
 
 ];

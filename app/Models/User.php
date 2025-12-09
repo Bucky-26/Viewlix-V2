@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Str;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -22,6 +23,10 @@ class User extends Authenticatable implements MustVerifyEmail
         'name',
         'email',
         'password',
+        'firebase_uuid',
+        'google_id',
+        'avatar',
+        'is_admin',
     ];
 
     /**
@@ -32,6 +37,7 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $hidden = [
         'password',
         'remember_token',
+        'firebase_uuid',
     ];
 
     /**
@@ -44,7 +50,43 @@ class User extends Authenticatable implements MustVerifyEmail
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_admin' => 'boolean',
         ];
+    }
+
+    /**
+     * Check if user is an admin
+     */
+    public function isAdmin(): bool
+    {
+        return $this->is_admin === true;
+    }
+
+    /**
+     * Boot function to auto-generate firebase_uuid
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($user) {
+            if (empty($user->firebase_uuid)) {
+                $user->firebase_uuid = Str::uuid()->toString();
+            }
+        });
+    }
+
+    /**
+     * Get or create the Firebase UUID for this user
+     */
+    public function getFirebaseUuid(): string
+    {
+        if (empty($this->firebase_uuid)) {
+            $this->firebase_uuid = Str::uuid()->toString();
+            $this->save();
+        }
+        
+        return $this->firebase_uuid;
     }
 
     /**

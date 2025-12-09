@@ -25,6 +25,9 @@
         </div>
     </section>
     
+    {{-- Continue Watching Section (from localStorage) --}}
+    @include('partials.continue-watching')
+    
     {{-- Trending Movies --}}
     @if(isset($trendingMovies) && count($trendingMovies) > 0)
     <section class="py-8">

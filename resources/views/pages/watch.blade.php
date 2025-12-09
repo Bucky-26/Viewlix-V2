@@ -239,30 +239,113 @@ async function toggleFavorite() {
     }
 }
 
-// VidLink Progress Tracking
-let lastSavedProgress = 0;
-const SAVE_INTERVAL = 30; // Save every 30 seconds of progress change
+// ============================================================
+// VidLink Continue Watching Progress Tracking
+// Saves to Firebase (authenticated) + localStorage (fallback)
+// ============================================================
 
-window.addEventListener('message', function(event) {
-    // Validate origin (VidLink)
-    if (!event.origin.includes('vidlink.pro')) return;
+let lastSavedProgress = 0;
+let lastSavedTime = 0;
+const SAVE_INTERVAL_SECONDS = 30; // Save to Firebase every 30 seconds
+
+// Build progress data object for saving
+function buildProgressData(watchedTime, duration) {
+    const progressData = {
+        id: mediaData.id,
+        type: mediaData.type,
+        title: mediaData.title,
+        poster_path: mediaData.posterPath,
+        backdrop_path: mediaData.backdropPath,
+        progress: {
+            watched: watchedTime,
+            duration: duration
+        },
+        last_updated: Date.now()
+    };
     
+    // Add TV/Anime specific fields
+    if (mediaData.type !== 'movie' && mediaData.season && mediaData.episode) {
+        progressData.last_season_watched = String(mediaData.season);
+        progressData.last_episode_watched = String(mediaData.episode);
+        
+        const seasonKey = `s${mediaData.season}e${mediaData.episode}`;
+        progressData.show_progress = {
+            [seasonKey]: {
+                season: String(mediaData.season),
+                episode: String(mediaData.episode),
+                progress: {
+                    watched: watchedTime,
+                    duration: duration
+                }
+            }
+        };
+    }
+    
+    return progressData;
+}
+
+// Listen for VidLink postMessage events
+window.addEventListener('message', function(event) {
+    // Accept messages from VidLink
+    if (event.origin !== 'https://vidlink.pro') return;
+    
+    // Handle MEDIA_DATA from VidLink
+    if (event.data?.type === 'MEDIA_DATA') {
+        const data = event.data.data;
+        const mediaKey = String(mediaData.id);
+        
+        if (data[mediaKey]) {
+            const progress = data[mediaKey].progress;
+            if (progress) {
+                const timeSinceLastSave = Math.abs(progress.watched - lastSavedTime);
+                
+                // Save to Firebase/localStorage using global function
+                if (typeof window.saveWatchProgress === 'function') {
+                    const progressData = buildProgressData(progress.watched, progress.duration);
+                    
+                    // Save frequently to localStorage, less frequently to Firebase
+                    if (timeSinceLastSave >= SAVE_INTERVAL_SECONDS) {
+                        window.saveWatchProgress(mediaData.id, progressData);
+                        lastSavedTime = progress.watched;
+                    } else {
+                        // Just update localStorage for quick saves
+                        try {
+                            const allProgress = JSON.parse(localStorage.getItem('vidLinkProgress') || '{}');
+                            allProgress[mediaKey] = progressData;
+                            localStorage.setItem('vidLinkProgress', JSON.stringify(allProgress));
+                        } catch (e) {}
+                    }
+                }
+            }
+        }
+        return;
+    }
+    
+    // Handle manual progress tracking (fallback)
     try {
         const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
         
-        // Handle progress updates from VidLink
-        if (data.type === 'MEDIA_DATA' || data.type === 'progress') {
-            const watchedTime = Math.floor(data.currentTime || data.watched || 0);
-            const duration = Math.floor(data.duration || 0);
+        if (data.currentTime !== undefined && data.duration !== undefined) {
+            const watchedTime = data.currentTime;
+            const duration = data.duration;
             
             if (duration > 0) {
-                const currentProgress = (watchedTime / duration) * 100;
+                const timeSinceLastSave = Math.abs(watchedTime - lastSavedTime);
+                const progressData = buildProgressData(watchedTime, duration);
                 
-                // Save progress if changed significantly (every 5% or 30 seconds)
-                if (Math.abs(currentProgress - lastSavedProgress) >= 5 || 
-                    Math.abs(watchedTime - (lastSavedProgress * duration / 100)) >= SAVE_INTERVAL) {
-                    saveWatchProgress(watchedTime, duration);
-                    lastSavedProgress = currentProgress;
+                // Save to Firebase/localStorage
+                if (typeof window.saveWatchProgress === 'function') {
+                    if (timeSinceLastSave >= SAVE_INTERVAL_SECONDS) {
+                        window.saveWatchProgress(mediaData.id, progressData);
+                        lastSavedTime = watchedTime;
+                    } else {
+                        // Just update localStorage
+                        try {
+                            const allProgress = JSON.parse(localStorage.getItem('vidLinkProgress') || '{}');
+                            allProgress[String(mediaData.id)] = progressData;
+                            localStorage.setItem('vidLinkProgress', JSON.stringify(allProgress));
+                        } catch (e) {}
+                    }
                 }
             }
         }
@@ -271,49 +354,45 @@ window.addEventListener('message', function(event) {
     }
 });
 
-@auth
-async function saveWatchProgress(watchedTime, duration) {
-    try {
-        await fetch('{{ route("watch-history.store") }}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            },
-            body: JSON.stringify({
-                media_id: mediaData.id,
-                media_type: mediaData.type,
-                title: mediaData.title,
-                poster_path: mediaData.posterPath,
-                backdrop_path: mediaData.backdropPath,
-                season: mediaData.season,
-                episode: mediaData.episode,
-                watched_time: watchedTime,
-                duration: duration
-            })
-        });
-    } catch (error) {
-        console.error('Error saving watch progress:', error);
-    }
-}
-
 // Save progress when leaving the page
 window.addEventListener('beforeunload', function() {
-    // Use sendBeacon for reliable delivery
-    const data = JSON.stringify({
-        media_id: mediaData.id,
-        media_type: mediaData.type,
-        title: mediaData.title,
-        poster_path: mediaData.posterPath,
-        backdrop_path: mediaData.backdropPath,
-        season: mediaData.season,
-        episode: mediaData.episode,
-        watched_time: 0, // Will be updated by last progress
-        duration: 1
-    });
-    
-    navigator.sendBeacon?.('{{ route("watch-history.store") }}', new Blob([data], {type: 'application/json'}));
+    try {
+        const allProgress = JSON.parse(localStorage.getItem('vidLinkProgress') || '{}');
+        const mediaKey = String(mediaData.id);
+        const currentMedia = allProgress[mediaKey];
+        
+        if (currentMedia?.progress && typeof window.saveWatchProgress === 'function') {
+            // Force save to Firebase on page exit
+            window.saveWatchProgress(mediaData.id, currentMedia);
+        }
+    } catch (e) {}
 });
-@endauth
+
+// Load saved progress on page load
+document.addEventListener('DOMContentLoaded', async function() {
+    // Try to get progress from Firebase first, then localStorage
+    if (typeof window.getWatchProgress === 'function') {
+        const saved = await window.getWatchProgress(mediaData.id);
+        
+        if (saved) {
+            if (mediaData.type === 'movie') {
+                if (saved.progress?.watched > 0) {
+                    lastSavedProgress = (saved.progress.watched / saved.progress.duration) * 100;
+                    lastSavedTime = saved.progress.watched;
+                    console.log(`📺 Resuming from ${Math.floor(saved.progress.watched)}s`);
+                }
+            } else {
+                // For TV shows, check episode-specific progress
+                const seasonKey = `s${mediaData.season}e${mediaData.episode}`;
+                if (saved.show_progress?.[seasonKey]?.progress?.watched > 0) {
+                    const epProgress = saved.show_progress[seasonKey].progress;
+                    lastSavedProgress = (epProgress.watched / epProgress.duration) * 100;
+                    lastSavedTime = epProgress.watched;
+                    console.log(`📺 Resuming S${mediaData.season}E${mediaData.episode} from ${Math.floor(epProgress.watched)}s`);
+                }
+            }
+        }
+    }
+});
 </script>
 @endpush

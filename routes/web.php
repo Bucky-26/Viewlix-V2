@@ -7,7 +7,13 @@ use App\Http\Controllers\AnimeController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\WatchHistoryController;
+use App\Http\Controllers\Auth\GoogleController;
+use App\Http\Controllers\Admin\AdminController;
 use Illuminate\Support\Facades\Route;
+
+// Google OAuth Routes (public)
+Route::get('/auth/google', [GoogleController::class, 'redirect'])->name('auth.google');
+Route::get('/auth/google/callback', [GoogleController::class, 'callback'])->name('auth.google.callback');
 
 // Home
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -51,17 +57,48 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return view('pages.account');
     })->name('account');
     
+    // Google Account Linking
+    Route::get('/auth/google/link', [GoogleController::class, 'link'])->name('auth.google.link');
+    Route::get('/auth/google/link/callback', [GoogleController::class, 'linkCallback'])->name('auth.google.link.callback');
+    Route::post('/auth/google/unlink', [GoogleController::class, 'unlink'])->name('auth.google.unlink');
+    
     // Favorites
     Route::get('/favorites', [FavoriteController::class, 'index'])->name('favorites');
     Route::post('/favorites/toggle', [FavoriteController::class, 'toggle'])->name('favorites.toggle');
     Route::get('/favorites/check', [FavoriteController::class, 'check'])->name('favorites.check');
     Route::delete('/favorites', [FavoriteController::class, 'destroy'])->name('favorites.destroy');
     
-    // Watch History
+    // Watch History (Firebase-powered, just renders the page)
     Route::get('/watch-history', [WatchHistoryController::class, 'index'])->name('watch-history');
-    Route::post('/watch-history', [WatchHistoryController::class, 'store'])->name('watch-history.store');
-    Route::get('/watch-history/progress', [WatchHistoryController::class, 'getProgress'])->name('watch-history.progress');
-    Route::get('/watch-history/continue', [WatchHistoryController::class, 'continueWatching'])->name('watch-history.continue');
-    Route::delete('/watch-history', [WatchHistoryController::class, 'destroy'])->name('watch-history.destroy');
-    Route::post('/watch-history/clear', [WatchHistoryController::class, 'clear'])->name('watch-history.clear');
+    
+    // Firebase token endpoint (for web session auth)
+    Route::get('/firebase-token', function (\App\Services\FirebaseService $firebase) {
+        if (!$firebase->isConfigured()) {
+            return response()->json(['error' => 'Firebase not configured'], 503);
+        }
+        
+        $token = $firebase->createCustomToken();
+        
+        if (!$token) {
+            return response()->json(['error' => 'Failed to create token'], 500);
+        }
+        
+        return response()->json(['token' => $token]);
+    })->name('firebase.token');
+});
+
+// Admin Routes
+Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
+    Route::get('/users', [AdminController::class, 'users'])->name('users');
+    Route::get('/users/{user}/edit', [AdminController::class, 'editUser'])->name('users.edit');
+    Route::put('/users/{user}', [AdminController::class, 'updateUser'])->name('users.update');
+    Route::delete('/users/{user}', [AdminController::class, 'deleteUser'])->name('users.delete');
+    Route::post('/users/{user}/toggle-admin', [AdminController::class, 'toggleAdmin'])->name('users.toggle-admin');
+    
+    // Notifications
+    Route::get('/notifications', [\App\Http\Controllers\Admin\NotificationController::class, 'index'])->name('notifications');
+    Route::get('/notifications/create', [\App\Http\Controllers\Admin\NotificationController::class, 'create'])->name('notifications.create');
+    Route::post('/notifications/send', [\App\Http\Controllers\Admin\NotificationController::class, 'send'])->name('notifications.send');
+    Route::delete('/notifications/{id}', [\App\Http\Controllers\Admin\NotificationController::class, 'destroy'])->name('notifications.destroy');
 });

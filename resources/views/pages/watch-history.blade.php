@@ -3,16 +3,16 @@
 @section('title', 'Watch History - Viewlix')
 
 @section('content')
-<div class="min-h-[calc(100vh-200px)]">
+<div class="min-h-[calc(100vh-200px)]" x-data="watchHistoryPage()" x-init="init()">
     <div class="flex items-center justify-between mb-8">
         <div>
             <h1 class="text-3xl font-bold text-white mb-2">Watch History</h1>
             <p class="text-gray-400">Keep track of what you've watched</p>
         </div>
         
-        @if($history->count() > 0)
         <button 
-            onclick="clearHistory('{{ $activeType }}')"
+            x-show="items.length > 0"
+            x-on:click="clearHistory()"
             class="px-4 py-2 bg-viewlix-gray hover:bg-red-600 text-gray-400 hover:text-white rounded-xl transition-colors flex items-center gap-2"
         >
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -20,193 +20,303 @@
             </svg>
             Clear History
         </button>
-        @endif
     </div>
     
     {{-- Filter Tabs --}}
     <div class="flex items-center gap-2 mb-6 overflow-x-auto pb-2">
-        <a href="{{ route('watch-history') }}" 
-           class="px-4 py-2 rounded-xl text-sm font-medium transition-colors whitespace-nowrap {{ $activeType === 'all' ? 'bg-viewlix-red text-white' : 'bg-viewlix-gray text-gray-400 hover:text-white' }}">
+        <button 
+            x-on:click="activeType = 'all'"
+            :class="activeType === 'all' ? 'bg-viewlix-red text-white' : 'bg-viewlix-gray text-gray-400 hover:text-white'"
+            class="px-4 py-2 rounded-xl text-sm font-medium transition-colors whitespace-nowrap">
             All
-        </a>
-        <a href="{{ route('watch-history', ['type' => 'movie']) }}" 
-           class="px-4 py-2 rounded-xl text-sm font-medium transition-colors whitespace-nowrap {{ $activeType === 'movie' ? 'bg-viewlix-red text-white' : 'bg-viewlix-gray text-gray-400 hover:text-white' }}">
+        </button>
+        <button 
+            x-on:click="activeType = 'movie'"
+            :class="activeType === 'movie' ? 'bg-viewlix-red text-white' : 'bg-viewlix-gray text-gray-400 hover:text-white'"
+            class="px-4 py-2 rounded-xl text-sm font-medium transition-colors whitespace-nowrap">
             Movies
-        </a>
-        <a href="{{ route('watch-history', ['type' => 'tv']) }}" 
-           class="px-4 py-2 rounded-xl text-sm font-medium transition-colors whitespace-nowrap {{ $activeType === 'tv' ? 'bg-viewlix-red text-white' : 'bg-viewlix-gray text-gray-400 hover:text-white' }}">
+        </button>
+        <button 
+            x-on:click="activeType = 'tv'"
+            :class="activeType === 'tv' ? 'bg-viewlix-red text-white' : 'bg-viewlix-gray text-gray-400 hover:text-white'"
+            class="px-4 py-2 rounded-xl text-sm font-medium transition-colors whitespace-nowrap">
             TV Shows
-        </a>
-        <a href="{{ route('watch-history', ['type' => 'anime']) }}" 
-           class="px-4 py-2 rounded-xl text-sm font-medium transition-colors whitespace-nowrap {{ $activeType === 'anime' ? 'bg-viewlix-red text-white' : 'bg-viewlix-gray text-gray-400 hover:text-white' }}">
+        </button>
+        <button 
+            x-on:click="activeType = 'anime'"
+            :class="activeType === 'anime' ? 'bg-viewlix-red text-white' : 'bg-viewlix-gray text-gray-400 hover:text-white'"
+            class="px-4 py-2 rounded-xl text-sm font-medium transition-colors whitespace-nowrap">
             Anime
-        </a>
+        </button>
     </div>
     
-    @if($history->count() > 0)
-        {{-- History Grid --}}
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-            @foreach($history as $item)
-                @php
-                    $routeName = match($item->media_type) {
-                        'movie' => 'movie.show',
-                        'tv' => 'tv-show.show',
-                        'anime' => 'anime.show',
-                        default => 'movie.show'
-                    };
-                    $watchRouteName = match($item->media_type) {
-                        'movie' => 'movie.watch',
-                        'tv' => 'tv-show.watch',
-                        'anime' => 'anime.watch',
-                        default => 'movie.watch'
-                    };
-                @endphp
-                <div class="group relative bg-viewlix-gray rounded-xl overflow-hidden transition-transform hover:scale-[1.02]">
-                    <a href="{{ route($routeName, $item->media_id) }}">
-                        <div class="aspect-[2/3] relative">
-                            <img 
-                                src="{{ $item->poster_url }}" 
-                                alt="{{ $item->title }}"
-                                class="w-full h-full object-cover"
-                                loading="lazy"
-                                onerror="this.src='https://via.placeholder.com/500x750/1a1a2e/e94560?text=No+Image'"
-                            >
-                            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
-                            
-                            {{-- Progress Bar --}}
-                            <div class="absolute bottom-0 left-0 right-0 h-1 bg-gray-700">
-                                <div class="h-full bg-viewlix-red transition-all" style="width: {{ $item->progress }}%"></div>
-                            </div>
-                            
-                            {{-- Play Button Overlay --}}
-                            <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                <div class="w-14 h-14 bg-viewlix-red/90 rounded-full flex items-center justify-center">
-                                    <svg class="w-6 h-6 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M8 5v14l11-7z"/>
-                                    </svg>
-                                </div>
-                            </div>
-                            
-                            {{-- Media Type Badge --}}
-                            <div class="absolute top-2 right-2 px-2 py-1 bg-viewlix-red/80 rounded-lg">
-                                <span class="text-xs text-white font-medium uppercase">{{ $item->media_type }}</span>
-                            </div>
-                            
-                            {{-- Completed Badge --}}
-                            @if($item->is_completed)
-                            <div class="absolute top-2 left-2 px-2 py-1 bg-green-500/80 rounded-lg">
-                                <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+    {{-- Loading State --}}
+    <div x-show="loading" class="flex justify-center py-20">
+        <div class="animate-spin rounded-full h-12 w-12 border-4 border-viewlix-red border-t-transparent"></div>
+    </div>
+    
+    {{-- History Grid --}}
+    <div x-show="!loading && filteredItems.length > 0" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+        <template x-for="item in filteredItems" :key="item.id">
+            <div class="group relative bg-viewlix-gray rounded-xl overflow-hidden transition-transform hover:scale-[1.02]">
+                <a :href="getDetailUrl(item)">
+                    <div class="aspect-[2/3] relative">
+                        <img 
+                            :src="getPosterUrl(item)"
+                            :alt="item.title"
+                            class="w-full h-full object-cover"
+                            loading="lazy"
+                            onerror="this.src='https://via.placeholder.com/500x750/1a1a2e/e94560?text=No+Image'"
+                        >
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+                        
+                        {{-- Progress Bar --}}
+                        <div class="absolute bottom-0 left-0 right-0 h-1 bg-gray-700">
+                            <div class="h-full bg-viewlix-red transition-all" :style="'width: ' + getProgressPercent(item) + '%'"></div>
+                        </div>
+                        
+                        {{-- Play Button Overlay --}}
+                        <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div class="w-14 h-14 bg-viewlix-red/90 rounded-full flex items-center justify-center">
+                                <svg class="w-6 h-6 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M8 5v14l11-7z"/>
                                 </svg>
                             </div>
-                            @endif
                         </div>
-                        <div class="p-3">
-                            <h3 class="text-white font-medium text-sm truncate">{{ $item->title }}</h3>
-                            <div class="flex items-center justify-between mt-1">
-                                @if($item->season && $item->episode)
-                                    <p class="text-gray-400 text-xs">S{{ $item->season }}:E{{ $item->episode }}</p>
-                                @else
-                                    <p class="text-gray-400 text-xs">{{ round($item->progress) }}% watched</p>
-                                @endif
-                                <p class="text-gray-500 text-xs">{{ $item->updated_at->diffForHumans() }}</p>
-                            </div>
+                        
+                        {{-- Media Type Badge --}}
+                        <div class="absolute top-2 right-2 px-2 py-1 bg-viewlix-red/80 rounded-lg">
+                            <span class="text-xs text-white font-medium uppercase" x-text="item.type"></span>
                         </div>
-                    </a>
-                    
-                    {{-- Continue Watching Button --}}
-                    @if(!$item->is_completed)
-                    <a 
-                        href="{{ $item->media_type === 'movie' ? route($watchRouteName, $item->media_id) : route($watchRouteName, ['id' => $item->media_id, 'season' => $item->season ?? 1, 'episode' => $item->episode ?? 1]) }}"
-                        class="absolute bottom-14 left-3 right-3 py-2 bg-viewlix-red hover:bg-viewlix-red-dark text-white text-xs font-medium rounded-lg text-center opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                        Continue Watching
-                    </a>
-                    @endif
-                    
-                    {{-- Remove Button --}}
-                    <button 
-                        onclick="event.preventDefault(); removeFromHistory({{ $item->media_id }}, '{{ $item->media_type }}', {{ $item->season ?? 'null' }}, {{ $item->episode ?? 'null' }})"
-                        class="absolute top-10 right-2 p-2 bg-black/50 hover:bg-red-600 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
-                        title="Remove from history"
-                    >
-                        <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
-                        </svg>
-                    </button>
-                </div>
-            @endforeach
-        </div>
-        
-        {{-- Pagination --}}
-        <div class="mt-8">
-            {{ $history->links() }}
-        </div>
-    @else
-        {{-- Empty State --}}
-        <div class="flex flex-col items-center justify-center py-20 text-center">
-            <div class="w-24 h-24 bg-viewlix-gray rounded-full flex items-center justify-center mb-6">
-                <svg class="w-12 h-12 text-gray-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
+                        
+                        {{-- Completed Badge --}}
+                        <div x-show="getProgressPercent(item) >= 90" class="absolute top-2 left-2 px-2 py-1 bg-green-500/80 rounded-lg">
+                            <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="p-3">
+                        <h3 class="text-white font-medium text-sm truncate" x-text="item.title"></h3>
+                        <div class="flex items-center justify-between mt-1">
+                            <p class="text-gray-400 text-xs" x-text="getEpisodeText(item)"></p>
+                            <p class="text-gray-500 text-xs" x-text="formatTimeAgo(item.last_updated)"></p>
+                        </div>
+                    </div>
+                </a>
+                
+                {{-- Continue Watching Button --}}
+                <a 
+                    x-show="getProgressPercent(item) < 90"
+                    :href="getWatchUrl(item)"
+                    class="absolute bottom-14 left-3 right-3 py-2 bg-viewlix-red hover:bg-viewlix-red-dark text-white text-xs font-medium rounded-lg text-center opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                    Continue Watching
+                </a>
+                
+                {{-- Remove Button --}}
+                <button 
+                    x-on:click.prevent="removeItem(item)"
+                    class="absolute top-10 right-2 p-2 bg-black/50 hover:bg-red-600 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="Remove from history"
+                >
+                    <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                    </svg>
+                </button>
             </div>
-            <h3 class="text-xl font-semibold text-white mb-2">No watch history</h3>
-            <p class="text-gray-400 mb-6 max-w-md">Start watching movies, TV shows, or anime to build your watch history.</p>
-            <a href="{{ route('movies') }}" class="px-6 py-3 bg-viewlix-red hover:bg-viewlix-red-dark text-white font-semibold rounded-xl transition-colors">
-                Start Watching
-            </a>
+        </template>
+    </div>
+    
+    {{-- Empty State --}}
+    <div x-show="!loading && filteredItems.length === 0" class="flex flex-col items-center justify-center py-20 text-center">
+        <div class="w-24 h-24 bg-viewlix-gray rounded-full flex items-center justify-center mb-6">
+            <svg class="w-12 h-12 text-gray-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
         </div>
-    @endif
+        <h3 class="text-xl font-semibold text-white mb-2">No watch history</h3>
+        <p class="text-gray-400 mb-6 max-w-md">Start watching movies, TV shows, or anime to build your watch history.</p>
+        <a href="{{ route('movies') }}" class="px-6 py-3 bg-viewlix-red hover:bg-viewlix-red-dark text-white font-semibold rounded-xl transition-colors">
+            Start Watching
+        </a>
+    </div>
 </div>
 @endsection
 
 @push('scripts')
 <script>
-async function removeFromHistory(mediaId, mediaType, season, episode) {
-    if (!confirm('Remove from watch history?')) return;
-    
-    try {
-        const response = await fetch('{{ route("watch-history.destroy") }}', {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            },
-            body: JSON.stringify({
-                media_id: mediaId,
-                media_type: mediaType,
-                season: season,
-                episode: episode
-            })
-        });
+function watchHistoryPage() {
+    return {
+        items: [],
+        activeType: 'all',
+        loading: true,
         
-        if (response.ok) {
-            window.location.reload();
-        }
-    } catch (error) {
-        console.error('Error removing from history:', error);
-    }
-}
-
-async function clearHistory(type) {
-    if (!confirm('Clear all watch history' + (type !== 'all' ? ' for ' + type : '') + '?')) return;
-    
-    try {
-        const response = await fetch('{{ route("watch-history.clear") }}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            },
-            body: JSON.stringify({ type: type })
-        });
+        async init() {
+            // Sign in to Firebase first
+            if (window.signInToFirebase) {
+                await window.signInToFirebase();
+            }
+            
+            // Wait a bit for Firebase auth to complete
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // Load watch history from Firebase
+            await this.loadHistory();
+        },
         
-        if (response.ok) {
-            window.location.reload();
+        async loadHistory() {
+            this.loading = true;
+            
+            try {
+                if (window.getAllWatchHistory) {
+                    this.items = await window.getAllWatchHistory();
+                } else {
+                    // Fallback to localStorage
+                    this.items = this.getFromLocalStorage();
+                }
+            } catch (error) {
+                console.error('Error loading history:', error);
+                this.items = this.getFromLocalStorage();
+            }
+            
+            this.loading = false;
+        },
+        
+        getFromLocalStorage() {
+            try {
+                const stored = localStorage.getItem('vidLinkProgress');
+                if (!stored) return [];
+                
+                const data = JSON.parse(stored);
+                return Object.entries(data)
+                    .map(([id, item]) => ({ id, ...item }))
+                    .sort((a, b) => (b.last_updated || 0) - (a.last_updated || 0));
+            } catch (e) {
+                return [];
+            }
+        },
+        
+        get filteredItems() {
+            if (this.activeType === 'all') {
+                return this.items;
+            }
+            return this.items.filter(item => item.type === this.activeType);
+        },
+        
+        getProgressPercent(item) {
+            if (!item.progress) return 0;
+            const watched = item.progress.watched || 0;
+            const duration = item.progress.duration || 1;
+            return Math.min(100, (watched / duration) * 100);
+        },
+        
+        getPosterUrl(item) {
+            if (item.poster_path) {
+                return 'https://image.tmdb.org/t/p/w500' + item.poster_path;
+            }
+            return 'https://via.placeholder.com/500x750/1a1a2e/e94560?text=No+Image';
+        },
+        
+        getEpisodeText(item) {
+            if (item.season && item.episode) {
+                return 'S' + item.season + ':E' + item.episode;
+            }
+            return Math.round(this.getProgressPercent(item)) + '% watched';
+        },
+        
+        getDetailUrl(item) {
+            const type = item.type || 'movie';
+            const id = item.id || item.media_id;
+            
+            if (type === 'movie') return '/movie/' + id;
+            if (type === 'tv') return '/tv-show/' + id;
+            if (type === 'anime') return '/anime/' + id;
+            return '/movie/' + id;
+        },
+        
+        getWatchUrl(item) {
+            const type = item.type || 'movie';
+            const id = item.id || item.media_id;
+            
+            if (type === 'movie') return '/movie/' + id + '/watch';
+            if (type === 'tv') return '/tv-show/' + id + '/watch?season=' + (item.season || 1) + '&episode=' + (item.episode || 1);
+            if (type === 'anime') return '/anime/' + id + '/watch?season=' + (item.season || 1) + '&episode=' + (item.episode || 1);
+            return '/movie/' + id + '/watch';
+        },
+        
+        formatTimeAgo(timestamp) {
+            if (!timestamp) return '';
+            
+            const seconds = Math.floor((Date.now() - timestamp) / 1000);
+            
+            if (seconds < 60) return 'just now';
+            if (seconds < 3600) return Math.floor(seconds / 60) + 'm ago';
+            if (seconds < 86400) return Math.floor(seconds / 3600) + 'h ago';
+            if (seconds < 604800) return Math.floor(seconds / 86400) + 'd ago';
+            
+            return new Date(timestamp).toLocaleDateString();
+        },
+        
+        async removeItem(item) {
+            if (!confirm('Remove from watch history?')) return;
+            
+            const mediaKey = this.getMediaKey(item);
+            
+            try {
+                if (window.removeWatchProgress) {
+                    await window.removeWatchProgress(mediaKey);
+                }
+                
+                // Remove from local list
+                this.items = this.items.filter(i => this.getMediaKey(i) !== mediaKey);
+                
+            } catch (error) {
+                console.error('Error removing item:', error);
+            }
+        },
+        
+        async clearHistory() {
+            const typeLabel = this.activeType === 'all' ? '' : ' for ' + this.activeType;
+            if (!confirm('Clear all watch history' + typeLabel + '?')) return;
+            
+            try {
+                if (this.activeType === 'all') {
+                    if (window.clearAllWatchProgress) {
+                        await window.clearAllWatchProgress();
+                    }
+                    this.items = [];
+                } else {
+                    // Remove only items of this type
+                    const toRemove = this.items.filter(item => item.type === this.activeType);
+                    
+                    for (const item of toRemove) {
+                        const mediaKey = this.getMediaKey(item);
+                        if (window.removeWatchProgress) {
+                            await window.removeWatchProgress(mediaKey);
+                        }
+                    }
+                    
+                    this.items = this.items.filter(item => item.type !== this.activeType);
+                }
+            } catch (error) {
+                console.error('Error clearing history:', error);
+            }
+        },
+        
+        getMediaKey(item) {
+            const type = item.type || 'movie';
+            const id = item.id || item.media_id;
+            
+            if (type === 'movie') {
+                return 'movie-' + id;
+            } else {
+                const season = item.season || 1;
+                const episode = item.episode || 1;
+                return type + '-' + id + '-s' + season + 'e' + episode;
+            }
         }
-    } catch (error) {
-        console.error('Error clearing history:', error);
-    }
+    };
 }
 </script>
 @endpush
