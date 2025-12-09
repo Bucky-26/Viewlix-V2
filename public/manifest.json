@@ -1,0 +1,42 @@
+{
+    "name": "Viewlix",
+    "short_name": "VLX",
+    "start_url": "/",
+    "background_color": "#0f0f14",
+    "description": "Discover, search, and watch the best movies, TV shows, and anime.",
+    "display": "standalone",
+    "theme_color": "#0f0f14",
+    "orientation": "portrait-primary",
+    "categories": ["entertainment", "movies"],
+    "icons": [
+        {
+            "src": "logo.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "logo.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Movies",
+            "url": "/movies",
+            "icons": [{ "src": "logo.png", "sizes": "192x192" }]
+        },
+        {
+            "name": "TV Shows",
+            "url": "/tv-shows",
+            "icons": [{ "src": "logo.png", "sizes": "192x192" }]
+        },
+        {
+            "name": "Anime",
+            "url": "/anime",
+            "icons": [{ "src": "logo.png", "sizes": "192x192" }]
+        }
+    ]
+}

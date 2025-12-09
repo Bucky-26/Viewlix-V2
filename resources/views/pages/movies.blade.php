@@ -1,0 +1,66 @@
+@extends('layouts.app')
+
+@section('title', 'Movies - Viewlix')
+
+@section('content')
+<div class="min-h-[calc(100vh-200px)]">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-white mb-2">Movies</h1>
+        <p class="text-gray-400">Explore our collection of movies</p>
+    </div>
+    
+    {{-- Filters --}}
+    <div class="flex flex-wrap items-center gap-3 mb-8">
+        <a href="{{ route('movies', ['filter' => 'popular']) }}" 
+           class="px-4 py-2 text-sm font-medium rounded-xl transition-colors {{ $filter === 'popular' ? 'bg-viewlix-red text-white' : 'bg-viewlix-gray text-gray-300 hover:bg-viewlix-gray-light' }}">
+            Popular
+        </a>
+        <a href="{{ route('movies', ['filter' => 'top_rated']) }}" 
+           class="px-4 py-2 text-sm font-medium rounded-xl transition-colors {{ $filter === 'top_rated' ? 'bg-viewlix-red text-white' : 'bg-viewlix-gray text-gray-300 hover:bg-viewlix-gray-light' }}">
+            Top Rated
+        </a>
+        <a href="{{ route('movies', ['filter' => 'now_playing']) }}" 
+           class="px-4 py-2 text-sm font-medium rounded-xl transition-colors {{ $filter === 'now_playing' ? 'bg-viewlix-red text-white' : 'bg-viewlix-gray text-gray-300 hover:bg-viewlix-gray-light' }}">
+            Now Playing
+        </a>
+        <a href="{{ route('movies', ['filter' => 'upcoming']) }}" 
+           class="px-4 py-2 text-sm font-medium rounded-xl transition-colors {{ $filter === 'upcoming' ? 'bg-viewlix-red text-white' : 'bg-viewlix-gray text-gray-300 hover:bg-viewlix-gray-light' }}">
+            Upcoming
+        </a>
+    </div>
+    
+    {{-- Movies Grid --}}
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+        @forelse($movies as $movie)
+            @include('partials.media-card', ['item' => $movie, 'type' => 'movie'])
+        @empty
+            <div class="col-span-full text-center py-12">
+                <p class="text-gray-400">No movies found.</p>
+            </div>
+        @endforelse
+    </div>
+    
+    {{-- Pagination --}}
+    @if($totalPages > 1)
+    <div class="flex items-center justify-center gap-2 mt-8">
+        @if($currentPage > 1)
+        <a href="{{ route('movies', ['filter' => $filter, 'page' => $currentPage - 1]) }}" 
+           class="px-4 py-2 bg-viewlix-gray text-white rounded-xl hover:bg-viewlix-gray-light transition-colors">
+            Previous
+        </a>
+        @endif
+        
+        <span class="px-4 py-2 text-gray-400">
+            Page {{ $currentPage }} of {{ min($totalPages, 500) }}
+        </span>
+        
+        @if($currentPage < $totalPages && $currentPage < 500)
+        <a href="{{ route('movies', ['filter' => $filter, 'page' => $currentPage + 1]) }}" 
+           class="px-4 py-2 bg-viewlix-gray text-white rounded-xl hover:bg-viewlix-gray-light transition-colors">
+            Next
+        </a>
+        @endif
+    </div>
+    @endif
+</div>
+@endsection
