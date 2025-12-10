@@ -4,15 +4,15 @@
 importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js');
 
-// Firebase configuration - same as in app.js
+// Firebase configuration for viewlix-v2
 firebase.initializeApp({
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT.firebaseapp.com",
-    databaseURL: "https://YOUR_PROJECT.firebaseio.com",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_PROJECT.appspot.com",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID"
+    apiKey: "AIzaSyAJjI3k_vfHexdpRzZPR0Ft0BUX1e3Zw8w",
+    authDomain: "viewlix-v2.firebaseapp.com",
+    databaseURL: "https://viewlix-v2-default-rtdb.firebaseio.com",
+    projectId: "viewlix-v2",
+    storageBucket: "viewlix-v2.firebasestorage.app",
+    messagingSenderId: "706887870364",
+    appId: "1:706887870364:web:dc4d637fc3048aa2e68a59"
 });
 
 const messaging = firebase.messaging();

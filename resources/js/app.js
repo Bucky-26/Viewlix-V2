@@ -447,18 +447,136 @@ window.clearAllNotifications = async function() {
 // ============================================
 
 /**
+ * Check if running as installed PWA
+ */
+function isInstalledPWA() {
+    return window.matchMedia('(display-mode: standalone)').matches 
+        || window.navigator.standalone === true;
+}
+
+/**
+ * Check if the current browser supports web push notifications
+ */
+function isWebPushSupported() {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    
+    // iOS Safari browser (not PWA) does not support web push
+    if (isIOS && !isInstalledPWA()) {
+        console.log('🔔 iOS Safari detected - add to home screen for push notifications');
+        return false;
+    }
+    
+    // iOS PWA on iOS 16.4+ supports push notifications
+    if (isIOS && isInstalledPWA()) {
+        console.log('🔔 iOS PWA detected - checking push support');
+        // Check if push is actually supported (iOS 16.4+)
+        if (!('PushManager' in window)) {
+            console.log('🔔 iOS version does not support web push (requires iOS 16.4+)');
+            return false;
+        }
+    }
+    
+    // Check for required APIs
+    if (!('serviceWorker' in navigator)) {
+        console.log('🔔 Service Workers not supported');
+        return false;
+    }
+    
+    if (!('PushManager' in window)) {
+        console.log('🔔 Push API not supported');
+        return false;
+    }
+    
+    if (!('Notification' in window)) {
+        console.log('🔔 Notifications API not supported');
+        return false;
+    }
+    
+    return true;
+}
+
+/**
+ * Show prompt to install PWA for iOS users
+ */
+function showIOSInstallPrompt() {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    
+    if (isIOS && !isInstalledPWA()) {
+        // Check if we've shown this recently
+        const lastPrompt = localStorage.getItem('ios_pwa_prompt');
+        if (lastPrompt && Date.now() - parseInt(lastPrompt) < 86400000) { // 24 hours
+            return;
+        }
+        
+        // Create and show the install prompt
+        const prompt = document.createElement('div');
+        prompt.id = 'ios-install-prompt';
+        prompt.className = 'fixed bottom-4 left-4 right-4 z-[9999] bg-gray-800 border border-gray-700 rounded-xl shadow-2xl p-4 transform translate-y-full transition-transform duration-300';
+        prompt.innerHTML = `
+            <div class="flex items-start gap-3">
+                <div class="w-10 h-10 rounded-xl bg-viewlix-red/20 flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5 text-viewlix-red" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                    </svg>
+                </div>
+                <div class="flex-1">
+                    <p class="text-sm font-semibold text-white mb-1">Install Viewlix App</p>
+                    <p class="text-xs text-gray-400">Add to home screen to get push notifications!</p>
+                    <p class="text-xs text-gray-500 mt-1">Tap <svg class="inline w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L12 14M12 2L8 6M12 2L16 6M4 14V20H20V14"/></svg> then "Add to Home Screen"</p>
+                </div>
+                <button onclick="document.getElementById('ios-install-prompt').remove(); localStorage.setItem('ios_pwa_prompt', Date.now())" class="text-gray-400 hover:text-white p-1">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+        `;
+        
+        document.body.appendChild(prompt);
+        
+        // Animate in
+        setTimeout(() => {
+            prompt.classList.remove('translate-y-full');
+        }, 1000);
+        
+        // Auto hide after 10 seconds
+        setTimeout(() => {
+            if (document.getElementById('ios-install-prompt')) {
+                prompt.classList.add('translate-y-full');
+                setTimeout(() => prompt.remove(), 300);
+            }
+        }, 10000);
+    }
+}
+
+/**
  * Request notification permission and get FCM token
  */
 async function requestFcmPermission() {
     if (!firebaseMessaging || !currentFirebaseUser) return;
     
+    // Skip FCM in development (self-signed SSL certificates cause issues)
+    const hostname = window.location.hostname;
+    if (hostname === 'localhost' || hostname.endsWith('.test') || hostname.endsWith('.local')) {
+        console.log('🔔 FCM skipped in development environment');
+        return;
+    }
+    
+    // Check if VAPID key is configured
+    if (!window.firebaseVapidKey) {
+        console.log('🔔 FCM skipped - no VAPID key configured');
+        return;
+    }
+    
+    // Check if web push is supported (handles iOS PWA detection)
+    if (!isWebPushSupported()) {
+        // Show iOS install prompt for non-PWA iOS users
+        showIOSInstallPrompt();
+        console.log('🔔 Web push not supported on this browser/platform');
+        return;
+    }
+    
     try {
-        // Check if notifications are supported
-        if (!('Notification' in window)) {
-            console.log('This browser does not support notifications');
-            return;
-        }
-        
         // Request permission
         const permission = await Notification.requestPermission();
         
@@ -469,7 +587,7 @@ async function requestFcmPermission() {
             console.log('🔔 Notification permission denied');
         }
     } catch (error) {
-        console.error('Error requesting notification permission:', error);
+        console.warn('Error requesting notification permission:', error.message);
     }
 }
 
@@ -479,29 +597,48 @@ async function requestFcmPermission() {
 async function getFcmToken() {
     if (!firebaseMessaging || !currentFirebaseUser) return;
     
-    // Skip FCM in development (self-signed SSL certificates cause issues)
-    const hostname = window.location.hostname;
-    if (hostname === 'localhost' || hostname.endsWith('.test') || hostname.endsWith('.local')) {
-        console.log('🔔 FCM skipped in development environment');
+    // Skip if no VAPID key
+    if (!window.firebaseVapidKey) {
+        console.log('🔔 FCM skipped - no VAPID key');
+        return;
+    }
+    
+    // Double-check web push support
+    if (!isWebPushSupported()) {
         return;
     }
     
     try {
-        // Get FCM token - uses VAPID key if provided
-        const vapidKey = window.firebaseVapidKey || null;
+        // First register the service worker
+        let swRegistration = null;
+        try {
+            swRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+            console.log('🔔 Service Worker registered');
+        } catch (swError) {
+            console.warn('🔔 Service Worker registration failed:', swError.message);
+            return;
+        }
         
         const token = await getToken(firebaseMessaging, {
-            vapidKey: vapidKey,
-            serviceWorkerRegistration: await navigator.serviceWorker.register('/firebase-messaging-sw.js')
+            vapidKey: window.firebaseVapidKey,
+            serviceWorkerRegistration: swRegistration
         });
         
         if (token) {
             console.log('🔔 FCM Token obtained');
-            // Save token to Firebase
             await saveFcmToken(token);
+        } else {
+            console.warn('🔔 No FCM token received');
         }
     } catch (error) {
-        console.error('Error getting FCM token:', error);
+        // Silently handle FCM errors - push notifications are optional
+        if (error.code === 'messaging/permission-blocked') {
+            console.log('🔔 Push notifications blocked by user');
+        } else if (error.name === 'AbortError') {
+            console.log('🔔 FCM unavailable - push notifications disabled');
+        } else {
+            console.warn('🔔 FCM error:', error.message || error);
+        }
     }
 }
 

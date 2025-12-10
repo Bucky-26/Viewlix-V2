@@ -20,6 +20,18 @@
       }
     },
     
+    "fcmTokens": {
+      "$uid": {
+        ".read": "auth != null && auth.uid == $uid",
+        ".write": "auth != null && auth.uid == $uid"
+      }
+    },
+    
+    "admin_notifications": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    
     ".read": false,
     ".write": false
   }

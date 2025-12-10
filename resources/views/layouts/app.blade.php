@@ -289,6 +289,9 @@
     <!-- Firebase Initialization (for authenticated users) -->
     @auth
     <script>
+        // Set VAPID key for FCM
+        window.firebaseVapidKey = "{{ config('services.firebase.vapid_key') }}";
+        
         // Wait for app.js to load, then initialize Firebase
         document.addEventListener('DOMContentLoaded', function() {
             if (typeof window.initFirebase === 'function') {

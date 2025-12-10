@@ -18,9 +18,12 @@ class NotificationController extends Controller
     public function __construct()
     {
         $credentials = config('services.firebase.credentials');
+        $databaseUrl = config('services.firebase.database_url');
         
         if ($credentials && file_exists($credentials)) {
-            $factory = (new Factory)->withServiceAccount($credentials);
+            $factory = (new Factory)
+                ->withServiceAccount($credentials)
+                ->withDatabaseUri($databaseUrl);
             $this->database = $factory->createDatabase();
             $this->messaging = $factory->createMessaging();
         }
@@ -105,11 +108,11 @@ class NotificationController extends Controller
                 ->set($notificationData);
 
             // Get all users and send to each
-            $users = User::all();
+            $users = User::whereNotNull('firebase_uuid')->get();
             $userNotifData = array_merge($notificationData, ['read' => false]);
 
             foreach ($users as $user) {
-                $this->database->getReference('notifications/' . $user->id . '/' . $notificationId)
+                $this->database->getReference('notifications/' . $user->firebase_uuid . '/' . $notificationId)
                     ->set($userNotifData);
             }
 
@@ -140,20 +143,28 @@ class NotificationController extends Controller
         }
 
         try {
-            // Get all FCM tokens from Firebase
-            $tokensSnapshot = $this->database->getReference('fcm_tokens')->getSnapshot();
+            // Get all FCM tokens from Firebase (stored at fcmTokens/{userId}/{tokenId}/token)
+            $tokensSnapshot = $this->database->getReference('fcmTokens')->getSnapshot();
             $tokensData = $tokensSnapshot->getValue() ?? [];
 
             $tokens = [];
-            foreach ($tokensData as $userId => $tokenInfo) {
-                if (isset($tokenInfo['token'])) {
-                    $tokens[] = $tokenInfo['token'];
+            foreach ($tokensData as $userId => $userTokens) {
+                // Each user can have multiple tokens (different devices)
+                if (is_array($userTokens)) {
+                    foreach ($userTokens as $tokenId => $tokenInfo) {
+                        if (isset($tokenInfo['token'])) {
+                            $tokens[] = $tokenInfo['token'];
+                        }
+                    }
                 }
             }
 
             if (empty($tokens)) {
+                \Log::info('FCM: No tokens found');
                 return 0;
             }
+            
+            \Log::info('FCM: Found ' . count($tokens) . ' tokens');
 
             // Create the notification
             $notification = Notification::create($title, $body);
@@ -206,10 +217,16 @@ class NotificationController extends Controller
                 }
             }
 
-            // Remove invalid tokens
-            foreach ($tokensData as $userId => $tokenInfo) {
-                if (isset($tokenInfo['token']) && in_array($tokenInfo['token'], $invalidTokens)) {
-                    $this->database->getReference('fcm_tokens/' . $userId)->remove();
+            // Remove invalid tokens from Firebase
+            if (!empty($invalidTokens)) {
+                foreach ($tokensData as $userId => $userTokens) {
+                    if (is_array($userTokens)) {
+                        foreach ($userTokens as $tokenId => $tokenInfo) {
+                            if (isset($tokenInfo['token']) && in_array($tokenInfo['token'], $invalidTokens)) {
+                                $this->database->getReference('fcmTokens/' . $userId . '/' . $tokenId)->remove();
+                            }
+                        }
+                    }
                 }
             }
 
