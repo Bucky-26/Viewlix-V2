@@ -1,3 +1,4 @@
+
 <?php
 
 use App\Http\Controllers\HomeController;
@@ -27,7 +28,9 @@ Route::get('/movie/{id}', [MovieController::class, 'show'])->name('movie.show');
 Route::get('/tv-shows', [TvShowController::class, 'index'])->name('tv-shows');
 Route::get('/tv-show/{id}', [TvShowController::class, 'show'])->name('tv-show.show');
 Route::get('/tv-show/{id}/season/{season}', [TvShowController::class, 'season'])->name('tv-show.season');
-
+// Terms and Privacy Pages
+Route::view('/terms', 'pages.terms')->name('terms');
+Route::view('/privacy', 'pages.privacy')->name('privacy');
 // Anime (browsing is public)
 Route::get('/anime', [AnimeController::class, 'index'])->name('anime');
 Route::get('/anime/{id}', [AnimeController::class, 'show'])->name('anime.show');
@@ -51,6 +54,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    
+    // Avatar upload
+    Route::post('/profile/avatar', [ProfileController::class, 'updateAvatar'])->name('profile.avatar');
     
     // Account page
     Route::get('/account', function () {
@@ -86,6 +92,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return response()->json(['token' => $token]);
     })->name('firebase.token');
 });
+
+// Public endpoint to get user avatar by user id
+Route::get('/avatar/{user}', function (\App\Models\User $user) {
+    if ($user->avatar) {
+        return redirect($user->avatar);
+    }
+    // Return a default avatar image if not set
+    return redirect(asset('images/default-avatar.png'));
+})->name('avatar.public');
 
 // Admin Routes
 Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.')->group(function () {

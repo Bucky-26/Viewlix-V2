@@ -11,8 +11,8 @@
         </div>
         
         <div class="flex items-center gap-4">
-            <a href="#" class="text-sm text-gray-400 hover:text-white transition-colors">Privacy</a>
-            <a href="#" class="text-sm text-gray-400 hover:text-white transition-colors">Terms</a>
+            <a href="/privacy" class="text-sm text-gray-400 hover:text-white transition-colors">Privacy</a>
+            <a href="/terms" class="text-sm text-gray-400 hover:text-white transition-colors">Terms</a>
             <a href="#" class="text-sm text-gray-400 hover:text-white transition-colors">Help</a>
         </div>
     </div>

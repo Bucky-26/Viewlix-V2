@@ -42,176 +42,15 @@
             <span class="text-xs mt-1">Account</span>
         </button>
         @else
-        <button type="button" class="flex flex-col items-center justify-center flex-1 py-2 text-gray-400 hover:text-white transition-colors" onclick="openOverlay('#mobile-auth-offcanvas')">
+        <a href="{{ route('login') }}" class="flex flex-col items-center justify-center flex-1 py-2 text-gray-400 hover:text-white transition-colors">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
             </svg>
-            <span class="text-xs mt-1">Sign In</span>
-        </button>
+            <span class="text-xs mt-1">Profile</span>
+        </a>
         @endauth
     </div>
 </nav>
-
-{{-- Mobile Auth Offcanvas (for guests) --}}
-<div id="mobile-auth-offcanvas" class="hidden translate-y-full fixed bottom-0 inset-x-0 transition-all duration-300 transform h-auto max-h-[90vh] w-full z-[80] bg-viewlix-darker border-t border-viewlix-border rounded-t-2xl" role="dialog" tabindex="-1" aria-labelledby="mobile-auth-offcanvas-label">
-    <div class="flex justify-center pt-3 pb-2">
-        <span class="w-12 h-1.5 bg-viewlix-gray rounded-full cursor-pointer" onclick="closeOverlay('#mobile-auth-offcanvas')"></span>
-    </div>
-    
-    <div class="p-4 overflow-y-auto max-h-[calc(90vh-40px)]" x-data="{ activeTab: 'login' }">
-        {{-- Google Sign In Button --}}
-        <a href="{{ route('auth.google') }}" class="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white hover:bg-gray-100 text-gray-800 font-medium rounded-xl transition-colors mb-4">
-            <svg class="w-5 h-5" viewBox="0 0 24 24">
-                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-            </svg>
-            Continue with Google
-        </a>
-        
-        <div class="relative mb-4">
-            <div class="absolute inset-0 flex items-center">
-                <div class="w-full border-t border-viewlix-border"></div>
-            </div>
-            <div class="relative flex justify-center text-sm">
-                <span class="px-3 bg-viewlix-darker text-gray-500">or</span>
-            </div>
-        </div>
-        
-        {{-- Tab Buttons --}}
-        <div class="flex mb-6 bg-viewlix-gray rounded-xl p-1">
-            <button 
-                @click="activeTab = 'login'" 
-                :class="activeTab === 'login' ? 'bg-viewlix-red text-white' : 'text-gray-400 hover:text-white'"
-                class="flex-1 py-2.5 text-sm font-semibold rounded-lg transition-colors"
-            >
-                Sign In
-            </button>
-            <button 
-                @click="activeTab = 'register'" 
-                :class="activeTab === 'register' ? 'bg-viewlix-red text-white' : 'text-gray-400 hover:text-white'"
-                class="flex-1 py-2.5 text-sm font-semibold rounded-lg transition-colors"
-            >
-                Create Account
-            </button>
-        </div>
-        
-        {{-- Login Form --}}
-        <div x-show="activeTab === 'login'" x-transition>
-            <form method="POST" action="{{ route('login') }}" class="space-y-4">
-                @csrf
-                
-                <div>
-                    <label for="mobile-email" class="block text-sm font-medium text-gray-300 mb-1">Email</label>
-                    <input 
-                        type="email" 
-                        id="mobile-email" 
-                        name="email" 
-                        required 
-                        autocomplete="username"
-                        class="w-full px-4 py-3 bg-viewlix-gray border border-viewlix-border rounded-xl text-white placeholder-gray-500 focus:ring-viewlix-red focus:border-viewlix-red"
-                        placeholder="your@email.com"
-                    >
-                </div>
-                
-                <div>
-                    <label for="mobile-password" class="block text-sm font-medium text-gray-300 mb-1">Password</label>
-                    <input 
-                        type="password" 
-                        id="mobile-password" 
-                        name="password" 
-                        required 
-                        autocomplete="current-password"
-                        class="w-full px-4 py-3 bg-viewlix-gray border border-viewlix-border rounded-xl text-white placeholder-gray-500 focus:ring-viewlix-red focus:border-viewlix-red"
-                        placeholder="••••••••"
-                    >
-                </div>
-                
-                <div class="flex items-center justify-between">
-                    <label class="flex items-center">
-                        <input type="checkbox" name="remember" class="w-4 h-4 rounded bg-viewlix-gray border-viewlix-border text-viewlix-red focus:ring-viewlix-red">
-                        <span class="ml-2 text-sm text-gray-400">Remember me</span>
-                    </label>
-                    <a href="{{ route('password.request') }}" class="text-sm text-viewlix-red hover:text-viewlix-red-light">
-                        Forgot password?
-                    </a>
-                </div>
-                
-                <button type="submit" class="w-full py-3 bg-viewlix-red hover:bg-viewlix-red-dark text-white font-semibold rounded-xl transition-colors">
-                    Sign In
-                </button>
-            </form>
-        </div>
-        
-        {{-- Register Form --}}
-        <div x-show="activeTab === 'register'" x-transition>
-            <form method="POST" action="{{ route('register') }}" class="space-y-4">
-                @csrf
-                
-                <div>
-                    <label for="mobile-reg-name" class="block text-sm font-medium text-gray-300 mb-1">Name</label>
-                    <input 
-                        type="text" 
-                        id="mobile-reg-name" 
-                        name="name" 
-                        required 
-                        autocomplete="name"
-                        class="w-full px-4 py-3 bg-viewlix-gray border border-viewlix-border rounded-xl text-white placeholder-gray-500 focus:ring-viewlix-red focus:border-viewlix-red"
-                        placeholder="Your name"
-                    >
-                </div>
-                
-                <div>
-                    <label for="mobile-reg-email" class="block text-sm font-medium text-gray-300 mb-1">Email</label>
-                    <input 
-                        type="email" 
-                        id="mobile-reg-email" 
-                        name="email" 
-                        required 
-                        autocomplete="username"
-                        class="w-full px-4 py-3 bg-viewlix-gray border border-viewlix-border rounded-xl text-white placeholder-gray-500 focus:ring-viewlix-red focus:border-viewlix-red"
-                        placeholder="your@email.com"
-                    >
-                </div>
-                
-                <div>
-                    <label for="mobile-reg-password" class="block text-sm font-medium text-gray-300 mb-1">Password</label>
-                    <input 
-                        type="password" 
-                        id="mobile-reg-password" 
-                        name="password" 
-                        required 
-                        autocomplete="new-password"
-                        class="w-full px-4 py-3 bg-viewlix-gray border border-viewlix-border rounded-xl text-white placeholder-gray-500 focus:ring-viewlix-red focus:border-viewlix-red"
-                        placeholder="••••••••"
-                    >
-                </div>
-                
-                <div>
-                    <label for="mobile-reg-password-confirm" class="block text-sm font-medium text-gray-300 mb-1">Confirm Password</label>
-                    <input 
-                        type="password" 
-                        id="mobile-reg-password-confirm" 
-                        name="password_confirmation" 
-                        required 
-                        autocomplete="new-password"
-                        class="w-full px-4 py-3 bg-viewlix-gray border border-viewlix-border rounded-xl text-white placeholder-gray-500 focus:ring-viewlix-red focus:border-viewlix-red"
-                        placeholder="••••••••"
-                    >
-                </div>
-                
-                <button type="submit" class="w-full py-3 bg-viewlix-red hover:bg-viewlix-red-dark text-white font-semibold rounded-xl transition-colors">
-                    Create Account
-                </button>
-            </form>
-        </div>
-        
-        <p class="text-xs text-gray-500 text-center mt-6 pb-4">
-            By continuing, you agree to our Terms of Service and Privacy Policy.
-        </p>
-    </div>
-</div>
 
 {{-- Mobile Account Offcanvas (for authenticated users) --}}
 @auth
@@ -246,6 +85,15 @@
         
         {{-- Menu Items --}}
         <div class="space-y-2">
+            @if(Auth::user()->isAdmin())
+            <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-4 p-3 rounded-xl bg-viewlix-red/10 hover:bg-viewlix-red/20 transition-colors">
+                <svg class="w-6 h-6 text-viewlix-red" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                </svg>
+                <span class="text-viewlix-red font-medium">Admin Panel</span>
+            </a>
+            @endif
+            
             <a href="{{ route('account') }}" class="flex items-center gap-4 p-3 rounded-xl hover:bg-viewlix-gray transition-colors">
                 <svg class="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>

@@ -3,60 +3,56 @@
 @section('title', 'Account - Viewlix')
 
 @section('content')
-<div class="min-h-[calc(100vh-200px)]">
-    <div class="mb-8">
-        <h1 class="text-3xl font-bold text-white mb-2">Account</h1>
-        <p class="text-gray-400">Manage your account settings</p>
-    </div>
-    
-    @if(session('success'))
-        <div class="max-w-2xl mb-6 p-4 bg-green-500/10 border border-green-500/20 rounded-xl text-green-400">
-            {{ session('success') }}
+<div class="min-h-[calc(100vh-200px)] flex flex-col items-center justify-center py-8">
+    <div class="w-full max-w-2xl flex flex-col items-center">
+        <div class="mb-8 w-full text-center">
+            <h1 class="text-3xl font-bold text-white mb-2">Account</h1>
+            <p class="text-gray-400">Manage your account settings</p>
         </div>
-    @endif
-    
-    @if(session('error'))
-        <div class="max-w-2xl mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400">
-            {{ session('error') }}
-        </div>
-    @endif
-    
-    <div class="max-w-2xl">
-        {{-- Profile Section --}}
-        <div class="bg-viewlix-gray rounded-2xl border border-viewlix-border p-6 mb-6">
-            <h2 class="text-lg font-semibold text-white mb-4">Profile</h2>
-            <div class="flex items-center gap-4 mb-6">
-                @if(Auth::user()->avatar)
-                    <img src="{{ Auth::user()->avatar }}" alt="{{ Auth::user()->name }}" class="w-20 h-20 rounded-full object-cover">
-                @else
-                    <div class="w-20 h-20 rounded-full bg-gradient-to-br from-viewlix-red to-viewlix-red-dark flex items-center justify-center text-white font-bold text-2xl">
-                        {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
-                    </div>
-                @endif
-                <div>
-                    <h3 class="text-lg font-medium text-white">{{ Auth::user()->name }}</h3>
-                    <p class="text-sm text-gray-400">{{ Auth::user()->email }}</p>
-                    @if(Auth::user()->google_id)
-                        <span class="inline-flex items-center gap-1 mt-1 text-xs text-green-400">
-                            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-                            </svg>
-                            Google Connected
-                        </span>
-                    @endif
-                </div>
+        @if(session('success'))
+            <div class="w-full max-w-2xl mb-6 p-4 bg-green-500/10 border border-green-500/20 rounded-xl text-green-400 text-center">
+                {{ session('success') }}
             </div>
-            <a href="{{ route('profile.edit') }}" class="px-4 py-2 bg-viewlix-gray-light text-white text-sm font-medium rounded-xl hover:bg-viewlix-border transition-colors">
-                Edit Profile
-            </a>
-        </div>
-        
-        {{-- Connected Accounts Section --}}
-        <div class="bg-viewlix-gray rounded-2xl border border-viewlix-border p-6 mb-6">
-            <h2 class="text-lg font-semibold text-white mb-4">Connected Accounts</h2>
-            <p class="text-sm text-gray-400 mb-4">Link your social accounts for easier login and sync across devices.</p>
-            
-            <div class="space-y-4">
+        @endif
+        @if(session('error'))
+            <div class="w-full max-w-2xl mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-center">
+                {{ session('error') }}
+            </div>
+        @endif
+        <div class="w-full max-w-2xl flex flex-col items-center">
+            {{-- Profile Section --}}
+            <div class="bg-viewlix-gray rounded-2xl border border-viewlix-border p-6 mb-6 w-full max-w-2xl mx-auto flex flex-col items-center">
+                <h2 class="text-lg font-semibold text-white mb-4 text-center">Profile</h2>
+                <div class="flex flex-col items-center gap-4 mb-6">
+                    @if(Auth::user()->avatar)
+                        <img src="{{ Auth::user()->avatar }}" alt="{{ Auth::user()->name }}" class="w-20 h-20 rounded-full object-cover">
+                    @else
+                        <div class="w-20 h-20 rounded-full bg-gradient-to-br from-viewlix-red to-viewlix-red-dark flex items-center justify-center text-white font-bold text-2xl">
+                            {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+                        </div>
+                    @endif
+                    <div class="text-center">
+                        <h3 class="text-lg font-medium text-white">{{ Auth::user()->name }}</h3>
+                        <p class="text-sm text-gray-400">{{ Auth::user()->email }}</p>
+                        @if(Auth::user()->google_id)
+                            <span class="inline-flex items-center gap-1 mt-1 text-xs text-green-400">
+                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                </svg>
+                                Google Connected
+                            </span>
+                        @endif
+                    </div>
+                </div>
+                <a href="{{ route('profile.edit') }}" class="px-4 py-2 bg-viewlix-gray-light text-white text-sm font-medium rounded-xl hover:bg-viewlix-border transition-colors">
+                    Edit Profile
+                </a>
+            </div>
+            {{-- Connected Accounts Section --}}
+                <div class="bg-viewlix-gray rounded-2xl border border-viewlix-border p-6 mb-6 w-full max-w-2xl mx-auto flex flex-col items-center">
+                <h2 class="text-lg font-semibold text-white mb-4 text-center">Connected Accounts</h2>
+                <p class="text-sm text-gray-400 mb-4 text-center">Link your social accounts for easier login and sync across devices.</p>
+                <div class="space-y-4 w-full">
                 {{-- Google Account --}}
                 <div class="flex items-center justify-between p-4 bg-viewlix-dark rounded-xl border border-viewlix-border">
                     <div class="flex items-center gap-3">
@@ -95,7 +91,7 @@
         </div>
         
         {{-- Settings Section --}}
-        <div class="bg-viewlix-gray rounded-2xl border border-viewlix-border p-6 mb-6">
+            <div class="bg-viewlix-gray rounded-2xl border border-viewlix-border p-6 mb-6 w-full max-w-2xl mx-auto flex flex-col items-center">
             <h2 class="text-lg font-semibold text-white mb-4">Preferences</h2>
             <div class="space-y-4">
                 <div class="flex items-center justify-between py-3 border-b border-viewlix-border">
@@ -129,7 +125,7 @@
         </div>
         
         {{-- Danger Zone --}}
-        <div class="bg-viewlix-gray rounded-2xl border border-red-900/50 p-6">
+            <div class="bg-viewlix-gray rounded-2xl border border-red-900/50 p-6 w-full max-w-2xl mx-auto flex flex-col items-center">
             <h2 class="text-lg font-semibold text-red-400 mb-4">Danger Zone</h2>
             <p class="text-sm text-gray-400 mb-4">Once you delete your account, there is no going back. Please be certain.</p>
             <a href="{{ route('profile.edit') }}" class="inline-block px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-xl transition-colors">

@@ -10,6 +10,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, signInWithCustomToken, onAuthStateChanged, signOut } from 'firebase/auth';
 import { getDatabase, ref, set, get, remove, query, orderByChild, limitToLast, onValue, update, push as firebasePush } from 'firebase/database';
 import { getMessaging, getToken, onMessage } from 'firebase/messaging';
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 window.Alpine = Alpine;
 Alpine.start();
@@ -723,3 +724,14 @@ function showToastNotification(payload) {
         setTimeout(() => toast.remove(), 300);
     }, 5000);
 }
+
+// Avatar upload function
+window.uploadAvatarToFirebase = async function(file) {
+    if (!firebaseApp) throw new Error('Firebase not initialized');
+    const storage = getStorage(firebaseApp);
+    const userId = currentFirebaseUser?.uid;
+    if (!userId) throw new Error('User not authenticated');
+    const avatarRef = storageRef(storage, `avatars/${userId}/${Date.now()}_${file.name}`);
+    await uploadBytes(avatarRef, file);
+    return await getDownloadURL(avatarRef);
+};

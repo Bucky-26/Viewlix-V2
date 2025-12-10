@@ -57,4 +57,20 @@ class ProfileController extends Controller
 
         return Redirect::to('/');
     }
+
+    /**
+     * Store avatar in Laravel storage and update user profile.
+     */
+    public function updateAvatar(Request $request)
+    {
+        $request->validate([
+            'avatar' => ['required', 'image', 'max:2048']
+        ]);
+        $user = $request->user();
+        $path = $request->file('avatar')->store('avatars', 'public');
+        $assetUrl = config('app.asset_url') ? config('app.asset_url') : config('app.url');
+        $user->avatar = $assetUrl . '/storage/' . $path;
+        $user->save();
+        return redirect()->route('profile.edit')->with('status', 'avatar-updated');
+    }
 }

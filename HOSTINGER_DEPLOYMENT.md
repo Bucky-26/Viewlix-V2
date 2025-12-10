@@ -179,12 +179,18 @@ Visit: `https://yourdomain.com/run-migrations-secret-key-12345`
 ## Step 7: Storage & Permissions
 
 ### 7.1 Create Storage Link
-Create a temporary route (remove after use):
-```php
-Route::get('/create-storage-link-secret', function () {
-    Artisan::call('storage:link');
-    return 'Storage linked!';
-});
+The `php artisan storage:link` command may fail on Hostinger because `exec()` is disabled.
+
+**Create the symlink manually via SSH:**
+```bash
+cd public_html/public
+ln -s ../../storage/app/public storage
+```
+
+**Verify it worked:**
+```bash
+ls -la public_html/public/ | grep storage
+# Should show: storage -> ../../storage/app/public
 ```
 
 ### 7.2 Set Folder Permissions
