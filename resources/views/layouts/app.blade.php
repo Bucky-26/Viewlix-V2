@@ -44,6 +44,9 @@
         
         <!-- Footer -->
         @include('partials.footer')
+    
+        <!-- Overlay Backdrop (placed before offcanvas elements so offcanvas sits above it) -->
+        <div id="overlay-backdrop" class="hidden pointer-events-none fixed inset-0 bg-black/60 z-[70] transition-opacity" onclick="closeAllOverlays()"></div>
     </main>
     
     <!-- Mobile Bottom Navigation -->
@@ -58,9 +61,6 @@
     <!-- Desktop Notifications Offcanvas -->
     @include('partials.notifications-desktop-offcanvas')
     
-    <!-- Overlay Backdrop -->
-    <div id="overlay-backdrop" class="hidden fixed inset-0 bg-black/60 z-[70] transition-opacity" onclick="closeAllOverlays()"></div>
-    
     <!-- Global Overlay Scripts -->
     <script>
         // Helper to open overlay
@@ -68,7 +68,10 @@
             const el = document.querySelector(selector);
             const backdrop = document.getElementById('overlay-backdrop');
             if (el) {
+                // Make backdrop visible and enable pointer events so clicks on backdrop can close overlays
                 backdrop.classList.remove('hidden');
+                backdrop.classList.remove('pointer-events-none');
+                backdrop.classList.add('pointer-events-auto');
                 el.classList.remove('hidden');
                 // Trigger animation
                 requestAnimationFrame(() => {
@@ -87,7 +90,10 @@
                 el.classList.add('translate-y-full');
                 setTimeout(() => {
                     el.classList.add('hidden');
+                    // Hide backdrop and disable pointer events
                     backdrop.classList.add('hidden');
+                    backdrop.classList.remove('pointer-events-auto');
+                    backdrop.classList.add('pointer-events-none');
                 }, 300);
             }
         }
@@ -97,8 +103,11 @@
             const el = document.querySelector(selector);
             const backdrop = document.getElementById('overlay-backdrop');
             if (el) {
-                el.classList.remove('hidden');
+                // Ensure backdrop can receive clicks
                 backdrop.classList.remove('hidden');
+                backdrop.classList.remove('pointer-events-none');
+                backdrop.classList.add('pointer-events-auto');
+                el.classList.remove('hidden');
                 // Trigger animation
                 requestAnimationFrame(() => {
                     el.classList.remove('translate-x-full');
@@ -116,7 +125,10 @@
                 el.classList.add('translate-x-full');
                 setTimeout(() => {
                     el.classList.add('hidden');
+                    // Hide backdrop and disable pointer events
                     backdrop.classList.add('hidden');
+                    backdrop.classList.remove('pointer-events-auto');
+                    backdrop.classList.add('pointer-events-none');
                 }, 300);
             }
         }
@@ -144,8 +156,29 @@
                 }, 300);
             });
             
+            // Hide backdrop and disable pointer events
             backdrop.classList.add('hidden');
+            backdrop.classList.remove('pointer-events-auto');
+            backdrop.classList.add('pointer-events-none');
         }
+
+        // Data-driven handlers for elements using Preline-like data attributes (data-hs-overlay)
+        document.addEventListener('click', function(e) {
+            const trigger = e.target.closest('[data-hs-overlay]');
+            if (!trigger) return;
+            e.preventDefault();
+            const selector = trigger.getAttribute('data-hs-overlay');
+            if (!selector) return;
+            const target = document.querySelector(selector);
+            if (!target) return;
+
+            // If target is hidden -> open, otherwise close
+            if (target.classList.contains('hidden')) {
+                openOverlay(selector);
+            } else {
+                closeOverlay(selector);
+            }
+        });
 
         // Notification UI Rendering (Vanilla JS)
         function formatNotificationTime(timestamp) {

@@ -1,7 +1,7 @@
 {{-- Desktop Notifications Offcanvas (Right Side) --}}
 @auth
 <div id="notifications-desktop-offcanvas" 
-     class="hidden translate-x-full fixed top-0 right-0 h-full transition-all duration-300 transform w-96 max-w-full z-[80] bg-viewlix-darker border-l border-viewlix-border shadow-2xl"
+    class="hidden translate-x-full fixed top-0 right-0 h-full transition-all duration-300 transform w-96 max-w-full z-[90] bg-viewlix-darker border-l border-viewlix-border shadow-2xl"
      role="dialog" 
      tabindex="-1" 
      aria-labelledby="notifications-desktop-offcanvas-label">

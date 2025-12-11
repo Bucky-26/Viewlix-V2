@@ -1,5 +1,5 @@
 {{-- Preview Offcanvas - Shows quick preview of media --}}
-<div id="preview-offcanvas" class="hidden translate-y-full fixed bottom-0 inset-x-0 transition-all duration-300 transform h-auto max-h-[90vh] w-full z-[80] bg-viewlix-darker border-t border-viewlix-border rounded-t-2xl" role="dialog" tabindex="-1" aria-labelledby="preview-offcanvas-label">
+<div id="preview-offcanvas" class="hidden translate-y-full fixed bottom-0 inset-x-0 transition-all duration-300 transform h-auto max-h-[90vh] w-full z-[90] bg-viewlix-darker border-t border-viewlix-border rounded-t-2xl" role="dialog" tabindex="-1" aria-labelledby="preview-offcanvas-label">
     <div class="flex justify-center pt-3 pb-2">
         <span class="w-12 h-1.5 bg-viewlix-gray rounded-full cursor-pointer" onclick="closeOverlay('#preview-offcanvas')"></span>
     </div>
@@ -13,7 +13,7 @@
 </div>
 
 {{-- Share Offcanvas --}}
-<div id="share-offcanvas" class="hidden translate-y-full fixed bottom-0 inset-x-0 transition-all duration-300 transform h-auto w-full z-[80] bg-viewlix-darker border-t border-viewlix-border rounded-t-2xl" role="dialog" tabindex="-1" aria-labelledby="share-offcanvas-label">
+<div id="share-offcanvas" class="hidden translate-y-full fixed bottom-0 inset-x-0 transition-all duration-300 transform h-auto w-full z-[90] bg-viewlix-darker border-t border-viewlix-border rounded-t-2xl" role="dialog" tabindex="-1" aria-labelledby="share-offcanvas-label">
     <div class="flex justify-center pt-3 pb-2">
         <span class="w-12 h-1.5 bg-viewlix-gray rounded-full cursor-pointer" onclick="closeOverlay('#share-offcanvas')"></span>
     </div>

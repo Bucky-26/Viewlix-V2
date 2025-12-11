@@ -1,7 +1,7 @@
 {{-- Mobile Notifications Offcanvas --}}
 @auth
 <div id="notifications-offcanvas" 
-     class="hidden translate-y-full fixed bottom-0 inset-x-0 transition-all duration-300 transform max-h-[85vh] w-full z-[80] bg-viewlix-darker border-t border-viewlix-border rounded-t-2xl"
+    class="hidden translate-y-full fixed bottom-0 inset-x-0 transition-all duration-300 transform max-h-[85vh] w-full z-[90] bg-viewlix-darker border-t border-viewlix-border rounded-t-2xl"
      role="dialog" 
      tabindex="-1" 
      aria-labelledby="notifications-offcanvas-label">
