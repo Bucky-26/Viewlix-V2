@@ -1,14 +1,15 @@
 {{-- Desktop Notifications Offcanvas (Right Side) --}}
 @auth
 <div id="notifications-desktop-offcanvas" 
-    class="hidden translate-x-full fixed top-0 right-0 h-full transition-all duration-300 transform w-96 max-w-full z-[90] bg-viewlix-darker border-l border-viewlix-border shadow-2xl"
+    class="hidden translate-x-full fixed top-16 right-0 h-[calc(100vh-4rem)] transition-all duration-300 transform w-96 max-w-full z-[100] bg-viewlix-darker border-l border-viewlix-border shadow-2xl"
      role="dialog" 
      tabindex="-1" 
-     aria-labelledby="notifications-desktop-offcanvas-label">
+     aria-labelledby="notifications-desktop-offcanvas-label"
+     onclick="event.stopPropagation()">
     
     <div class="flex flex-col h-full">
         {{-- Header --}}
-        <div class="flex items-center justify-between px-5 py-4 border-b border-viewlix-border flex-shrink-0">
+        <div class="flex items-center justify-between px-5 py-4 border-b border-viewlix-border flex-shrink-0 bg-viewlix-darker">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-xl bg-viewlix-red/10 flex items-center justify-center">
                     <svg class="w-5 h-5 text-viewlix-red" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -21,8 +22,9 @@
                 </div>
             </div>
             <button type="button" 
-                    onclick="closeDesktopOverlay('#notifications-desktop-offcanvas')"
-                    class="p-2 text-gray-400 hover:text-white hover:bg-viewlix-gray rounded-xl transition-colors">
+                    onclick="if(typeof closeDesktopOverlay === 'function') { closeDesktopOverlay('#notifications-desktop-offcanvas'); } else { document.getElementById('notifications-desktop-offcanvas').classList.add('hidden', 'translate-x-full'); document.getElementById('notifications-desktop-offcanvas').classList.remove('translate-x-0'); }"
+                    class="p-2 text-gray-400 hover:text-white hover:bg-viewlix-gray rounded-xl transition-colors"
+                    aria-label="Close notifications">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
                 </svg>
@@ -58,11 +60,5 @@
             </div>
         </div>
     </div>
-</div>
-
-{{-- Desktop Notifications Backdrop --}}
-<div id="notifications-desktop-backdrop" 
-     class="hidden fixed inset-0 bg-black/50 z-[75] transition-opacity duration-300 opacity-0"
-     onclick="closeDesktopNotifications()">
 </div>
 @endauth

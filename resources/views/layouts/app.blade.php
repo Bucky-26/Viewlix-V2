@@ -46,7 +46,7 @@
         @include('partials.footer')
     
         <!-- Overlay Backdrop (placed before offcanvas elements so offcanvas sits above it) -->
-        <div id="overlay-backdrop" class="hidden pointer-events-none fixed inset-0 bg-black/60 z-[70] transition-opacity" onclick="closeAllOverlays()"></div>
+        <div id="overlay-backdrop" class="hidden pointer-events-none fixed inset-0 bg-black/30 z-[70] transition-opacity" onclick="closeAllOverlays()"></div>
     </main>
     
     <!-- Mobile Bottom Navigation -->
@@ -64,14 +64,16 @@
     <!-- Global Overlay Scripts -->
     <script>
         // Helper to open overlay
-        function openOverlay(selector) {
+        function openOverlay(selector, showBackdrop = true) {
             const el = document.querySelector(selector);
             const backdrop = document.getElementById('overlay-backdrop');
             if (el) {
-                // Make backdrop visible and enable pointer events so clicks on backdrop can close overlays
-                backdrop.classList.remove('hidden');
-                backdrop.classList.remove('pointer-events-none');
-                backdrop.classList.add('pointer-events-auto');
+                // Only show backdrop if requested (default true for compatibility)
+                if (showBackdrop) {
+                    backdrop.classList.remove('hidden');
+                    backdrop.classList.remove('pointer-events-none');
+                    backdrop.classList.add('pointer-events-auto');
+                }
                 el.classList.remove('hidden');
                 // Trigger animation
                 requestAnimationFrame(() => {
@@ -82,7 +84,7 @@
         }
 
         // Helper to close overlay
-        function closeOverlay(selector) {
+        function closeOverlay(selector, hideBackdrop = true) {
             const el = document.querySelector(selector);
             const backdrop = document.getElementById('overlay-backdrop');
             if (el) {
@@ -90,23 +92,27 @@
                 el.classList.add('translate-y-full');
                 setTimeout(() => {
                     el.classList.add('hidden');
-                    // Hide backdrop and disable pointer events
-                    backdrop.classList.add('hidden');
-                    backdrop.classList.remove('pointer-events-auto');
-                    backdrop.classList.add('pointer-events-none');
+                    // Hide backdrop and disable pointer events only if requested
+                    if (hideBackdrop) {
+                        backdrop.classList.add('hidden');
+                        backdrop.classList.remove('pointer-events-auto');
+                        backdrop.classList.add('pointer-events-none');
+                    }
                 }, 300);
             }
         }
 
         // Helper to open desktop right offcanvas
-        function openDesktopOverlay(selector) {
+        function openDesktopOverlay(selector, showBackdrop = false) {
             const el = document.querySelector(selector);
             const backdrop = document.getElementById('overlay-backdrop');
             if (el) {
-                // Ensure backdrop can receive clicks
-                backdrop.classList.remove('hidden');
-                backdrop.classList.remove('pointer-events-none');
-                backdrop.classList.add('pointer-events-auto');
+                // Only show backdrop if requested (default false for desktop side panels)
+                if (showBackdrop) {
+                    backdrop.classList.remove('hidden');
+                    backdrop.classList.remove('pointer-events-none');
+                    backdrop.classList.add('pointer-events-auto');
+                }
                 el.classList.remove('hidden');
                 // Trigger animation
                 requestAnimationFrame(() => {
@@ -117,21 +123,67 @@
         }
 
         // Helper to close desktop right offcanvas
-        function closeDesktopOverlay(selector) {
+        function closeDesktopOverlay(selector, hideBackdrop = false) {
             const el = document.querySelector(selector);
             const backdrop = document.getElementById('overlay-backdrop');
-            if (el) {
+            if (el && !el.classList.contains('hidden')) {
                 el.classList.remove('translate-x-0');
                 el.classList.add('translate-x-full');
                 setTimeout(() => {
                     el.classList.add('hidden');
-                    // Hide backdrop and disable pointer events
-                    backdrop.classList.add('hidden');
-                    backdrop.classList.remove('pointer-events-auto');
-                    backdrop.classList.add('pointer-events-none');
+                    // Hide backdrop and disable pointer events only if requested
+                    if (hideBackdrop && backdrop) {
+                        backdrop.classList.add('hidden');
+                        backdrop.classList.remove('pointer-events-auto');
+                        backdrop.classList.add('pointer-events-none');
+                    }
                 }, 300);
             }
         }
+        
+        // ESC key handler to close desktop overlays
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const desktopOffcanvas = document.getElementById('notifications-desktop-offcanvas');
+                if (desktopOffcanvas && !desktopOffcanvas.classList.contains('hidden')) {
+                    closeDesktopOverlay('#notifications-desktop-offcanvas');
+                }
+            }
+        });
+        
+        // Click outside to close desktop notifications offcanvas
+        document.addEventListener('click', function(e) {
+            const desktopOffcanvas = document.getElementById('notifications-desktop-offcanvas');
+            if (desktopOffcanvas && !desktopOffcanvas.classList.contains('hidden')) {
+                // Check if click is outside the offcanvas
+                if (!desktopOffcanvas.contains(e.target)) {
+                    // Check if click is not on the notification bell button
+                    const notificationButton = document.querySelector('[onclick*="openDesktopOverlay"][onclick*="notifications-desktop-offcanvas"]');
+                    if (!notificationButton || !notificationButton.contains(e.target)) {
+                        closeDesktopOverlay('#notifications-desktop-offcanvas');
+                    }
+                }
+            }
+        });
+        
+        // Click outside to close mobile notifications offcanvas
+        document.addEventListener('click', function(e) {
+            const mobileOffcanvas = document.getElementById('notifications-offcanvas');
+            if (mobileOffcanvas && !mobileOffcanvas.classList.contains('hidden')) {
+                // Check if click is outside the offcanvas
+                if (!mobileOffcanvas.contains(e.target)) {
+                    // Check if click is not on the notification bell button (mobile)
+                    const mobileNotificationButton = document.querySelector('[onclick*="openOverlay"][onclick*="notifications-offcanvas"]');
+                    if (!mobileNotificationButton || !mobileNotificationButton.contains(e.target)) {
+                        // Also check if click is not on mobile nav
+                        const mobileNav = document.querySelector('nav.fixed.bottom-0');
+                        if (!mobileNav || !mobileNav.contains(e.target)) {
+                            closeOverlay('#notifications-offcanvas', false);
+                        }
+                    }
+                }
+            }
+        });
 
         // Close all overlays
         function closeAllOverlays() {
@@ -145,6 +197,13 @@
                     el.classList.add('hidden');
                 }, 300);
             });
+            
+            // Hide backdrop after animations complete
+            setTimeout(() => {
+                backdrop.classList.add('hidden');
+                backdrop.classList.remove('pointer-events-auto');
+                backdrop.classList.add('pointer-events-none');
+            }, 300);
             
             // Right offcanvas (desktop)
             const rightOverlays = document.querySelectorAll('#notifications-desktop-offcanvas');

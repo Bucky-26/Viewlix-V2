@@ -35,14 +35,14 @@
         
         {{-- Account/Login --}}
         @auth
-        <button type="button" class="flex flex-col items-center justify-center flex-1 py-2 text-gray-400 hover:text-white transition-colors" onclick="openOverlay('#mobile-account-offcanvas')">
+        <button type="button" class="flex flex-col items-center justify-center flex-1 py-2 text-gray-400 hover:text-white transition-colors" onclick="openOverlay('#mobile-account-offcanvas', false)">
             <div class="w-6 h-6 rounded-full bg-gradient-to-br from-viewlix-red to-viewlix-red-dark flex items-center justify-center text-white text-xs font-semibold uppercase">
                 {{ substr(Auth::user()->name, 0, 1) }}
             </div>
             <span class="text-xs mt-1">Account</span>
         </button>
         @else
-        <button type="button" class="flex flex-col items-center justify-center flex-1 py-2 text-gray-400 hover:text-white transition-colors" onclick="openOverlay('#mobile-auth-offcanvas'); showAuthView('login')">
+        <button type="button" class="flex flex-col items-center justify-center flex-1 py-2 text-gray-400 hover:text-white transition-colors" onclick="openOverlay('#mobile-auth-offcanvas', false); showAuthView('login')">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
             </svg>
@@ -56,7 +56,7 @@
 @guest
 <div id="mobile-auth-offcanvas" class="hidden translate-y-full fixed bottom-0 inset-x-0 transition-all duration-300 transform h-auto max-h-[90vh] w-full z-[80] bg-viewlix-darker border-t border-viewlix-border rounded-t-2xl" role="dialog" tabindex="-1" aria-labelledby="mobile-auth-offcanvas-label">
     <div class="flex justify-center pt-3 pb-2">
-        <span class="w-12 h-1.5 bg-viewlix-gray rounded-full cursor-pointer" onclick="closeOverlay('#mobile-auth-offcanvas')"></span>
+        <span class="w-12 h-1.5 bg-viewlix-gray rounded-full cursor-pointer" onclick="closeOverlay('#mobile-auth-offcanvas', false)"></span>
     </div>
     
     <div class="p-4 overflow-y-auto max-h-[calc(90vh-3rem)]">
@@ -259,7 +259,7 @@
 @auth
 <div id="mobile-account-offcanvas" class="hidden translate-y-full fixed bottom-0 inset-x-0 transition-all duration-300 transform h-auto max-h-[85vh] w-full z-[80] bg-viewlix-darker border-t border-viewlix-border rounded-t-2xl" role="dialog" tabindex="-1" aria-labelledby="mobile-account-offcanvas-label">
     <div class="flex justify-center pt-3 pb-2">
-        <span class="w-12 h-1.5 bg-viewlix-gray rounded-full cursor-pointer" onclick="closeOverlay('#mobile-account-offcanvas')"></span>
+        <span class="w-12 h-1.5 bg-viewlix-gray rounded-full cursor-pointer" onclick="closeOverlay('#mobile-account-offcanvas', false)"></span>
     </div>
     
     <div class="p-4 overflow-y-auto">

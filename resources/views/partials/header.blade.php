@@ -46,7 +46,7 @@
             {{-- Notification Bell - Mobile (opens bottom offcanvas) --}}
             <button type="button" 
                     class="inline-flex md:hidden relative p-2 text-gray-400 hover:text-white hover:bg-viewlix-gray rounded-xl transition-colors" 
-                    onclick="openOverlay('#notifications-offcanvas')"
+                    onclick="openOverlay('#notifications-offcanvas', false)"
                     aria-controls="notifications-offcanvas"
                     aria-label="Open notifications"
                     title="Notifications">

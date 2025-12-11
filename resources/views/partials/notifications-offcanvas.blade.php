@@ -4,12 +4,13 @@
     class="hidden translate-y-full fixed bottom-0 inset-x-0 transition-all duration-300 transform max-h-[85vh] w-full z-[90] bg-viewlix-darker border-t border-viewlix-border rounded-t-2xl"
      role="dialog" 
      tabindex="-1" 
-     aria-labelledby="notifications-offcanvas-label">
+     aria-labelledby="notifications-offcanvas-label"
+     onclick="event.stopPropagation()">
     
     <div class="flex flex-col h-full max-h-[85vh]">
         {{-- Drag Handle --}}
         <div class="flex justify-center pt-3 pb-2 flex-shrink-0">
-            <span class="w-12 h-1.5 bg-viewlix-gray rounded-full cursor-pointer" onclick="closeOverlay('#notifications-offcanvas')"></span>
+            <span class="w-12 h-1.5 bg-viewlix-gray rounded-full cursor-pointer" onclick="closeOverlay('#notifications-offcanvas', false)"></span>
         </div>
         
         {{-- Header --}}
@@ -54,7 +55,7 @@
             </button>
             <button type="button" 
                     class="text-sm text-gray-400 hover:text-white font-medium"
-                    onclick="closeOverlay('#notifications-offcanvas')">
+                    onclick="closeOverlay('#notifications-offcanvas', false)">
                 Close
             </button>
         </div>
