@@ -15,17 +15,31 @@ import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'fire
 window.Alpine = Alpine;
 Alpine.start();
 
-// Initialize Preline components after DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-    // Auto-initialize all Preline components
-    HSDropdown.autoInit();
-    HSOverlay.autoInit();
-});
+// Initialize Preline components after DOM is ready (also handle case
+// where script is loaded after DOMContentLoaded by invoking immediately
+// when document is already ready).
+function initPreline() {
+    try {
+        // Auto-initialize all Preline components
+        HSDropdown.autoInit();
+        HSOverlay.autoInit();
+    } catch (e) {
+        console.warn('Preline init failed', e);
+    }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initPreline);
+} else {
+    // DOM already ready
+    initPreline();
+}
 
 // Robust fallback for desktop notifications offcanvas
 // Ensures the bell always toggles the right-side offcanvas even if Preline
-// behaves unexpectedly (backdrop shown but panel stays hidden).
-document.addEventListener('DOMContentLoaded', () => {
+// behaves unexpectedly (backdrop shown but panel stays hidden). This init
+// runs immediately if the document is already ready.
+function initDesktopNotifFallback() {
     try {
         const toggle = document.getElementById('desktop-notif-button');
         const offcanvas = document.getElementById('notifications-desktop-offcanvas');
@@ -33,7 +47,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!toggle || !offcanvas) return;
 
-        toggle.addEventListener('click', (e) => {
+    // Use capture phase so this handler runs before Preline's handlers
+    // (prevents double-toggle races where Preline opens/closes the panel)
+    toggle.addEventListener('click', (e) => {
+            // Prevent other click handlers (Preline's built-in toggle) from
+            // running after this handler which can cause the overlay to
+            // immediately close (double-toggle). Stop immediate propagation
+            // and prevent default right away so we control the open/close flow.
+            try {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                e.stopPropagation();
+            } catch (ep) {
+                // ignore if event methods are not available for some reason
+            }
+
             // Diagnostic logging to help debug why offcanvas isn't visible
             try {
                 console.debug('[notif] desktop bell clicked', {
@@ -64,7 +92,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         } catch (openErr) {
                             console.warn('[notif] Preline instance open() call failed', openErr);
                         }
-                        // Defer to Preline after attempting open
+                        // Defer to Preline after attempting open. We already
+                        // stopped propagation so Preline's own click handler
+                        // won't run and cause a double-toggle.
                         return;
                     }
                 }
@@ -73,8 +103,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.debug('[notif] Preline check failed', err);
             }
 
-            e.preventDefault();
-            e.stopPropagation();
 
             // Remove any Preline-created backdrop for this overlay (id is `${id}-backdrop`)
             const prelineBackdrop = document.getElementById(offcanvas.id + '-backdrop');
@@ -97,6 +125,45 @@ document.addEventListener('DOMContentLoaded', () => {
                     offcanvas.classList.remove('translate-x-full');
                     offcanvas.classList.add('translate-x-0');
                 });
+
+                // Prevent global/document click handlers (which some libraries
+                // use to auto-close overlays) from seeing the *same* click that
+                // triggered opening. Add a short-lived capturing listener that
+                // swallows click events immediately after opening.
+                const _swallowClick = (evt) => {
+                    try {
+                        evt.stopImmediatePropagation();
+                        evt.stopPropagation();
+                    } catch (_) {}
+                    // remove immediately so we don't block further interactions
+                    document.removeEventListener('click', _swallowClick, true);
+                };
+                document.addEventListener('click', _swallowClick, true);
+                // safety: remove after 250ms in case something went wrong
+                setTimeout(() => document.removeEventListener('click', _swallowClick, true), 250);
+
+                // Resilience: sometimes other code will still close the panel
+                // immediately (race). If that happens, reopen after a short
+                // delay so the user's click results in an open panel.
+                setTimeout(() => {
+                    try {
+                        if (offcanvas.classList.contains('hidden')) {
+                            if (backdrop) {
+                                backdrop.classList.remove('hidden');
+                                backdrop.classList.remove('pointer-events-none');
+                                backdrop.classList.add('pointer-events-auto');
+                            }
+                            offcanvas.classList.remove('hidden');
+                            offcanvas.style.zIndex = '9999';
+                            requestAnimationFrame(() => {
+                                offcanvas.classList.remove('translate-x-full');
+                                offcanvas.classList.add('translate-x-0');
+                            });
+                        }
+                    } catch (reopenErr) {
+                        console.debug('[notif] reopen attempt failed', reopenErr);
+                    }
+                }, 120);
             } else {
                 offcanvas.classList.remove('translate-x-0');
                 offcanvas.classList.add('translate-x-full');
@@ -112,7 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     backdrop.classList.add('pointer-events-none');
                 }
             }
-        });
+    }, true);
 
         // Close when clicking the global backdrop
         if (backdrop) {
@@ -130,7 +197,13 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (e) {
         console.warn('Desktop notif fallback init failed', e);
     }
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initDesktopNotifFallback);
+} else {
+    initDesktopNotifFallback();
+}
 
 // Also reinitialize on Livewire/Turbo navigation if used
 document.addEventListener('livewire:navigated', () => {
