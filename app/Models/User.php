@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Cache;
+use Carbon\Carbon;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -103,5 +105,30 @@ class User extends Authenticatable implements MustVerifyEmail
     public function watchHistory(): HasMany
     {
         return $this->hasMany(WatchHistory::class);
+    }
+
+    /**
+     * Return if the user is currently online.
+     */
+    public function isOnline(): bool
+    {
+        return Cache::has('user-is-online-' . $this->id);
+    }
+
+    /**
+     * Return the last active Carbon instance or null.
+     */
+    public function lastActive(): ?Carbon
+    {
+        $val = Cache::get('user-last-active-' . $this->id);
+        if (empty($val)) {
+            return null;
+        }
+
+        try {
+            return Carbon::parse($val);
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 }

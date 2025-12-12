@@ -166,6 +166,18 @@
                                     </svg>
                                 </span>
                             @endif
+                            {{-- Presence indicator --}}
+                            @if(method_exists($user, 'isOnline') && $user->isOnline())
+                                <span class="py-1 px-2 inline-flex items-center gap-x-2 text-xs font-medium text-green-400">
+                                    <span class="inline-block w-2 h-2 rounded-full bg-green-400"></span>
+                                    Online
+                                </span>
+                            @else
+                                <span class="py-1 px-2 inline-flex items-center gap-x-2 text-xs font-medium text-gray-400">
+                                    <span class="inline-block w-2 h-2 rounded-full bg-gray-600"></span>
+                                    Last seen {{ optional($user->lastActive())->diffForHumans() ?? 'N/A' }}
+                                </span>
+                            @endif
                         </div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">

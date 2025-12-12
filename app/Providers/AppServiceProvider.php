@@ -35,5 +35,11 @@ class AppServiceProvider extends ServiceProvider
                 config('services.google.email')
             );
         });
+
+        // Push the TrackUserActivity middleware into the web group so every
+        // authenticated request updates presence information in cache.
+        if ($this->app->bound('router')) {
+            $this->app['router']->pushMiddlewareToGroup('web', \App\Http\Middleware\TrackUserActivity::class);
+        }
     }
 }
