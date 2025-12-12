@@ -6,6 +6,9 @@ use App\Mail\GmailOAuthTransport;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Auth\Events\Registered;
+use App\Listeners\SendWelcomeNotification;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -41,5 +44,8 @@ class AppServiceProvider extends ServiceProvider
         if ($this->app->bound('router')) {
             $this->app['router']->pushMiddlewareToGroup('web', \App\Http\Middleware\TrackUserActivity::class);
         }
+
+        // Listen for Registered event and send welcome notification
+        Event::listen(Registered::class, SendWelcomeNotification::class);
     }
 }

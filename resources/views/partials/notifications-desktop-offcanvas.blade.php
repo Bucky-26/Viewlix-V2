@@ -1,7 +1,6 @@
 {{-- Desktop Notifications Offcanvas (Right Side) --}}
-@auth
 <div id="notifications-desktop-offcanvas" 
-    class="hidden translate-x-full fixed top-16 right-0 h-[calc(100vh-4rem)] transition-all duration-300 transform w-96 max-w-full z-[100] bg-viewlix-darker border-l border-viewlix-border shadow-2xl"
+    class="--prevent-on-load-init hidden translate-x-full fixed top-16 right-0 h-[calc(100vh-4rem)] transition-all duration-300 transform w-96 max-w-full z-[100] bg-viewlix-darker border-l border-viewlix-border shadow-2xl"
      role="dialog" 
      tabindex="-1" 
      aria-labelledby="notifications-desktop-offcanvas-label"
@@ -21,10 +20,10 @@
                     <p class="text-xs text-gray-400" id="desktop-notif-count-text">No new notifications</p>
                 </div>
             </div>
-            <button type="button" 
-                    onclick="if(typeof closeDesktopOverlay === 'function') { closeDesktopOverlay('#notifications-desktop-offcanvas'); } else { document.getElementById('notifications-desktop-offcanvas').classList.add('hidden', 'translate-x-full'); document.getElementById('notifications-desktop-offcanvas').classList.remove('translate-x-0'); }"
-                    class="p-2 text-gray-400 hover:text-white hover:bg-viewlix-gray rounded-xl transition-colors"
-                    aria-label="Close notifications">
+        <button type="button"
+            data-hs-overlay-close
+            class="p-2 text-gray-400 hover:text-white hover:bg-viewlix-gray rounded-xl transition-colors"
+            aria-label="Close notifications">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
                 </svg>
@@ -61,4 +60,3 @@
         </div>
     </div>
 </div>
-@endauth

@@ -68,6 +68,14 @@
     
     <!-- Global Overlay Scripts -->
     <script>
+        // Debug: confirm this inline layout script executed and whether Preline is available
+        try {
+            console.debug('[Viewlix] Global overlay script loaded');
+            console.debug('[Viewlix] HSOverlay available:', typeof HSOverlay !== 'undefined' ? 'yes' : 'no', 'typeof HSOverlay =', typeof HSOverlay);
+            console.debug('[Viewlix] HSDropdown available:', typeof HSDropdown !== 'undefined' ? 'yes' : 'no', 'typeof HSDropdown =', typeof HSDropdown);
+        } catch (e) {
+            console.debug('[Viewlix] Error logging overlay script diagnostics', e);
+        }
         // Helper to open overlay
         function openOverlay(selector, showBackdrop = true) {
             const el = document.querySelector(selector);
@@ -111,6 +119,9 @@
         function openDesktopOverlay(selector, showBackdrop = false) {
             const el = document.querySelector(selector);
             const backdrop = document.getElementById('overlay-backdrop');
+            // mark last toggle time to avoid immediate document click handlers closing it
+            window.__lastDesktopOverlayToggle = Date.now();
+            console.debug('openDesktopOverlay called', selector);
             if (el) {
                 // Only show backdrop if requested (default false for desktop side panels)
                 if (showBackdrop) {
@@ -131,6 +142,8 @@
         function closeDesktopOverlay(selector, hideBackdrop = false) {
             const el = document.querySelector(selector);
             const backdrop = document.getElementById('overlay-backdrop');
+            window.__lastDesktopOverlayToggle = Date.now();
+            console.debug('closeDesktopOverlay called', selector);
             if (el && !el.classList.contains('hidden')) {
                 el.classList.remove('translate-x-0');
                 el.classList.add('translate-x-full');
@@ -146,49 +159,11 @@
             }
         }
         
-        // ESC key handler to close desktop overlays
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                const desktopOffcanvas = document.getElementById('notifications-desktop-offcanvas');
-                if (desktopOffcanvas && !desktopOffcanvas.classList.contains('hidden')) {
-                    closeDesktopOverlay('#notifications-desktop-offcanvas');
-                }
-            }
-        });
-        
-        // Click outside to close desktop notifications offcanvas
-        document.addEventListener('click', function(e) {
-            const desktopOffcanvas = document.getElementById('notifications-desktop-offcanvas');
-            if (desktopOffcanvas && !desktopOffcanvas.classList.contains('hidden')) {
-                // Check if click is outside the offcanvas
-                if (!desktopOffcanvas.contains(e.target)) {
-                    // Check if click is not on the notification bell button
-                    const notificationButton = document.querySelector('[onclick*="openDesktopOverlay"][onclick*="notifications-desktop-offcanvas"]');
-                    if (!notificationButton || !notificationButton.contains(e.target)) {
-                        closeDesktopOverlay('#notifications-desktop-offcanvas');
-                    }
-                }
-            }
-        });
-        
-        // Click outside to close mobile notifications offcanvas
-        document.addEventListener('click', function(e) {
-            const mobileOffcanvas = document.getElementById('notifications-offcanvas');
-            if (mobileOffcanvas && !mobileOffcanvas.classList.contains('hidden')) {
-                // Check if click is outside the offcanvas
-                if (!mobileOffcanvas.contains(e.target)) {
-                    // Check if click is not on the notification bell button (mobile)
-                    const mobileNotificationButton = document.querySelector('[onclick*="openOverlay"][onclick*="notifications-offcanvas"]');
-                    if (!mobileNotificationButton || !mobileNotificationButton.contains(e.target)) {
-                        // Also check if click is not on mobile nav
-                        const mobileNav = document.querySelector('nav.fixed.bottom-0');
-                        if (!mobileNav || !mobileNav.contains(e.target)) {
-                            closeOverlay('#notifications-offcanvas', false);
-                        }
-                    }
-                }
-            }
-        });
+        // NOTE: Overlay behavior (ESC / outside clicks / trigger handling) is
+        // delegated to Preline's HSOverlay plugin. The plugin is initialized
+        // in `resources/js/app.js` (HSOverlay.autoInit()). Removing custom
+        // document-level handlers avoids conflicts with the library and
+        // follows the Preline docs.
 
         // Close all overlays
         function closeAllOverlays() {
@@ -226,23 +201,14 @@
             backdrop.classList.add('pointer-events-none');
         }
 
-        // Data-driven handlers for elements using Preline-like data attributes (data-hs-overlay)
-        document.addEventListener('click', function(e) {
-            const trigger = e.target.closest('[data-hs-overlay]');
-            if (!trigger) return;
-            e.preventDefault();
-            const selector = trigger.getAttribute('data-hs-overlay');
-            if (!selector) return;
-            const target = document.querySelector(selector);
-            if (!target) return;
+        // Data-driven overlay triggers are handled by Preline's HSOverlay.
+        // Keep trigger attributes like `data-hs-overlay="#selector"` on buttons
+        // and let the library toggle the targets per the official docs.
 
-            // If target is hidden -> open, otherwise close
-            if (target.classList.contains('hidden')) {
-                openOverlay(selector);
-            } else {
-                closeOverlay(selector);
-            }
-        });
+        // Triggers like `#desktop-notif-button` should use `data-hs-overlay` on
+        // the element. Preline's HSOverlay will attach handlers automatically
+        // on DOMContentLoaded (see `resources/js/app.js`). Avoid adding manual
+        // click handlers here so there's no duplication or event interference.
 
         // Notification UI Rendering (Vanilla JS)
         function formatNotificationTime(timestamp) {

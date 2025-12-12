@@ -22,6 +22,116 @@ document.addEventListener('DOMContentLoaded', () => {
     HSOverlay.autoInit();
 });
 
+// Robust fallback for desktop notifications offcanvas
+// Ensures the bell always toggles the right-side offcanvas even if Preline
+// behaves unexpectedly (backdrop shown but panel stays hidden).
+document.addEventListener('DOMContentLoaded', () => {
+    try {
+        const toggle = document.getElementById('desktop-notif-button');
+        const offcanvas = document.getElementById('notifications-desktop-offcanvas');
+        const backdrop = document.getElementById('overlay-backdrop');
+
+        if (!toggle || !offcanvas) return;
+
+        toggle.addEventListener('click', (e) => {
+            // Diagnostic logging to help debug why offcanvas isn't visible
+            try {
+                console.debug('[notif] desktop bell clicked', {
+                    HSOverlay_type: typeof HSOverlay,
+                    has_hs_collection: !!window.$hsOverlayCollection,
+                    offcanvas_id: offcanvas && offcanvas.id,
+                    offcanvas_classes: offcanvas && offcanvas.className,
+                    backdrop_classes: backdrop && backdrop.className,
+                });
+            } catch (dbgErr) {
+                console.debug('[notif] debug error', dbgErr);
+            }
+
+            // Prefer Preline if it's fully functional. If HSOverlay is present
+            // and an instance exists for the element, try using it to open the overlay.
+            try {
+                if (window.$hsOverlayCollection) {
+                    const inst = window.$hsOverlayCollection.find(c => c.element.el === offcanvas);
+                    if (inst) {
+                        console.debug('[notif] Found Preline instance for offcanvas, attempting to open via instance');
+                        try {
+                            if (typeof inst.element.open === 'function') {
+                                inst.element.open();
+                            } else if (typeof HSOverlay.getInstance === 'function') {
+                                const got = HSOverlay.getInstance(offcanvas, true);
+                                if (got && typeof got.open === 'function') got.open();
+                            }
+                        } catch (openErr) {
+                            console.warn('[notif] Preline instance open() call failed', openErr);
+                        }
+                        // Defer to Preline after attempting open
+                        return;
+                    }
+                }
+            } catch (err) {
+                // fallthrough to manual toggle
+                console.debug('[notif] Preline check failed', err);
+            }
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            // Remove any Preline-created backdrop for this overlay (id is `${id}-backdrop`)
+            const prelineBackdrop = document.getElementById(offcanvas.id + '-backdrop');
+            if (prelineBackdrop) prelineBackdrop.remove();
+
+            const isHidden = offcanvas.classList.contains('hidden');
+
+            if (isHidden) {
+                // show our central backdrop if available
+                if (backdrop) {
+                    backdrop.classList.remove('hidden');
+                    backdrop.classList.remove('pointer-events-none');
+                    backdrop.classList.add('pointer-events-auto');
+                }
+
+                offcanvas.classList.remove('hidden');
+                // ensure it's positioned above the backdrop
+                offcanvas.style.zIndex = '9999';
+                requestAnimationFrame(() => {
+                    offcanvas.classList.remove('translate-x-full');
+                    offcanvas.classList.add('translate-x-0');
+                });
+            } else {
+                offcanvas.classList.remove('translate-x-0');
+                offcanvas.classList.add('translate-x-full');
+                setTimeout(() => {
+                    offcanvas.classList.add('hidden');
+                    // reset inline z-index
+                    offcanvas.style.zIndex = '';
+                }, 300);
+
+                if (backdrop) {
+                    backdrop.classList.add('hidden');
+                    backdrop.classList.remove('pointer-events-auto');
+                    backdrop.classList.add('pointer-events-none');
+                }
+            }
+        });
+
+        // Close when clicking the global backdrop
+        if (backdrop) {
+            backdrop.addEventListener('click', () => {
+                if (!offcanvas.classList.contains('hidden')) {
+                    offcanvas.classList.remove('translate-x-0');
+                    offcanvas.classList.add('translate-x-full');
+                    setTimeout(() => offcanvas.classList.add('hidden'), 300);
+                    backdrop.classList.add('hidden');
+                    backdrop.classList.remove('pointer-events-auto');
+                    backdrop.classList.add('pointer-events-none');
+                }
+            });
+        }
+    } catch (e) {
+        console.warn('Desktop notif fallback init failed', e);
+    }
+});
+
 // Also reinitialize on Livewire/Turbo navigation if used
 document.addEventListener('livewire:navigated', () => {
     HSDropdown.autoInit();
