@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Services\TMDBService;
 use Illuminate\Http\Request;
+use RalphJSmit\Laravel\SEO\Support\SEOData;
 
 class MovieController extends Controller
 {
@@ -23,12 +24,24 @@ class MovieController extends Controller
             default => $this->tmdb->getPopularMovies($page),
         };
 
+        $filterTitle = match($filter) {
+            'top_rated' => 'Top Rated Movies',
+            'now_playing' => 'Now Playing Movies',
+            'upcoming' => 'Upcoming Movies',
+            default => 'Popular Movies',
+        };
+
         return view('pages.movies', [
             'movies' => $movies['results'] ?? [],
             'currentPage' => $movies['page'] ?? 1,
             'totalPages' => $movies['total_pages'] ?? 1,
             'filter' => $filter,
             'tmdb' => $this->tmdb,
+            'SEOData' => new SEOData(
+                title: "{$filterTitle} - Viewlix",
+                description: "Browse {$filterTitle} on Viewlix. Discover the best movies to watch online.",
+                url: route('movies', ['filter' => $filter]),
+            ),
         ]);
     }
 
@@ -43,13 +56,25 @@ class MovieController extends Controller
         $credits = $this->tmdb->getMovieCredits($id);
         $similar = $this->tmdb->getSimilarMovies($id);
 
+        $title = $movie['title'] ?? 'Movie';
+        $description = $movie['overview'] ?? "Watch {$title} on Viewlix. Stream movies online in HD quality.";
+        $imageUrl = $this->tmdb->getImageUrl($movie['poster_path'] ?? null, 'w500');
+        $releaseYear = !empty($movie['release_date']) ? \Carbon\Carbon::parse($movie['release_date'])->format('Y') : '';
+
         return view('pages.movie-detail', [
             'movie' => $movie,
             'credits' => $credits ?? [],
             'similar' => $similar['results'] ?? [],
-            'posterUrl' => $this->tmdb->getImageUrl($movie['poster_path'] ?? null, 'w500'),
+            'posterUrl' => $imageUrl,
             'backdropUrl' => $this->tmdb->getImageUrl($movie['backdrop_path'] ?? null, 'original'),
             'tmdb' => $this->tmdb,
+            'SEOData' => new SEOData(
+                title: "{$title}" . ($releaseYear ? " ({$releaseYear})" : '') . " - Viewlix",
+                description: $description,
+                url: route('movie.show', ['id' => $id]),
+                image: $imageUrl ?: null,
+                type: 'website',
+            ),
         ]);
     }
 

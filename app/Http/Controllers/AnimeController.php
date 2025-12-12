@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Services\TMDBService;
 use Illuminate\Http\Request;
+use RalphJSmit\Laravel\SEO\Support\SEOData;
 
 class AnimeController extends Controller
 {
@@ -22,12 +23,23 @@ class AnimeController extends Controller
             default => $this->tmdb->getPopularAnime($page),
         };
 
+        $filterTitle = match($filter) {
+            'top_rated' => 'Top Rated Anime',
+            'airing' => 'Airing Anime',
+            default => 'Popular Anime',
+        };
+
         return view('pages.anime', [
             'animeList' => $anime['results'] ?? [],
             'currentPage' => $anime['page'] ?? 1,
             'totalPages' => $anime['total_pages'] ?? 1,
             'filter' => $filter,
             'tmdb' => $this->tmdb,
+            'SEOData' => new SEOData(
+                title: "{$filterTitle} - Viewlix",
+                description: "Browse {$filterTitle} on Viewlix. Discover the best anime series to watch online.",
+                url: route('anime', ['filter' => $filter]),
+            ),
         ]);
     }
 
@@ -43,14 +55,26 @@ class AnimeController extends Controller
         $seasonData = $this->tmdb->getTvSeasonDetails($id, $currentSeason);
         $similar = $this->tmdb->getSimilarTvShows($id);
 
+        $title = $anime['name'] ?? 'Anime';
+        $description = $anime['overview'] ?? "Watch {$title} on Viewlix. Stream anime online in HD quality.";
+        $imageUrl = $this->tmdb->getImageUrl($anime['poster_path'] ?? null, 'w500');
+        $releaseYear = !empty($anime['first_air_date']) ? \Carbon\Carbon::parse($anime['first_air_date'])->format('Y') : '';
+
         return view('pages.anime-detail', [
             'anime' => $anime,
             'currentSeason' => $currentSeason,
             'episodes' => $seasonData['episodes'] ?? [],
             'similar' => $similar['results'] ?? [],
-            'posterUrl' => $this->tmdb->getImageUrl($anime['poster_path'] ?? null, 'w500'),
+            'posterUrl' => $imageUrl,
             'backdropUrl' => $this->tmdb->getImageUrl($anime['backdrop_path'] ?? null, 'original'),
             'tmdb' => $this->tmdb,
+            'SEOData' => new SEOData(
+                title: "{$title}" . ($releaseYear ? " ({$releaseYear})" : '') . " - Viewlix",
+                description: $description,
+                url: route('anime.show', ['id' => $id]),
+                image: $imageUrl ?: null,
+                type: 'website',
+            ),
         ]);
     }
 

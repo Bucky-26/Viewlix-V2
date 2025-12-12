@@ -1,4 +1,3 @@
-
 <?php
 
 use App\Http\Controllers\HomeController;
@@ -10,7 +9,9 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\WatchHistoryController;
 use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\SitemapController;
 use Illuminate\Support\Facades\Route;
+use RalphJSmit\Laravel\SEO\Support\SEOData;
 
 // Google OAuth Routes (public)
 Route::get('/auth/google', [GoogleController::class, 'redirect'])->name('auth.google');
@@ -29,8 +30,25 @@ Route::get('/tv-shows', [TvShowController::class, 'index'])->name('tv-shows');
 Route::get('/tv-show/{id}', [TvShowController::class, 'show'])->name('tv-show.show');
 Route::get('/tv-show/{id}/season/{season}', [TvShowController::class, 'season'])->name('tv-show.season');
 // Terms and Privacy Pages
-Route::view('/terms', 'pages.terms')->name('terms');
-Route::view('/privacy', 'pages.privacy')->name('privacy');
+Route::get('/terms', function () {
+    return view('pages.terms', [
+        'SEOData' => new SEOData(
+            title: 'Terms of Service - Viewlix',
+            description: 'Read Viewlix Terms of Service. Understand the terms and conditions for using our streaming platform.',
+            url: route('terms'),
+        ),
+    ]);
+})->name('terms');
+
+Route::get('/privacy', function () {
+    return view('pages.privacy', [
+        'SEOData' => new SEOData(
+            title: 'Privacy Policy - Viewlix',
+            description: 'Viewlix Privacy Policy. Learn how we collect, use, and protect your personal information.',
+            url: route('privacy'),
+        ),
+    ]);
+})->name('privacy');
 // Anime (browsing is public)
 Route::get('/anime', [AnimeController::class, 'index'])->name('anime');
 Route::get('/anime/{id}', [AnimeController::class, 'show'])->name('anime.show');
@@ -101,6 +119,14 @@ Route::get('/avatar/{user}', function (\App\Models\User $user) {
     // Return a default avatar image if not set
     return redirect(asset('images/default-avatar.png'));
 })->name('avatar.public');
+
+// Sitemap and Robots
+Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('sitemap.index');
+Route::get('/sitemap-main.xml', [SitemapController::class, 'main'])->name('sitemap.main');
+Route::get('/sitemap-movies.xml', [SitemapController::class, 'movies'])->name('sitemap.movies');
+Route::get('/sitemap-tv-shows.xml', [SitemapController::class, 'tvShows'])->name('sitemap.tv-shows');
+Route::get('/sitemap-anime.xml', [SitemapController::class, 'anime'])->name('sitemap.anime');
+Route::get('/robots.txt', [SitemapController::class, 'robots'])->name('robots');
 
 // Admin Routes
 Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.')->group(function () {

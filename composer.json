@@ -18,6 +18,7 @@
         "laravel/tinker": "^2.10.1",
         "league/oauth2-google": "^4.0",
         "phpmailer/phpmailer": "^7.0",
+        "ralphjsmit/laravel-seo": "^1.7",
         "symfony/google-mailer": "^7.4"
     },
     "require-dev": {

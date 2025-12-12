@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Services\TMDBService;
 use Illuminate\Http\Request;
+use RalphJSmit\Laravel\SEO\Support\SEOData;
 
 class TvShowController extends Controller
 {
@@ -23,12 +24,24 @@ class TvShowController extends Controller
             default => $this->tmdb->getPopularTvShows($page),
         };
 
+        $filterTitle = match($filter) {
+            'top_rated' => 'Top Rated TV Shows',
+            'on_the_air' => 'TV Shows On The Air',
+            'airing_today' => 'TV Shows Airing Today',
+            default => 'Popular TV Shows',
+        };
+
         return view('pages.tv-shows', [
             'tvShows' => $tvShows['results'] ?? [],
             'currentPage' => $tvShows['page'] ?? 1,
             'totalPages' => $tvShows['total_pages'] ?? 1,
             'filter' => $filter,
             'tmdb' => $this->tmdb,
+            'SEOData' => new SEOData(
+                title: "{$filterTitle} - Viewlix",
+                description: "Browse {$filterTitle} on Viewlix. Discover the best TV series to watch online.",
+                url: route('tv-shows', ['filter' => $filter]),
+            ),
         ]);
     }
 
@@ -43,13 +56,25 @@ class TvShowController extends Controller
         $credits = $this->tmdb->getTvCredits($id);
         $similar = $this->tmdb->getSimilarTvShows($id);
 
+        $title = $tvShow['name'] ?? 'TV Show';
+        $description = $tvShow['overview'] ?? "Watch {$title} on Viewlix. Stream TV shows online in HD quality.";
+        $imageUrl = $this->tmdb->getImageUrl($tvShow['poster_path'] ?? null, 'w500');
+        $releaseYear = !empty($tvShow['first_air_date']) ? \Carbon\Carbon::parse($tvShow['first_air_date'])->format('Y') : '';
+
         return view('pages.tv-show-detail', [
             'tvShow' => $tvShow,
             'credits' => $credits ?? [],
             'similar' => $similar['results'] ?? [],
-            'posterUrl' => $this->tmdb->getImageUrl($tvShow['poster_path'] ?? null, 'w500'),
+            'posterUrl' => $imageUrl,
             'backdropUrl' => $this->tmdb->getImageUrl($tvShow['backdrop_path'] ?? null, 'original'),
             'tmdb' => $this->tmdb,
+            'SEOData' => new SEOData(
+                title: "{$title}" . ($releaseYear ? " ({$releaseYear})" : '') . " - Viewlix",
+                description: $description,
+                url: route('tv-show.show', ['id' => $id]),
+                image: $imageUrl ?: null,
+                type: 'website',
+            ),
         ]);
     }
 

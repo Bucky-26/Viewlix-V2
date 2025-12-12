@@ -5,7 +5,12 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ config('app.name', 'Viewlix') }}</title>
+        @if(isset($SEOData))
+            {!! seo($SEOData) !!}
+        @else
+            <title>{{ config('app.name', 'Viewlix') }}</title>
+            <meta name="description" content="Viewlix - Watch Movies, TV Shows & Anime Online">
+        @endif
 
         <!-- PWA -->
         @PwaHead

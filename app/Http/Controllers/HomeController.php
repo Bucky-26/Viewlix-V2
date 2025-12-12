@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Services\TMDBService;
 use Illuminate\Http\Request;
+use RalphJSmit\Laravel\SEO\Support\SEOData;
 
 class HomeController extends Controller
 {
@@ -24,6 +25,12 @@ class HomeController extends Controller
             'trendingTv' => $trendingTv['results'] ?? [],
             'popularAnime' => $popularAnime['results'] ?? [],
             'tmdb' => $this->tmdb,
+            'SEOData' => new SEOData(
+                title: 'Viewlix - Watch Movies, TV Shows & Anime Online',
+                description: 'Discover and watch the best movies, TV shows, and anime. Browse trending content, top-rated films, and popular series. Your ultimate streaming destination.',
+                url: route('home'),
+                site_name: 'Viewlix',
+            ),
         ]);
     }
 
@@ -53,6 +60,11 @@ class HomeController extends Controller
             'currentPage' => $results['page'] ?? 1,
             'totalPages' => $results['total_pages'] ?? 1,
             'tmdb' => $this->tmdb,
+            'SEOData' => new SEOData(
+                title: "Search Results for \"{$query}\" - Viewlix",
+                description: "Search results for \"{$query}\" on Viewlix. Find movies, TV shows, and anime.",
+                url: route('search', ['q' => $query, 'filter' => $filter]),
+            ),
         ]);
     }
 }
