@@ -63,6 +63,20 @@
             </span>
         </a>
         
+        {{-- Filipino (Tagalog) Hub --}}
+        <a href="{{ route('filipino') }}" 
+           class="group relative flex items-center justify-center w-12 h-12 rounded-xl transition-all duration-200 
+                  {{ request()->is('filipino*') ? 'bg-viewlix-red text-white' : 'text-gray-400 hover:bg-viewlix-gray hover:text-white' }}"
+           title="Filipino Movies & Series">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 7a2 2 0 012-2h3l2-3h4l2 3h3a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8 14s1-1 4-1 4 1 4 1"/>
+            </svg>
+            <span class="absolute left-full ml-2 px-2 py-1 text-sm font-medium text-white bg-viewlix-gray rounded-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                Filipino
+            </span>
+        </a>
+        
         {{-- Favorites --}}
         <a href="{{ url('/favorites') }}" 
            class="group relative flex items-center justify-center w-12 h-12 rounded-xl transition-all duration-200 

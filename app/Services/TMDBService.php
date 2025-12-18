@@ -263,6 +263,34 @@ class TMDBService
     }
 
     /**
+     * Get Filipino / Tagalog movies (discover by original language 'tl')
+     */
+    public function getFilipinoMovies(int $page = 1): ?array
+    {
+        return Cache::remember("movies.filipino.{$page}", 3600, function () use ($page) {
+            return $this->request('/discover/movie', [
+                'with_original_language' => 'tl',
+                'sort_by' => 'popularity.desc',
+                'page' => $page,
+            ]);
+        });
+    }
+
+    /**
+     * Get Filipino / Tagalog TV shows (discover by original language 'tl')
+     */
+    public function getFilipinoTvShows(int $page = 1): ?array
+    {
+        return Cache::remember("tv.filipino.{$page}", 3600, function () use ($page) {
+            return $this->request('/discover/tv', [
+                'with_original_language' => 'tl',
+                'sort_by' => 'popularity.desc',
+                'page' => $page,
+            ]);
+        });
+    }
+
+    /**
      * Get top rated anime
      */
     public function getTopRatedAnime(int $page = 1): ?array

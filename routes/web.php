@@ -20,6 +20,11 @@ Route::get('/auth/google/callback', [GoogleController::class, 'callback'])->name
 // Home
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/search', [HomeController::class, 'search'])->name('search');
+// Search suggestions (autocomplete)
+Route::get('/search/suggest', [HomeController::class, 'suggest'])->name('search.suggest');
+
+// Filipino / Tagalog hub (movies + series)
+Route::get('/filipino', [HomeController::class, 'filipino'])->name('filipino');
 
 // Movies (browsing is public)
 Route::get('/movies', [MovieController::class, 'index'])->name('movies');

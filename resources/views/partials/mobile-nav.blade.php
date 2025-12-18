@@ -17,6 +17,16 @@
             <span class="text-xs mt-1">Movies</span>
         </a>
         
+        {{-- Filipino (Tagalog hub) --}}
+        <a href="{{ route('filipino') }}" class="flex flex-col items-center justify-center flex-1 py-2 {{ request()->routeIs('filipino') ? 'text-viewlix-red' : 'text-gray-400 hover:text-white' }} transition-colors">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 5h6v14H3z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h11" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 8h11" />
+            </svg>
+            <span class="text-xs mt-1">Filipino</span>
+        </a>
+        
         {{-- TV Shows --}}
         <a href="{{ route('tv-shows') }}" class="flex flex-col items-center justify-center flex-1 py-2 {{ request()->routeIs('tv-shows') ? 'text-viewlix-red' : 'text-gray-400 hover:text-white' }} transition-colors">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">

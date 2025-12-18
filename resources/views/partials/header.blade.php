@@ -9,11 +9,17 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                     </svg>
                 </div>
-                <input type="search" 
+                <div class="relative w-full">
+                <input id="global-search-input" type="search" 
                        name="q"
                        value="{{ request('q') }}"
                        class="block w-full ps-10 pe-4 py-2.5 text-sm text-white bg-viewlix-gray border border-viewlix-border rounded-xl focus:ring-viewlix-red focus:border-viewlix-red placeholder-gray-400"
                        placeholder="Search movies, TV shows, anime...">
+                    {{-- Autocomplete suggestions container --}}
+                    <div id="search-suggestions" class="hidden z-50 absolute left-0 right-0 mt-1 bg-viewlix-darker border border-viewlix-border rounded-xl shadow-lg overflow-hidden">
+                        <ul class="divide-y divide-viewlix-border" role="listbox"></ul>
+                    </div>
+                </div>
             </form>
         </div>
         

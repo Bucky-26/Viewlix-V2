@@ -77,6 +77,9 @@
             <x-responsive-nav-link :href="route('home')" :active="request()->routeIs('home')">
                 {{ __('Home') }}
             </x-responsive-nav-link>
+            <x-responsive-nav-link :href="url('/filipino')" :active="request()->is('filipino*')">
+                {{ __('Filipino') }}
+            </x-responsive-nav-link>
         </div>
 
         @auth

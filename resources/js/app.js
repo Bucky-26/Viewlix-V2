@@ -211,6 +211,160 @@ document.addEventListener('livewire:navigated', () => {
     HSOverlay.autoInit();
 });
 
+// Search autocomplete / prediction
+function initSearchAutocomplete() {
+    try {
+        const input = document.getElementById('global-search-input');
+        const container = document.getElementById('search-suggestions');
+        if (!input || !container) return;
+
+        const list = container.querySelector('ul');
+        let suggestions = [];
+        let selectedIndex = -1;
+        let controller = null;
+
+        function hide() {
+            container.classList.add('hidden');
+            selectedIndex = -1;
+            suggestions = [];
+            list.innerHTML = '';
+        }
+
+        function show() {
+            container.classList.remove('hidden');
+        }
+
+        function render(items) {
+            suggestions = items || [];
+            selectedIndex = -1;
+            if (!suggestions.length) {
+                hide();
+                return;
+            }
+            list.innerHTML = suggestions.map((s, i) => {
+                const img = s.image ? `<img src="${s.image}" alt="" class="w-10 h-14 rounded-sm object-cover flex-shrink-0 me-3">` : `<div class="w-10 h-14 rounded-sm bg-viewlix-gray flex-shrink-0 me-3"></div>`;
+                const type = s.type ? `<span class="text-xs text-gray-400 ms-1">${s.type}</span>` : '';
+                return `
+                    <li data-index="${i}" role="option" class="px-3 py-2 cursor-pointer hover:bg-viewlix-gray flex items-center gap-3">
+                        ${img}
+                        <div class="min-w-0">
+                            <div class="text-sm font-medium text-white truncate">${s.title}</div>
+                            <div class="text-xs text-gray-400 truncate">${type}</div>
+                        </div>
+                    </li>
+                `;
+            }).join('');
+
+            // attach handlers
+            Array.from(list.querySelectorAll('li')).forEach(li => {
+                li.addEventListener('mousedown', (ev) => {
+                    // prevent input blur before click
+                    ev.preventDefault();
+                });
+                li.addEventListener('click', (ev) => {
+                    const idx = parseInt(li.getAttribute('data-index'));
+                    const item = suggestions[idx];
+                    if (item && item.link) {
+                        window.location.href = item.link;
+                    } else if (item) {
+                        // fallback: submit form with query
+                        input.value = item.title;
+                        input.form && input.form.submit();
+                    }
+                });
+            });
+
+            show();
+        }
+
+        function setActive(idx) {
+            const items = Array.from(list.querySelectorAll('li'));
+            items.forEach((el, i) => {
+                el.classList.toggle('bg-viewlix-gray', i === idx);
+            });
+            selectedIndex = idx;
+        }
+
+        function debounce(fn, wait = 250) {
+            let t;
+            return function(...args) {
+                clearTimeout(t);
+                t = setTimeout(() => fn.apply(this, args), wait);
+            };
+        }
+
+        const fetchSuggestions = debounce(async (q) => {
+            if (controller) controller.abort();
+            controller = new AbortController();
+
+            try {
+                const resp = await fetch(`/search/suggest?q=${encodeURIComponent(q)}`, { signal: controller.signal });
+                if (!resp.ok) return hide();
+                const data = await resp.json();
+                render(data.suggestions || []);
+            } catch (err) {
+                if (err.name === 'AbortError') return;
+                console.debug('Search suggest error', err);
+                hide();
+            }
+        }, 180);
+
+        input.addEventListener('input', (e) => {
+            const q = input.value.trim();
+            if (q.length < 2) {
+                hide();
+                return;
+            }
+            fetchSuggestions(q);
+        });
+
+        input.addEventListener('keydown', (e) => {
+            const items = Array.from(list.querySelectorAll('li'));
+            if (!items.length) return;
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                const next = (selectedIndex + 1) % items.length;
+                setActive(next);
+                items[next].scrollIntoView({ block: 'nearest' });
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                const next = (selectedIndex - 1 + items.length) % items.length;
+                setActive(next);
+                items[next].scrollIntoView({ block: 'nearest' });
+            } else if (e.key === 'Enter') {
+                if (selectedIndex >= 0 && suggestions[selectedIndex]) {
+                    e.preventDefault();
+                    const item = suggestions[selectedIndex];
+                    if (item.link) window.location.href = item.link;
+                    else { input.value = item.title; input.form && input.form.submit(); }
+                }
+            } else if (e.key === 'Escape') {
+                hide();
+            }
+        });
+
+        // Hide when clicking outside
+        document.addEventListener('click', (ev) => {
+            if (!container.contains(ev.target) && ev.target !== input) {
+                hide();
+            }
+        });
+
+    } catch (e) {
+        console.warn('Search autocomplete init failed', e);
+    }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initSearchAutocomplete);
+} else {
+    initSearchAutocomplete();
+}
+
+// Reinit on Livewire/Turbo navigation
+document.addEventListener('livewire:navigated', initSearchAutocomplete);
+
 // ============================================
 // Firebase Configuration & Initialization
 // ============================================
