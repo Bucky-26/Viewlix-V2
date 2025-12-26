@@ -4,6 +4,7 @@ import Alpine from 'alpinejs';
 
 // Preline UI - Import all components
 import { HSDropdown, HSOverlay } from 'preline/preline';
+import './overlays';
 
 // Firebase imports - Realtime Database + Messaging
 import { initializeApp } from 'firebase/app';
