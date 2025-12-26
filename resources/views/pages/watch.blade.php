@@ -415,50 +415,13 @@ const providedSources = @json($sources ?? null);
 const defaultEmbed = @json($embedUrl);
 
 function buildSources() {
-    // Helper to build a vidsrc embed URL based on media type
-    function buildVidsrcEmbed() {
-        // Preferred embed domains from the vidsrc docs
-        const domains = ['https://vidsrc-embed.ru', 'https://vidsrc-embed.su', 'https://vidsrcme.su', 'https://vsrc.su'];
-        const domain = domains[0]; // use first available by default
-
-        // If we have a TMDB id (mediaData.id) use it. For movies: /embed/movie?tmdb=ID
-        // For tv/anime: /embed/tv?tmdb=ID&season=X&episode=Y
-        if (!mediaData || !mediaData.id) return defaultEmbed;
-
-        if (mediaData.type === 'movie') {
-            return `${domain}/embed/movie?tmdb=${mediaData.id}`;
-        }
-
-        // tv / anime
-        if (mediaData.season && mediaData.episode) {
-            return `${domain}/embed/tv?tmdb=${mediaData.id}&season=${mediaData.season}&episode=${mediaData.episode}`;
-        }
-
-        // fallback to tv page for the show if episode info missing
-        return `${domain}/embed/tv?tmdb=${mediaData.id}`;
-    }
-
-    const vidsrcEmbed = buildVidsrcEmbed();
-
-    let baseSources = [];
     if (Array.isArray(providedSources) && providedSources.length > 0) {
         // Ensure each source has {name, embed}
-        baseSources = providedSources.map(s => ({ name: s.name || 'Source', embed: s.embed || defaultEmbed }));
-    } else {
-        // fallback single source
-        baseSources = [{ name: 'Default', embed: defaultEmbed }];
+        return providedSources.map(s => ({ name: s.name || 'Source', embed: s.embed || defaultEmbed }));
     }
 
-    // Append a Vidsrc Embed option (if we were able to build a vidsrc URL)
-    try {
-        if (vidsrcEmbed && !baseSources.find(s => s.embed === vidsrcEmbed)) {
-            baseSources.push({ name: 'Vidsrc (Embed)', embed: vidsrcEmbed });
-        }
-    } catch (e) {
-        // noop - if something goes wrong just return the base sources
-    }
-
-    return baseSources;
+    // fallback single source
+    return [{ name: 'Default', embed: defaultEmbed }];
 }
 
 const sources = buildSources();
