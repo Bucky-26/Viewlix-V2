@@ -94,7 +94,7 @@ class MovieController extends Controller
         // If the API expects a different path or needs server-side fetching, this can be adjusted later.
         $sources = [
             ['name' => 'VidLink', 'embed' => $embedUrl],
-            ['name' => 'Vidsrcme', 'embed' => "https://vidsrc.net/api/movie/{$id}"],
+            ['name' => 'Vidsrcme', 'embed' => "https://vidsrcme.ru/embed/movie?tmdb={$id}"],
         ];
 
         return view('pages.watch', [

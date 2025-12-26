@@ -111,7 +111,7 @@ class TvShowController extends Controller
         // Assumption: Vidsrcme accepts a tv endpoint like: https://vidsrcme.ru/api/tv/{tmdb_id}/{season}/{episode}
         $sources = [
             ['name' => 'VidLink', 'embed' => $embedUrl],
-            ['name' => 'Vidsrcme', 'embed' => "https://vidsrcme.ru/api/tv/{$id}/{$season}/{$episode}"],
+            ['name' => 'Vidsrcme', 'embed' => "https://vidsrcme.ru/embed/tv?tmdb={$id}&season={$season}&episode={$episode}"],
         ];
 
         return view('pages.watch', [
