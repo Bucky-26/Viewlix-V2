@@ -32,6 +32,7 @@
         <div class="video-container">
             <iframe 
                 src="{{ $embedUrl }}" 
+                sandbox = "allow-forms allow-pointer-lock allow-same-origin allow-scripts allow-top-navigation" width="1000" height="600" frameborder="0" gesture="media" allow="encrypted-media" 
                 allowfullscreen 
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 referrerpolicy="origin"
