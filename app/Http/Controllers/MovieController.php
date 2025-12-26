@@ -89,12 +89,21 @@ class MovieController extends Controller
         // VidLink embed URL for movies: https://vidlink.pro/movie/{tmdb_id}
         $embedUrl = config('services.vidlink.base_url') . "/movie/{$id}";
 
+        // Build multiple sources: VidLink (primary) + Vidsrcme API as an alternate source.
+        // Assumption: Vidsrcme accepts a movie endpoint like: https://vidsrcme.ru/api/movie/{tmdb_id}
+        // If the API expects a different path or needs server-side fetching, this can be adjusted later.
+        $sources = [
+            ['name' => 'VidLink', 'embed' => $embedUrl],
+            ['name' => 'Vidsrcme', 'embed' => "https://vidsrc.net/api/movie/{$id}"],
+        ];
+
         return view('pages.watch', [
             'type' => 'movie',
             'id' => $id,
             'title' => $movie['title'] ?? 'Unknown',
             'media' => $movie,
             'embedUrl' => $embedUrl,
+            'sources' => $sources,
             'tmdb' => $this->tmdb,
         ]);
     }

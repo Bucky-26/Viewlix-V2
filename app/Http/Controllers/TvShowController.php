@@ -107,6 +107,13 @@ class TvShowController extends Controller
         // VidLink embed URL for TV: https://vidlink.pro/tv/{tmdb_id}/{season}/{episode}
         $embedUrl = config('services.vidlink.base_url') . "/tv/{$id}/{$season}/{$episode}";
 
+        // Build multiple sources: VidLink (primary) + Vidsrcme API as an alternate source.
+        // Assumption: Vidsrcme accepts a tv endpoint like: https://vidsrcme.ru/api/tv/{tmdb_id}/{season}/{episode}
+        $sources = [
+            ['name' => 'VidLink', 'embed' => $embedUrl],
+            ['name' => 'Vidsrcme', 'embed' => "https://vidsrcme.ru/api/tv/{$id}/{$season}/{$episode}"],
+        ];
+
         return view('pages.watch', [
             'type' => 'tv',
             'id' => $id,
@@ -116,6 +123,7 @@ class TvShowController extends Controller
             'episode' => $episode,
             'episodes' => $seasonData['episodes'] ?? [],
             'embedUrl' => $embedUrl,
+            'sources' => $sources,
             'tmdb' => $this->tmdb,
         ]);
     }

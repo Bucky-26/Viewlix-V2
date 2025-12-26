@@ -57,6 +57,16 @@
         </div>
         
         <div class="flex items-center gap-3">
+                {{-- Source / Server selector --}}
+                <div class="flex items-center gap-2">
+                    <label for="sourceSelect" class="text-sm text-gray-400 hidden md:inline">Source</label>
+                    <select id="sourceSelect" class="text-sm bg-viewlix-gray text-white px-3 py-2 rounded-xl border border-viewlix-border hover:bg-viewlix-gray-light transition-colors">
+                        {{-- Options injected by JS from server-provided $sources or fallback --}}
+                    </select>
+                    <button id="openSourceBtn" class="hidden md:inline-flex items-center gap-2 px-3 py-2 bg-viewlix-gray text-white text-sm font-medium rounded-xl border border-viewlix-border hover:bg-viewlix-gray-light transition-colors">
+                        Open
+                    </button>
+                </div>
             {{-- Back to Details --}}
             @if($type === 'movie')
             <a href="{{ route('movie.show', ['id' => $id]) }}" class="flex items-center gap-2 px-4 py-2 bg-viewlix-gray text-white text-sm font-medium rounded-xl border border-viewlix-border hover:bg-viewlix-gray-light transition-colors">
@@ -394,5 +404,130 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 });
+
+// ============================================================
+// Multi-source / server switching (iframe source selection)
+// Expectation: Controller may pass $sources = [ ['name'=>'Vidsrcme','embed'=>'https://vidsrcme.ru/embed/...'], ... ]
+// Fallback: use existing `{{ $embedUrl }}` as a single source named 'Default'.
+// ============================================================
+
+const providedSources = @json($sources ?? null);
+const defaultEmbed = @json($embedUrl);
+
+function buildSources() {
+    // Helper to build a vidsrc embed URL based on media type
+    function buildVidsrcEmbed() {
+        // Preferred embed domains from the vidsrc docs
+        const domains = ['https://vidsrc-embed.ru', 'https://vidsrc-embed.su', 'https://vidsrcme.su', 'https://vsrc.su'];
+        const domain = domains[0]; // use first available by default
+
+        // If we have a TMDB id (mediaData.id) use it. For movies: /embed/movie?tmdb=ID
+        // For tv/anime: /embed/tv?tmdb=ID&season=X&episode=Y
+        if (!mediaData || !mediaData.id) return defaultEmbed;
+
+        if (mediaData.type === 'movie') {
+            return `${domain}/embed/movie?tmdb=${mediaData.id}`;
+        }
+
+        // tv / anime
+        if (mediaData.season && mediaData.episode) {
+            return `${domain}/embed/tv?tmdb=${mediaData.id}&season=${mediaData.season}&episode=${mediaData.episode}`;
+        }
+
+        // fallback to tv page for the show if episode info missing
+        return `${domain}/embed/tv?tmdb=${mediaData.id}`;
+    }
+
+    const vidsrcEmbed = buildVidsrcEmbed();
+
+    let baseSources = [];
+    if (Array.isArray(providedSources) && providedSources.length > 0) {
+        // Ensure each source has {name, embed}
+        baseSources = providedSources.map(s => ({ name: s.name || 'Source', embed: s.embed || defaultEmbed }));
+    } else {
+        // fallback single source
+        baseSources = [{ name: 'Default', embed: defaultEmbed }];
+    }
+
+    // Append a Vidsrc Embed option (if we were able to build a vidsrc URL)
+    try {
+        if (vidsrcEmbed && !baseSources.find(s => s.embed === vidsrcEmbed)) {
+            baseSources.push({ name: 'Vidsrc (Embed)', embed: vidsrcEmbed });
+        }
+    } catch (e) {
+        // noop - if something goes wrong just return the base sources
+    }
+
+    return baseSources;
+}
+
+const sources = buildSources();
+const sourceSelect = document.getElementById('sourceSelect');
+const openSourceBtn = document.getElementById('openSourceBtn');
+const playerIframe = document.querySelector('.video-container iframe');
+
+function populateSourceOptions() {
+    if (!sourceSelect) return;
+    sourceSelect.innerHTML = '';
+    sources.forEach((s, idx) => {
+        const opt = document.createElement('option');
+        opt.value = idx;
+        opt.text = s.name;
+        sourceSelect.appendChild(opt);
+    });
+
+    // Restore saved choice for this media
+    try {
+        const key = `preferredSource_${mediaData.type}_${mediaData.id}`;
+        const saved = localStorage.getItem(key);
+        if (saved !== null && !isNaN(parseInt(saved)) && sources[parseInt(saved)]) {
+            sourceSelect.value = saved;
+        } else {
+            sourceSelect.value = 0;
+        }
+    } catch (e) {
+        sourceSelect.value = 0;
+    }
+
+    // Apply initial selection
+    applySelectedSource();
+}
+
+function applySelectedSource() {
+    if (!playerIframe || !sourceSelect) return;
+    const idx = parseInt(sourceSelect.value || 0);
+    const src = sources[idx]?.embed || defaultEmbed;
+    // update iframe src if different
+    if (playerIframe.getAttribute('src') !== src) {
+        playerIframe.setAttribute('src', src);
+    }
+
+    // persist selection per media
+    try {
+        const key = `preferredSource_${mediaData.type}_${mediaData.id}`;
+        localStorage.setItem(key, String(idx));
+    } catch (e) {}
+
+    // toggle open button visibility (some mobile layouts hide it)
+    if (openSourceBtn) {
+        openSourceBtn.classList.remove('hidden');
+    }
+}
+
+if (sourceSelect) {
+    sourceSelect.addEventListener('change', applySelectedSource);
+}
+
+if (openSourceBtn) {
+    openSourceBtn.addEventListener('click', function() {
+        const idx = parseInt(sourceSelect.value || 0);
+        const url = sources[idx]?.embed || defaultEmbed;
+        // open raw embed in new tab
+        window.open(url, '_blank');
+    });
+}
+
+// Initialize after DOM loaded
+document.addEventListener('DOMContentLoaded', populateSourceOptions);
 </script>
 @endpush
