@@ -34,7 +34,6 @@
                 src="{{ $embedUrl }}" 
                 width="1000" height="600" frameborder="0" gesture="media" allow="encrypted-media" 
                 allowfullscreen 
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 referrerpolicy="origin"
                 loading="lazy">
             </iframe>
@@ -466,22 +465,7 @@ function applySelectedSource() {
         playerIframe.setAttribute('src', src);
     }
 
-    // Toggle sandbox attribute only for Filmix/FilMex source.
-    // Detection: prefer source name, fall back to embed URL checks (e.g. fmovies4u).
-    try {
-        const sel = sources[idx] || {};
-        const name = (sel.name || '').toString().toLowerCase();
-        const embed = (sel.embed || '').toString().toLowerCase();
-        const needsSandbox = name.includes('film') || name.includes('filmex') || name.includes('filmix') || embed.includes('fmovies4u') || embed.includes('filmex');
-
-        if (needsSandbox) {
-            playerIframe.setAttribute('sandbox', 'allow-forms allow-pointer-lock allow-same-origin allow-scripts allow-top-navigation');
-        } else {
-            playerIframe.removeAttribute('sandbox');
-        }
-    } catch (e) {
-        // fail silently if something unexpected happens
-    }
+   
 
     // persist selection per media
     try {
