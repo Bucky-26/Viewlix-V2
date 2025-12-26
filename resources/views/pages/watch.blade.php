@@ -29,7 +29,7 @@
 <div class="min-h-[calc(100vh-200px)]">
     {{-- Video Player with VidLink --}}
     <div class="mb-6">
-        <div class="video-container">
+        <div class="video-container" style="position: relative; width: 100%; height: 0; padding-bottom: 56.25%;">
             <iframe 
                 src="{{ $embedUrl }}" 
                 width="1000" height="600" frameborder="0" gesture="media" allow="encrypted-media" 
