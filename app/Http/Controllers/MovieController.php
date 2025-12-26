@@ -94,6 +94,7 @@ class MovieController extends Controller
         // If the API expects a different path or needs server-side fetching, this can be adjusted later.
         $sources = [
             ['name' => 'VidLink', 'embed' => $embedUrl],
+            ["name" => "FilMex(Ad-Free)Suggessted", "embed" => "https://fmovies4u.com/embed/tmdb-movie-{$id}?autoPlay=true&hideTitle=true"],
             ['name' => 'Vidsrcme', 'embed' => "https://vidsrcme.ru/embed/movie?tmdb={$id}"],
         ];
 
