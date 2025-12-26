@@ -95,7 +95,7 @@ class MovieController extends Controller
         $sources = [
             ['name' => 'VidLink', 'embed' => $embedUrl],
             ["name" => "FilMex(Ad-Free)Suggessted", "embed" => "https://fmovies4u.com/embed/tmdb-movie-{$id}?autoPlay=true&hideTitle=true"],
-            ['name' => 'Vidsrcme', 'embed' => "https://vidsrcme.ru/embed/movie?tmdb={$id}"],
+            ['name' => 'Vidsrcme', 'embed' => "https://cdn.viewlix.site/embed/movie?tmdb={$id}"],
         ];
 
         return view('pages.watch', [
