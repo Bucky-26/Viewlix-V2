@@ -390,13 +390,53 @@ class TMDBService
     /**
      * Return a fully-qualified logo image URL or empty string
      */
-    public function getMovieLogoUrl(int $id, string $country = 'US', string $size = 'w500'): string
+    /**
+     * Return a fully-qualified logo image URL or empty string.
+     * By default this will return a wsrv.nl proxied URL (webp, quality 80).
+     * Set $useProxy = false to return the direct TMDB image URL instead.
+     *
+     * @param int $id
+     * @param string $country
+     * @param string $size    TMDB size token like 'w500' or numeric width like '280'
+     * @param bool $useProxy
+     * @return string
+     */
+    public function getMovieLogoUrl(int $id, string $country = 'US', string $size = 'w500', bool $useProxy = true): string
     {
         $path = $this->getMovieLogoPath($id, $country);
         if (!$path) {
             return '';
         }
-        return $this->getImageUrl($path, $size);
+
+        // If caller explicitly wants the direct TMDB URL, return it
+        if (!$useProxy) {
+            return $this->getImageUrl($path, $size);
+        }
+
+    // Build the TMDB image URL first.
+    // Use the original (full-size) TMDB image when proxying so the proxy can
+    // reliably resize to the requested width. Requesting a non-supported
+    // TMDB size token (e.g. w280) may return 404 from TMDB, which then
+    // causes the proxy to fail. Using 'original' avoids that.
+    $tmdbUrl = $this->getImageUrl($path, 'original');
+
+        // Determine numeric width for wsrv from TMDB size token or numeric size
+        $width = 0;
+        // If size is like 'w500' extract digits
+        if (preg_match('/^w(\d+)$/i', $size, $m)) {
+            $width = (int) $m[1];
+        } elseif (is_numeric($size)) {
+            $width = (int) $size;
+        }
+
+        // Fallback width if parsing failed
+        if ($width <= 0) {
+            $width = 500;
+        }
+
+        $encoded = rawurlencode($tmdbUrl);
+        // Use wsrv.nl to proxy/resize and deliver webp; matches the sample link pattern
+        return "https://wsrv.nl/?url={$encoded}&w=280&output=webp&q=80";
     }
 
     /**
