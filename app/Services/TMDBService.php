@@ -356,6 +356,50 @@ class TMDBService
     }
 
     /**
+     * Get movie images (posters, backdrops, logos)
+     */
+    public function getMovieImages(int $id): ?array
+    {
+        return Cache::remember("movie.{$id}.images", 3600, function () use ($id) {
+            return $this->request("/movie/{$id}/images");
+        });
+    }
+
+    /**
+     * Return a preferred movie logo file path (tries country first, falls back to first available)
+     */
+    public function getMovieLogoPath(int $id, string $country = 'US'): ?string
+    {
+        $images = $this->getMovieImages($id);
+
+        if (!$images || empty($images['logos'])) {
+            return null;
+        }
+
+        // Try to find a logo matching the requested country
+        foreach ($images['logos'] as $logo) {
+            if (!empty($logo['iso_3166_1']) && strtoupper($logo['iso_3166_1']) === strtoupper($country)) {
+                return $logo['file_path'] ?? null;
+            }
+        }
+
+        // Fallback to first available logo
+        return $images['logos'][0]['file_path'] ?? null;
+    }
+
+    /**
+     * Return a fully-qualified logo image URL or empty string
+     */
+    public function getMovieLogoUrl(int $id, string $country = 'US', string $size = 'w500'): string
+    {
+        $path = $this->getMovieLogoPath($id, $country);
+        if (!$path) {
+            return '';
+        }
+        return $this->getImageUrl($path, $size);
+    }
+
+    /**
      * Get TV genres
      */
     public function getTvGenres(): ?array
