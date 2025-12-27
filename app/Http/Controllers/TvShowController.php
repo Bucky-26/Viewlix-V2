@@ -110,7 +110,9 @@ class TvShowController extends Controller
         // Build multiple sources: VidLink (primary) + Vidsrcme API as an alternate source.
         // Assumption: Vidsrcme accepts a tv endpoint like: https://vidsrcme.ru/api/tv/{tmdb_id}/{season}/{episode}
         $sources = [
+                        ['name' => 'Viewlix - Default(ad-free)', 'embed' => "https://player.viewlix.site/embed/tv/{$id}/{$season}/{$episode}"],
             ['name' => 'VidLink', 'embed' => $embedUrl],
+            ['name' => 'FilMex (Ad-Free) Suggested', 'embed' => "https://fmovies4u.com/embed/tmdb-tv-{$id}/{$season}/{$episode}?autoPlay=true&hideTitle=true"],
             ['name' => 'Vidsrcme', 'embed' => "https://vidsrcme.ru/embed/tv?tmdb={$id}&season={$season}&episode={$episode}"],
         ];
 
