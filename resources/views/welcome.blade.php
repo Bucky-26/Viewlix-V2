@@ -15,9 +15,10 @@
                     <div class="hs-carousel-body flex gap-4">
                         @foreach(array_slice($trendingMovies, 0, 8) as $movie)
                         <div class="hs-carousel-slide min-w-full flex-shrink-0 rounded-xl overflow-hidden relative transition-opacity duration-700 ease-in-out will-change-transform">
-                            <a href="{{ route('movie.show', $movie['id']) }}" class="block relative group">
+                            <div role="link" tabindex="0" aria-label="Open details for {{ $movie['title'] ?? $movie['name'] }}" class="block relative group viewlix-clickable-card" data-url="{{ route('movie.show', $movie['id']) }}">
                                 @if(isset($tmdb) && ($movie['backdrop_path'] ?? null))
-                                <img src="{{ $tmdb->getImageUrl($movie['backdrop_path'], 'original') }}" alt="{{ $movie['title'] ?? $movie['name'] }}" class="w-full h-[260px] sm:h-[360px] md:h-[520px] lg:h-[720px] object-cover transform-gpu group-hover:scale-105 transition-transform duration-700" loading="lazy">
+                                {{-- Fixed-size backdrop: explicit heights per breakpoint and no hover-scaling so the visible size is consistent across devices --}}
+                                <img src="{{ $tmdb->getImageUrl($movie['backdrop_path'], 'original') }}" alt="{{ $movie['title'] ?? $movie['name'] }}" class="w-full h-[260px] sm:h-[360px] md:h-[520px] lg:h-[720px] object-cover transition-opacity duration-700" loading="lazy">
                                 @else
                                 <div class="w-full h-[260px] sm:h-[360px] md:h-[520px] lg:h-[720px] bg-viewlix-darker"></div>
                                 @endif
@@ -36,10 +37,12 @@
                                         @endphp
 
                                         @if($logoUrl)
-                                            <div class="relative mx-auto mb-4 flex items-center justify-center" style="height:auto;">
-                                                {{-- Blurred fading shadow behind the logo --}}
-                                                <div class="absolute rounded-full filter blur-2xl opacity-80" style="width:12rem;height:3.2rem; background: radial-gradient(ellipse at center, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.25) 40%, rgba(0,0,0,0) 100%);"></div>
-                                                <img src="{{ $logoUrl }}" alt="{{ $movie['title'] ?? $movie['name'] }}" class="relative z-10 h-12 sm:h-16 md:h-20 lg:h-24 object-contain" loading="lazy">
+                                            {{-- Use a dedicated class so we can strictly control logo sizing with CSS (more specific than utility classes) --}}
+                                            <div class="relative mx-auto mb-4 flex items-center justify-center viewlix-hero-logo">
+                                                {{-- Blurred fading shadow behind the logo (slightly reduced to match smaller logo) --}}
+                                                <div class="absolute rounded-full filter blur-2xl opacity-80 viewlix-hero-logo-shadow" aria-hidden="true"></div>
+                                                {{-- Constrain the logo via CSS rules below so it never stretches wide or becomes too tall --}}
+                                                <img src="{{ $logoUrl }}" alt="{{ $movie['title'] ?? $movie['name'] }}" class="relative z-10 viewlix-hero-logo-img" loading="lazy">
                                             </div>
                                         @else
                                             <h3 class="text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-extrabold text-white tracking-tight mb-4">{{ $movie['title'] ?? $movie['name'] }}</h3>
@@ -74,17 +77,17 @@
                                         <p class="text-gray-300 hidden md:block mb-6">{{ \Illuminate\Support\Str::limit($movie['overview'] ?? '', 220) }}</p>
 
                                         <div class="flex items-center justify-center gap-4">
-                                            <a href="{{ route('movie.show', $movie['id']) }}" class="inline-flex items-center gap-2 bg-white text-black px-5 py-3 rounded-md font-medium">Details
+                                            <a href="{{ route('movie.show', $movie['id']) }}" onclick="event.stopPropagation();" onpointerdown="event.stopPropagation();" class="inline-flex items-center gap-2 bg-white text-black px-5 py-3 rounded-md font-medium">Details
                                             </a>
 
-                                            <a href="{{ route('movie.show', $movie['id']) }}" class="inline-flex items-center gap-2 bg-viewlix-red hover:bg-viewlix-red-dark text-white px-5 py-3 rounded-md font-medium">
+                                            <a href="{{ route('movie.show', $movie['id']) }}" onclick="event.stopPropagation();" onpointerdown="event.stopPropagation();" class="inline-flex items-center gap-2 bg-viewlix-red hover:bg-viewlix-red-dark text-white px-5 py-3 rounded-md font-medium">
                                                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M6.5 5.5v9l7-4.5-7-4.5z"></path></svg>
                                                 Watch
                                             </a>
                                         </div>
                                     </div>
                                 </div>
-                            </a>
+                            </div>
                         </div>
                         @endforeach
                     </div>
@@ -174,6 +177,56 @@
 
     {{-- Smooth carousel transition + swipe/pointer support --}}
     <style>
+        /* Hero logo sizing: make the container a fixed height per breakpoint and force the image to fill 100% height
+           This ensures the logo's height is exactly the container height (no gap) while preserving aspect ratio. */
+        .viewlix-hero-logo {
+            position: relative;
+            height: auto; /* base — reduced for a smaller logo */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .viewlix-hero-logo-shadow {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 9999px;
+            filter: blur(20px);
+            opacity: 0.8;
+            width: 10rem;
+            height: 2.6rem;
+            background: radial-gradient(ellipse at center, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.25) 40%, rgba(0,0,0,0) 100%);
+            pointer-events: none;
+        }
+
+        /* Force the logo image to occupy full container height while keeping width auto (preserve aspect ratio). */
+        .viewlix-hero-logo-img {
+            display: block;
+            height: 100%;
+            width: auto;
+            max-width: 50%; /* tighten width so logo doesn't span the hero */
+        }
+
+        /* Slightly larger on small screens and above */
+        @media (min-width: 640px) {
+            .viewlix-hero-logo { height: 40px; }
+            .viewlix-hero-logo-shadow { width: 10rem; height: 2.6rem; }
+        }
+
+        @media (min-width: 768px) {
+            .viewlix-hero-logo { height: 48px; }
+            .viewlix-hero-logo-shadow { width: 12rem; height: 3rem; }
+        }
+
+        @media (min-width: 1024px) {
+            /* Keep desktop logo modest so it doesn't dominate the hero */
+            .viewlix-hero-logo { height: 56px; }
+            .viewlix-hero-logo-shadow { width: 14rem; height: 3.4rem; }
+        }
+
         /* Smooth transform for carousel movement */
         .hs-carousel-body {
             transition: transform 700ms cubic-bezier(.2,.8,.2,1) !important;
@@ -244,6 +297,9 @@
 
         /* Keep carousel content within page padding */
         .hs-carousel .hs-carousel-body { max-width: calc(100% - 2rem); margin: 0 auto; }
+
+        /* Make the whole slide feel clickable */
+        .viewlix-clickable-card { cursor: pointer; }
     </style>
 
     <script>
@@ -316,6 +372,28 @@
                         lastMoveX = moveX;
                     }
                 }, {passive:true});
+            });
+
+            // Attach click handlers directly to each card — more reliable for mouse events and avoids
+            // interference from other global handlers.
+            document.querySelectorAll('.viewlix-clickable-card').forEach(function(card){
+                card.addEventListener('click', function(e){
+                    // If the click originated from a real interactive element, let it proceed
+                    if(e.target.closest && e.target.closest('a, button, input')) return;
+                    var url = card.getAttribute('data-url');
+                    if(url) window.location.href = url;
+                });
+            });
+
+            // keyboard support: Enter or Space activates the card when focused
+            document.addEventListener('keydown', function(e){
+                var el = document.activeElement;
+                if(!el || !el.classList.contains('viewlix-clickable-card')) return;
+                if(e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    var url = el.getAttribute('data-url');
+                    if(url) window.location.href = url;
+                }
             });
         })();
     </script>
