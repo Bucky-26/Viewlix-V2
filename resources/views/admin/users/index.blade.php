@@ -197,6 +197,29 @@
                                 </svg>
                             </a>
 
+                            {{-- Verify / Resend Buttons for unverified users --}}
+                            @if(!$user->email_verified_at)
+                                <form action="{{ route('admin.users.verify', $user) }}" method="POST" class="inline">
+                                    @csrf
+                                    <button type="submit" title="Verify User" class="py-1.5 px-2 inline-flex justify-center items-center rounded-lg text-teal-400 hover:text-white hover:bg-teal-500/10 focus:outline-none focus:ring-2 focus:ring-teal-400 transition-colors">
+                                        <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
+                                            <path d="m9 12 2 2 4-4"/>
+                                        </svg>
+                                    </button>
+                                </form>
+
+                                <form action="{{ route('admin.users.resend-verification', $user) }}" method="POST" class="inline">
+                                    @csrf
+                                    <button type="submit" title="Resend verification" class="py-1.5 px-2 inline-flex justify-center items-center rounded-lg text-gray-300 hover:text-white hover:bg-viewlix-gray focus:outline-none focus:ring-2 focus:ring-viewlix-red transition-colors">
+                                        <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M21 12v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h6"/>
+                                            <path d="M7 8h10M7 12h6"/>
+                                        </svg>
+                                    </button>
+                                </form>
+                            @endif
+
                             {{-- Delete Button --}}
                             @if($user->id !== auth()->id())
                             <form action="{{ route('admin.users.delete', $user) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this user?')">

@@ -65,6 +65,24 @@
                             </span>
                         @endif
                     </div>
+
+                    @if(!$user->email_verified_at)
+                        <div class="mt-3 flex items-center gap-2">
+                            <form action="{{ route('admin.users.verify', $user) }}" method="POST">
+                                @csrf
+                                <button type="submit" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg bg-teal-500/10 text-teal-400 hover:bg-teal-500/20 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-colors">
+                                    Verify user
+                                </button>
+                            </form>
+
+                            <form action="{{ route('admin.users.resend-verification', $user) }}" method="POST">
+                                @csrf
+                                <button type="submit" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-viewlix-border bg-viewlix-gray text-gray-300 hover:bg-viewlix-border hover:text-white focus:outline-none focus:ring-2 focus:ring-viewlix-red transition-colors">
+                                    Resend verification link
+                                </button>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

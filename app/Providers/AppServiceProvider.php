@@ -9,6 +9,8 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Auth\Events\Registered;
 use App\Listeners\SendWelcomeNotification;
+use Illuminate\Auth\Events\Verified;
+use App\Listeners\SendVerifiedEmail;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -47,5 +49,7 @@ class AppServiceProvider extends ServiceProvider
 
         // Listen for Registered event and send welcome notification
         Event::listen(Registered::class, SendWelcomeNotification::class);
+        // Listen for Verified event and send account verified email
+        Event::listen(Verified::class, SendVerifiedEmail::class);
     }
 }
