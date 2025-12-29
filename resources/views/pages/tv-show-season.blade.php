@@ -68,8 +68,8 @@
     
     {{-- Episodes List --}}
     <div class="space-y-3">
-        @forelse($episodes ?? [] as $episode)
-        <a href="{{ route('tv-show.watch', ['id' => $tvShow['id'], 'season' => $season['season_number'], 'episode' => $episode['episode_number']]) }}" 
+    @forelse($episodes ?? [] as $episode)
+    <a href="{{ route('tv-show.watch', ['slug' => $tvShow['id'] . '-' . \Illuminate\Support\Str::slug($tvShow['name']), 'season' => $season['season_number'], 'episode' => $episode['episode_number']]) }}" 
            class="flex gap-4 p-4 bg-viewlix-gray rounded-xl border border-viewlix-border hover:border-viewlix-red transition-colors group">
             <div class="flex-shrink-0 w-40 aspect-video bg-viewlix-darker rounded-lg overflow-hidden relative">
                 @if(!empty($episode['still_path']))

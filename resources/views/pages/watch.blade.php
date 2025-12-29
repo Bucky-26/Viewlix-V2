@@ -115,8 +115,8 @@
     @if($type !== 'movie' && !empty($episodes))
     {{-- Episode Navigation --}}
     <div class="flex items-center justify-between gap-4 mb-6">
-        @if(($episode ?? 1) > 1)
-        <a href="{{ $type === 'tv' ? route('tv-show.watch', ['id' => $id, 'season' => $season, 'episode' => $episode - 1]) : route('anime.watch', ['id' => $id, 'season' => $season, 'episode' => $episode - 1]) }}" 
+    @if(($episode ?? 1) > 1)
+    <a href="{{ $type === 'tv' ? route('tv-show.watch', ['slug' => $id . '-' . \Illuminate\Support\Str::slug($title), 'season' => $season, 'episode' => $episode - 1]) : route('anime.watch', ['id' => $id, 'season' => $season, 'episode' => $episode - 1]) }}" 
            class="flex items-center gap-2 px-4 py-2 bg-viewlix-gray text-white hover:bg-viewlix-gray-light rounded-xl border border-viewlix-border transition-colors">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
@@ -132,8 +132,8 @@
         </button>
         @endif
         
-        @if(($episode ?? 1) < count($episodes))
-        <a href="{{ $type === 'tv' ? route('tv-show.watch', ['id' => $id, 'season' => $season, 'episode' => $episode + 1]) : route('anime.watch', ['id' => $id, 'season' => $season, 'episode' => $episode + 1]) }}" 
+    @if(($episode ?? 1) < count($episodes))
+    <a href="{{ $type === 'tv' ? route('tv-show.watch', ['slug' => $id . '-' . \Illuminate\Support\Str::slug($title), 'season' => $season, 'episode' => $episode + 1]) : route('anime.watch', ['id' => $id, 'season' => $season, 'episode' => $episode + 1]) }}" 
            class="flex items-center gap-2 px-4 py-2 bg-viewlix-gray text-white hover:bg-viewlix-gray-light rounded-xl border border-viewlix-border transition-colors">
             Next
             <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -155,7 +155,7 @@
         <h2 class="text-lg font-bold text-white mb-4">Episodes - Season {{ $season ?? 1 }}</h2>
         <div class="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 xl:grid-cols-16 gap-2">
             @foreach($episodes as $ep)
-            <a href="{{ $type === 'tv' ? route('tv-show.watch', ['id' => $id, 'season' => $season, 'episode' => $ep['episode_number']]) : route('anime.watch', ['id' => $id, 'season' => $season, 'episode' => $ep['episode_number']]) }}" 
+         <a href="{{ $type === 'tv' ? route('tv-show.watch', ['slug' => $id . '-' . \Illuminate\Support\Str::slug($title), 'season' => $season, 'episode' => $ep['episode_number']]) : route('anime.watch', ['id' => $id, 'season' => $season, 'episode' => $ep['episode_number']]) }}" 
                class="aspect-square flex items-center justify-center rounded-lg border font-medium transition-colors
                       {{ ($episode ?? 1) == $ep['episode_number'] ? 'bg-viewlix-red border-viewlix-red text-white' : 'bg-viewlix-gray border-viewlix-border text-gray-400 hover:border-viewlix-red hover:text-white' }}"
                title="{{ $ep['name'] ?? 'Episode '.$ep['episode_number'] }}">
