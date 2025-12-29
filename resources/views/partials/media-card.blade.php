@@ -6,10 +6,10 @@
     $posterPath = $item['poster_path'] ?? null;
     $mediaType = $type === 'anime' ? 'anime' : ($type === 'tv' ? 'tv' : 'movie');
     
-    // Determine route based on type
+    // Determine route based on type (use slug: {id}-{slugified-title})
     $route = match($type) {
-        'movie' => route('movie.show', $item['id']),
-        'tv' => route('tv-show.show', $item['id']),
+        'movie' => route('movie.show', ['slug' => $item['id'] . '-' . \Illuminate\Support\Str::slug($title)]),
+        'tv' => route('tv-show.show', ['slug' => $item['id'] . '-' . \Illuminate\Support\Str::slug($title)]),
         'anime' => route('anime.show', $item['id']),
         default => '#'
     };

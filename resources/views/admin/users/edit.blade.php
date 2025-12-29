@@ -14,78 +14,72 @@
 
 @section('content')
 <div class="max-w-2xl">
-    {{-- User Card --}}
-    <div class="bg-viewlix-dark border border-viewlix-border rounded-xl shadow-sm overflow-hidden">
-        {{-- User Header --}}
-        <div class="p-4 sm:p-6 bg-viewlix-gray/30 border-b border-viewlix-border">
-            <div class="flex items-center gap-x-4">
-                @if($user->avatar)
-                    <img class="inline-block size-16 rounded-full object-cover ring-2 ring-viewlix-border" src="{{ $user->avatar }}" alt="{{ $user->name }}">
-                @else
-                    <span class="inline-flex items-center justify-center size-16 rounded-full bg-gradient-to-br from-viewlix-red to-viewlix-red-dark ring-2 ring-viewlix-border">
-                        <span class="text-2xl font-medium text-white leading-none uppercase">{{ substr($user->name, 0, 1) }}</span>
-                    </span>
-                @endif
-                <div class="grow">
-                    <h2 class="text-lg font-semibold text-white">{{ $user->name }}</h2>
-                    <p class="text-sm text-gray-400">Member since {{ $user->created_at->format('F j, Y') }}</p>
-                    <div class="mt-2 flex flex-wrap items-center gap-2">
+    {{-- User Card (Preline-style) --}}
+    <div class="rounded-xl border border-viewlix-border bg-viewlix-dark shadow-sm overflow-hidden">
+        <div class="p-6 sm:p-8">
+            <div class="flex items-center gap-6">
+                <div class="flex-shrink-0">
+                    @if($user->avatar)
+                        <img src="{{ $user->avatar }}" alt="{{ $user->name }}" class="w-20 h-20 rounded-full object-cover ring-2 ring-viewlix-border">
+                    @else
+                        <div class="w-20 h-20 rounded-full bg-gradient-to-br from-viewlix-red to-viewlix-red-dark flex items-center justify-center ring-2 ring-viewlix-border">
+                            <span class="text-2xl font-medium text-white leading-none uppercase">{{ substr($user->name, 0, 1) }}</span>
+                        </div>
+                    @endif
+                </div>
+
+                <div class="flex-1 min-w-0">
+                    <h2 class="text-xl lg:text-2xl font-semibold text-white truncate">{{ $user->name }}</h2>
+                    <p class="mt-1 text-sm text-gray-400 truncate">Member since {{ $user->created_at->format('F j, Y') }}</p>
+
+                    <div class="mt-3 flex flex-wrap items-center gap-2">
                         @if($user->is_admin)
-                            <span class="py-1 px-2 inline-flex items-center gap-x-1 text-xs font-medium bg-viewlix-red/10 text-viewlix-red rounded-full">
-                                <svg class="size-3" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/>
-                                </svg>
+                            <span class="inline-flex items-center gap-x-2 rounded-full px-2 py-1 text-xs font-medium bg-viewlix-red/10 text-viewlix-red">
+                                <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg>
                                 Admin
                             </span>
                         @endif
+
                         @if($user->google_id)
-                            <span class="py-1 px-2 inline-flex items-center gap-x-1 text-xs font-medium bg-blue-500/10 text-blue-400 rounded-full">
-                                <svg class="size-3" viewBox="0 0 24 24">
-                                    <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                                </svg>
+                            <span class="inline-flex items-center gap-x-2 rounded-full px-2 py-1 text-xs font-medium bg-blue-500/10 text-blue-400">
+                                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/></svg>
                                 Google
                             </span>
                         @endif
+
                         @if($user->email_verified_at)
-                            <span class="py-1 px-2 inline-flex items-center gap-x-1 text-xs font-medium bg-teal-500/10 text-teal-400 rounded-full">
-                                <svg class="size-3" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
-                                    <path d="m9 12 2 2 4-4"/>
-                                </svg>
+                            <span class="inline-flex items-center gap-x-2 rounded-full px-2 py-1 text-xs font-medium bg-teal-500/10 text-teal-400">
+                                <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4"/></svg>
                                 Verified
                             </span>
                         @else
-                            <span class="py-1 px-2 inline-flex items-center gap-x-1 text-xs font-medium bg-yellow-500/10 text-yellow-400 rounded-full">
-                                <svg class="size-3" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <circle cx="12" cy="12" r="10"/>
-                                    <line x1="12" x2="12" y1="8" y2="12"/>
-                                    <line x1="12" x2="12.01" y1="16" y2="16"/>
-                                </svg>
+                            <span class="inline-flex items-center gap-x-2 rounded-full px-2 py-1 text-xs font-medium bg-yellow-500/10 text-yellow-400">
+                                <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M12 2a10 10 0 100 20 10 10 0 000-20z"/></svg>
                                 Unverified
                             </span>
                         @endif
                     </div>
+                </div>
 
-                    @if(!$user->email_verified_at)
-                        <div class="mt-3 flex items-center gap-2">
+                <div class="ml-auto flex-shrink-0">
+                    <div class="flex items-center gap-2">
+                        @if(!$user->email_verified_at)
                             <form action="{{ route('admin.users.verify', $user) }}" method="POST">
                                 @csrf
-                                <button type="submit" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg bg-teal-500/10 text-teal-400 hover:bg-teal-500/20 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-colors">
-                                    Verify user
-                                </button>
+                                <button type="submit" class="inline-flex items-center gap-x-2 rounded-md bg-teal-500/10 text-teal-400 px-3 py-2 text-sm font-medium hover:bg-teal-500/20 focus:outline-none focus:ring-2 focus:ring-teal-500">Verify</button>
                             </form>
 
                             <form action="{{ route('admin.users.resend-verification', $user) }}" method="POST">
                                 @csrf
-                                <button type="submit" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-viewlix-border bg-viewlix-gray text-gray-300 hover:bg-viewlix-border hover:text-white focus:outline-none focus:ring-2 focus:ring-viewlix-red transition-colors">
-                                    Resend verification link
-                                </button>
+                                <button type="submit" class="inline-flex items-center gap-x-2 rounded-md border border-viewlix-border bg-viewlix-gray text-gray-300 px-3 py-2 text-sm font-medium hover:bg-viewlix-border">Resend</button>
                             </form>
-                        </div>
+                        @endif
                     </div>
                 </div>
             </div>
         </div>
+        
+        {{-- End User Card --}}
 
         {{-- Edit Form --}}
         <form action="{{ route('admin.users.update', $user) }}" method="POST">
@@ -205,4 +199,37 @@
     </div>
     @endif
 </div>
+
+@if(session('success') || session('error') || session('status'))
+    <div id="flash-toast" class="fixed bottom-6 right-6 z-50">
+        <div id="flash-toast-inner" class="max-w-sm w-full px-4 py-3 rounded-lg shadow-lg text-white {{ session('error') ? 'bg-red-600' : 'bg-teal-600' }}">
+            <div class="flex items-start gap-3">
+                <div class="flex-1 text-sm">
+                    @if(session('success'))
+                        {{ session('success') }}
+                    @elseif(session('status'))
+                        {{ session('status') }}
+                    @else
+                        {{ session('error') }}
+                    @endif
+                </div>
+                <button id="flash-toast-close" class="ml-2 text-white opacity-80 hover:opacity-100">&times;</button>
+            </div>
+        </div>
+    </div>
+
+    @push('scripts')
+    <script>
+        (function(){
+            const toast = document.getElementById('flash-toast');
+            const close = document.getElementById('flash-toast-close');
+            if(!toast) return;
+            // Auto-hide after 5s
+            const timeout = setTimeout(() => { toast.style.display = 'none'; }, 5000);
+            close.addEventListener('click', function(){ clearTimeout(timeout); toast.style.display = 'none'; });
+        })();
+    </script>
+    @endpush
+@endif
+
 @endsection

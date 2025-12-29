@@ -28,12 +28,14 @@ Route::get('/filipino', [HomeController::class, 'filipino'])->name('filipino');
 
 // Movies (browsing is public)
 Route::get('/movies', [MovieController::class, 'index'])->name('movies');
-Route::get('/movie/{id}', [MovieController::class, 'show'])->name('movie.show');
+// Use slug format: {tmdbId}-{slugified-title}
+Route::get('/movie/{slug}', [MovieController::class, 'show'])->name('movie.show');
 
 // TV Shows (browsing is public)
 Route::get('/tv-shows', [TvShowController::class, 'index'])->name('tv-shows');
-Route::get('/tv-show/{id}', [TvShowController::class, 'show'])->name('tv-show.show');
-Route::get('/tv-show/{id}/season/{season}', [TvShowController::class, 'season'])->name('tv-show.season');
+// Use slug format: {tmdbId}-{slugified-name}
+Route::get('/tv-show/{slug}', [TvShowController::class, 'show'])->name('tv-show.show');
+Route::get('/tv-show/{slug}/season/{season}', [TvShowController::class, 'season'])->name('tv-show.season');
 // Terms and Privacy Pages
 Route::get('/terms', function () {
     return view('pages.terms', [
@@ -64,8 +66,8 @@ require __DIR__.'/auth.php';
 // Watch routes (require authentication)
 Route::middleware(['auth', 'verified'])->group(function () {
     // Watch content
-    Route::get('/movie/{id}/watch', [MovieController::class, 'watch'])->name('movie.watch');
-    Route::get('/tv-show/{id}/watch/{season?}/{episode?}', [TvShowController::class, 'watch'])->name('tv-show.watch');
+    Route::get('/movie/{slug}/watch', [MovieController::class, 'watch'])->name('movie.watch');
+    Route::get('/tv-show/{slug}/watch/{season?}/{episode?}', [TvShowController::class, 'watch'])->name('tv-show.watch');
     Route::get('/anime/{id}/watch/{season?}/{episode?}', [AnimeController::class, 'watch'])->name('anime.watch');
     
     // Dashboard

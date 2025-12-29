@@ -21,7 +21,7 @@
                     $poster = $movie['poster_path'] ?? null;
                 @endphp
 
-                <a href="{{ route('movie.show', ['id' => $movie['id']]) }}" class="group">
+                <a href="{{ route('movie.show', ['slug' => $movie['id'] . '-' . \Illuminate\Support\Str::slug($movie['title'] ?? $movie['name'])]) }}" class="group">
                     @if($poster && isset($tmdb))
                         <img src="{{ $tmdb->getImageUrl($poster, 'w500') }}"
                              alt="{{ $title }}"
@@ -61,7 +61,7 @@
                     $poster = $tv['poster_path'] ?? null;
                 @endphp
 
-                <a href="{{ route('tv-show.show', ['id' => $tv['id']]) }}" class="group">
+                <a href="{{ route('tv-show.show', ['slug' => $tv['id'] . '-' . \Illuminate\Support\Str::slug($tv['name'])]) }}" class="group">
                     @if($poster && isset($tmdb))
                         <img src="{{ $tmdb->getImageUrl($poster, 'w500') }}"
                              alt="{{ $title }}"

@@ -11,7 +11,7 @@
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
             </svg>
-            <a href="{{ route('tv-show.show', ['id' => $tvShow['id']]) }}" class="hover:text-white transition-colors">{{ $tvShow['name'] }}</a>
+            <a href="{{ route('tv-show.show', ['slug' => $tvShow['id'] . '-' . \Illuminate\Support\Str::slug($tvShow['name'])]) }}" class="hover:text-white transition-colors">{{ $tvShow['name'] }}</a>
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
             </svg>
@@ -57,7 +57,7 @@
     <div class="flex flex-wrap gap-2 mb-8">
         @foreach($tvShow['seasons'] as $s)
         @if($s['season_number'] > 0)
-        <a href="{{ route('tv-show.season', ['id' => $tvShow['id'], 'season' => $s['season_number']]) }}" 
+    <a href="{{ route('tv-show.season', ['slug' => $tvShow['id'] . '-' . \Illuminate\Support\Str::slug($tvShow['name']), 'season' => $s['season_number']]) }}" 
            class="px-4 py-2 text-sm font-medium rounded-xl transition-colors {{ $s['season_number'] == $season['season_number'] ? 'bg-viewlix-red text-white' : 'bg-viewlix-gray text-gray-300 hover:bg-viewlix-gray-light' }}">
             Season {{ $s['season_number'] }}
         </a>

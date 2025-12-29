@@ -93,9 +93,9 @@ class HomeController extends Controller
             // Determine a friendly link for the suggestion
             $link = route('search', ['q' => $title]);
             if ($type === 'movie') {
-                $link = route('movie.show', ['id' => $item['id']]);
+                $link = route('movie.show', ['slug' => $item['id'] . '-' . \Illuminate\Support\Str::slug($title)]);
             } elseif ($type === 'tv') {
-                $link = route('tv-show.show', ['id' => $item['id']]);
+                $link = route('tv-show.show', ['slug' => $item['id'] . '-' . \Illuminate\Support\Str::slug($title)]);
             }
 
             $image = $this->tmdb->getImageUrl($item['poster_path'] ?? $item['profile_path'] ?? null, 'w92');

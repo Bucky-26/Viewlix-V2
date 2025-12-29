@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\TMDBService;
 use Illuminate\Http\Request;
 use RalphJSmit\Laravel\SEO\Support\SEOData;
+use Illuminate\Support\Str;
 
 class MovieController extends Controller
 {
@@ -45,8 +46,16 @@ class MovieController extends Controller
         ]);
     }
 
-    public function show(int $id)
+    public function show(string $slug)
     {
+        // slug expected as "{id}-{slugified-title}" - extract numeric id
+        $parts = explode('-', $slug);
+        $id = (int) ($parts[0] ?? 0);
+
+        if ($id <= 0) {
+            abort(404);
+        }
+
         $movie = $this->tmdb->getMovieDetails($id);
 
         if (!$movie) {
@@ -71,15 +80,22 @@ class MovieController extends Controller
             'SEOData' => new SEOData(
                 title: "{$title}" . ($releaseYear ? " ({$releaseYear})" : '') . " - Viewlix",
                 description: $description,
-                url: route('movie.show', ['id' => $id]),
+                url: route('movie.show', ['slug' => $id . '-' . Str::slug($title)]),
                 image: $imageUrl ?: null,
                 type: 'website',
             ),
         ]);
     }
 
-    public function watch(int $id)
+    public function watch(string $slug)
     {
+        $parts = explode('-', $slug);
+        $id = (int) ($parts[0] ?? 0);
+
+        if ($id <= 0) {
+            abort(404);
+        }
+
         $movie = $this->tmdb->getMovieDetails($id);
 
         if (!$movie) {

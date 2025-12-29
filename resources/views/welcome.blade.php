@@ -15,7 +15,7 @@
                         <div class="hs-carousel-body flex gap-4">
                             @foreach(array_slice($trendingMovies, 0, 8) as $movie)
                             <div class="hs-carousel-slide min-w-full flex-shrink-0 rounded-xl overflow-hidden relative transition-opacity duration-700 ease-in-out will-change-transform">
-                                <div role="link" tabindex="0" aria-label="Open details for {{ $movie['title'] ?? $movie['name'] }}" class="block relative group viewlix-clickable-card" data-url="{{ route('movie.show', $movie['id']) }}">
+                                <div role="link" tabindex="0" aria-label="Open details for {{ $movie['title'] ?? $movie['name'] }}" class="block relative group viewlix-clickable-card" data-url="{{ route('movie.show', ['slug' => $movie['id'].'-'.\Illuminate\Support\Str::slug($movie['title'] ?? $movie['name'])]) }}">
                                     @if(isset($tmdb) && ($movie['backdrop_path'] ?? null))
                                     {{-- Fixed-size backdrop: explicit heights per breakpoint and no hover-scaling so the visible size is consistent across devices --}}
                                     <img src="{{ $tmdb->getImageUrl($movie['backdrop_path'], 'original') }}" alt="{{ $movie['title'] ?? $movie['name'] }}" class="w-full h-[260px] sm:h-[360px] md:h-[520px] lg:h-[720px] object-cover transition-opacity duration-700" loading="lazy">
@@ -59,10 +59,10 @@
                                             <p class="text-gray-300 hidden md:block mb-6">{{ \Illuminate\Support\Str::limit($movie['overview'] ?? '', 220) }}</p>
 
                                             <div class="flex items-center justify-center gap-4">
-                                                <a href="{{ route('movie.show', $movie['id']) }}" onclick="event.stopPropagation();" onpointerdown="event.stopPropagation();" class="inline-flex items-center gap-2 bg-white text-black px-5 py-3 rounded-md font-medium">Details
+                                                <a href="{{ route('movie.show', ['slug' => $movie['id'].'-'.\Illuminate\Support\Str::slug($movie['title'] ?? $movie['name'])]) }}" onclick="event.stopPropagation();" onpointerdown="event.stopPropagation();" class="inline-flex items-center gap-2 bg-white text-black px-5 py-3 rounded-md font-medium">Details
                                                 </a>
 
-                                                <a href="{{ route('movie.show', $movie['id']) }}" onclick="event.stopPropagation();" onpointerdown="event.stopPropagation();" class="inline-flex items-center gap-2 bg-viewlix-red hover:bg-viewlix-red-dark text-white px-5 py-3 rounded-md font-medium">
+                                                <a href="{{ route('movie.show', ['slug' => $movie['id'].'-'.\Illuminate\Support\Str::slug($movie['title'] ?? $movie['name'])]) }}" onclick="event.stopPropagation();" onpointerdown="event.stopPropagation();" class="inline-flex items-center gap-2 bg-viewlix-red hover:bg-viewlix-red-dark text-white px-5 py-3 rounded-md font-medium">
                                                     <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M6.5 5.5v9l7-4.5-7-4.5z"></path></svg>
                                                     Watch
                                                 </a>

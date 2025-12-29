@@ -63,7 +63,7 @@
     
     {{-- Action Buttons --}}
     <div class="flex flex-wrap items-center gap-3 mb-8 sm:ml-52 lg:ml-60 pt-8 sm:pt-0">
-        <a href="{{ route('tv-show.watch', ['id' => $tvShow['id'], 'season' => 1, 'episode' => 1]) }}" class="flex items-center gap-2 px-6 py-3 bg-viewlix-red hover:bg-viewlix-red-dark text-white font-semibold rounded-xl transition-colors">
+        <a href="{{ route('tv-show.watch', ['slug' => $tvShow['id'] . '-' . \Illuminate\Support\Str::slug($tvShow['name'] ?? 'tv'), 'season' => 1, 'episode' => 1]) }}" class="flex items-center gap-2 px-6 py-3 bg-viewlix-red hover:bg-viewlix-red-dark text-white font-semibold rounded-xl transition-colors">
             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"/>
             </svg>
@@ -114,7 +114,7 @@
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
             @foreach($tvShow['seasons'] as $season)
             @if($season['season_number'] > 0)
-            <a href="{{ route('tv-show.season', ['id' => $tvShow['id'], 'season' => $season['season_number']]) }}" 
+                <a href="{{ route('tv-show.season', ['slug' => $tvShow['id'] . '-' . \Illuminate\Support\Str::slug($tvShow['name']), 'season' => $season['season_number']]) }}" 
                class="group bg-viewlix-gray rounded-xl overflow-hidden border border-viewlix-border hover:border-viewlix-red transition-colors">
                 <div class="aspect-[2/3] bg-viewlix-darker overflow-hidden">
                     @if(!empty($season['poster_path']))

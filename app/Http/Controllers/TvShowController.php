@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\TMDBService;
 use Illuminate\Http\Request;
 use RalphJSmit\Laravel\SEO\Support\SEOData;
+use Illuminate\Support\Str;
 
 class TvShowController extends Controller
 {
@@ -45,8 +46,15 @@ class TvShowController extends Controller
         ]);
     }
 
-    public function show(int $id)
+    public function show(string $slug)
     {
+        $parts = explode('-', $slug);
+        $id = (int) ($parts[0] ?? 0);
+
+        if ($id <= 0) {
+            abort(404);
+        }
+
         $tvShow = $this->tmdb->getTvShowDetails($id);
 
         if (!$tvShow) {
@@ -71,15 +79,22 @@ class TvShowController extends Controller
             'SEOData' => new SEOData(
                 title: "{$title}" . ($releaseYear ? " ({$releaseYear})" : '') . " - Viewlix",
                 description: $description,
-                url: route('tv-show.show', ['id' => $id]),
+                url: route('tv-show.show', ['slug' => $id . '-' . Str::slug($title)]),
                 image: $imageUrl ?: null,
                 type: 'website',
             ),
         ]);
     }
 
-    public function season(int $id, int $seasonNumber)
+    public function season(string $slug, int $seasonNumber)
     {
+        $parts = explode('-', $slug);
+        $id = (int) ($parts[0] ?? 0);
+
+        if ($id <= 0) {
+            abort(404);
+        }
+
         $tvShow = $this->tmdb->getTvShowDetails($id);
         $season = $this->tmdb->getTvSeasonDetails($id, $seasonNumber);
 
@@ -95,8 +110,15 @@ class TvShowController extends Controller
         ]);
     }
 
-    public function watch(int $id, int $season = 1, int $episode = 1)
+    public function watch(string $slug, int $season = 1, int $episode = 1)
     {
+        $parts = explode('-', $slug);
+        $id = (int) ($parts[0] ?? 0);
+
+        if ($id <= 0) {
+            abort(404);
+        }
+
         $tvShow = $this->tmdb->getTvShowDetails($id);
         $seasonData = $this->tmdb->getTvSeasonDetails($id, $season);
 
