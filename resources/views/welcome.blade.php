@@ -16,6 +16,20 @@
                 } else {
                     $ogImage = asset('splash.png');
                 }
+
+                // Precompute JSON-LD to avoid Blade interpreting keys that start with @ (e.g. @context)
+                $jsonLd = json_encode([
+                    "@context" => "https://schema.org",
+                    "@type" => "WebSite",
+                    "name" => config('app.name', 'Viewlix'),
+                    "url" => url('/'),
+                    "description" => $pageDescription,
+                    "publisher" => [
+                        "@type" => "Organization",
+                        "name" => config('app.name', 'Viewlix'),
+                        "url" => url('/'),
+                    ]
+                ], JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE|JSON_PRETTY_PRINT);
             @endphp
 
             <link rel="canonical" href="{{ $pageUrl }}" />
@@ -37,18 +51,7 @@
 
             {{-- JSON-LD Structured Data (WebSite + Publisher) --}}
             <script type="application/ld+json">
-                {!! json_encode([
-                    "@context" => "https://schema.org",
-                    "@type" => "WebSite",
-                    "name" => config('app.name', 'Viewlix'),
-                    "url" => url('/'),
-                    "description" => $pageDescription,
-                    "publisher" => [
-                        "@type" => "Organization",
-                        "name" => config('app.name', 'Viewlix'),
-                        "url" => url('/'),
-                    ]
-                ], JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE|JSON_PRETTY_PRINT) !!}
+                {!! $jsonLd !!}
             </script>
         @endpush
 
