@@ -111,7 +111,7 @@ class MovieController extends Controller
         $sources = [
                 ['name' => 'Viewlix - Default(ad-free)', 'embed' => "https://player.viewlix.site/embed/movie/{$id}"],
             ['name' => 'VidLink', 'embed' => $embedUrl],
-            ["name" => "FilMex(Ad-Free)Suggessted", "embed" => "https://fmovies4u.com/embed/tmdb-movie-{$id}?autoPlay=true&hideTitle=true"],
+            ["name" => "FilMex(Ad-Free)Suggessted", "embed" => "https://fmovies4u.com/embed/tmdb-movie-{$id}?autoPlay=true&hideTitle=true&?fullscreenButton=true"],
           ["name" => "VidRock", "embed" => "https://vidrock.net/movie/{$id}"],
         ];
 

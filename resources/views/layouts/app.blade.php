@@ -11,8 +11,15 @@
     @if(isset($SEOData))
         {!! seo($SEOData) !!}
     @else
-        <title>@yield('title', config('app.name', 'Viewlix'))</title>
-        <meta name="description" content="@yield('description', 'Discover, search, and watch the best movies, TV shows, and anime on Viewlix. Enjoy a modern streaming experience!')">
+        @php
+            // Build a default SEOData so canonical/robots/OpenGraph are rendered consistently
+            $defaultSEO = new \RalphJSmit\Laravel\SEO\Support\SEOData();
+            $defaultSEO->title = trim(View::yieldContent('title', config('app.name', 'Viewlix')));
+            $defaultSEO->description = trim(View::yieldContent('description', 'Discover, search, and watch the best movies, TV shows, and anime on Viewlix. Enjoy a modern streaming experience!'));
+            $defaultSEO->url = url()->current();
+        @endphp
+
+        {!! seo($defaultSEO) !!}
     @endif
     
     <!-- PWA (only in production) -->
