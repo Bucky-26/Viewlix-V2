@@ -22,6 +22,13 @@
         border: none;
         border-radius: 1rem;
     }
+    /* Hide native scrollbars on the iframe where possible */
+    .video-container iframe {
+        overflow: hidden;
+        -ms-overflow-style: none; /* IE and Edge */
+        scrollbar-width: none; /* Firefox */
+    }
+    .video-container iframe::-webkit-scrollbar { display: none; }
 </style>
 @endpush
 
@@ -31,7 +38,9 @@
     <div class="mb-6">
         <div class="video-container" style="position: relative; width: 100%; height: 0; padding-bottom: 56.25%;">
             <iframe 
+                id="playerIframe"
                 src="blob:{{ $embedUrl }}" 
+                scrolling="no"
                 width="1000" height="600" frameborder="0" gesture="media" allow="encrypted-media" 
                 allowfullscreen 
                 referrerpolicy="origin"
@@ -427,7 +436,7 @@ function buildSources() {
 const sources = buildSources();
 const sourceSelect = document.getElementById('sourceSelect');
 const openSourceBtn = document.getElementById('openSourceBtn');
-const playerIframe = document.querySelector('.video-container iframe');
+const playerIframe = document.getElementById('playerIframe') || document.querySelector('.video-container iframe');
 
 function populateSourceOptions() {
     if (!sourceSelect) return;
@@ -463,6 +472,24 @@ function applySelectedSource() {
     // update iframe src if different
     if (playerIframe.getAttribute('src') !== src) {
         playerIframe.setAttribute('src', src);
+    }
+
+    // If the selected source is the Viewlix player, force-hide scrollbars on the iframe.
+    // Detect by hostname fragment to avoid hardcoding exact full URL.
+    try {
+        const lower = String(src || '').toLowerCase();
+        const isViewlix = lower.includes('player.viewlix.site') || lower.includes('viewlix.site') || lower.includes('viewlix');
+        if (isViewlix) {
+            playerIframe.setAttribute('scrolling', 'no');
+            playerIframe.style.overflow = 'hidden';
+            playerIframe.classList.add('hide-iframe-scrollbar');
+        } else {
+            playerIframe.removeAttribute('scrolling');
+            playerIframe.style.overflow = '';
+            playerIframe.classList.remove('hide-iframe-scrollbar');
+        }
+    } catch (e) {
+        // silent fallback
     }
 
    
