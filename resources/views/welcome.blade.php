@@ -1,6 +1,56 @@
     @extends('layouts.app')
 
-    @section('title', 'Welcome to Viewlix')
+        @section('title', 'Welcome to Viewlix')
+
+        {{-- SEO: description, Open Graph, Twitter Card, canonical and JSON-LD. Pushed into the head via the `styles` stack. --}}
+        @section('description', 'Discover, search, and watch the best movies, TV shows, and anime on Viewlix — curated trending picks, top rated titles, and a modern streaming experience.')
+
+        @push('styles')
+            @php
+                $pageUrl = url()->current();
+                $pageTitle = 'Welcome to Viewlix | ' . config('app.name', 'Viewlix');
+                $pageDescription = trim(View::yieldContent('description', 'Discover, search, and watch the best movies, TV shows, and anime on Viewlix — curated trending picks, top rated titles, and a modern streaming experience.'));
+                $ogImage = null;
+                if(isset($trendingMovies) && count($trendingMovies) > 0 && isset($tmdb) && ($trendingMovies[0]['backdrop_path'] ?? null)) {
+                    $ogImage = $tmdb->getImageUrl($trendingMovies[0]['backdrop_path'], 'original');
+                } else {
+                    $ogImage = asset('splash.png');
+                }
+            @endphp
+
+            <link rel="canonical" href="{{ $pageUrl }}" />
+            <meta name="robots" content="index, follow" />
+
+            {{-- Open Graph --}}
+            <meta property="og:locale" content="{{ str_replace('_','-',app()->getLocale()) }}" />
+            <meta property="og:type" content="website" />
+            <meta property="og:title" content="{{ $pageTitle }}" />
+            <meta property="og:description" content="{{ $pageDescription }}" />
+            <meta property="og:url" content="{{ $pageUrl }}" />
+            <meta property="og:image" content="{{ $ogImage }}" />
+
+            {{-- Twitter Card --}}
+            <meta name="twitter:card" content="summary_large_image" />
+            <meta name="twitter:title" content="{{ $pageTitle }}" />
+            <meta name="twitter:description" content="{{ $pageDescription }}" />
+            <meta name="twitter:image" content="{{ $ogImage }}" />
+
+            {{-- JSON-LD Structured Data (WebSite + Publisher) --}}
+            <script type="application/ld+json">
+                {!! json_encode([
+                    "@context" => "https://schema.org",
+                    "@type" => "WebSite",
+                    "name" => config('app.name', 'Viewlix'),
+                    "url" => url('/'),
+                    "description" => $pageDescription,
+                    "publisher" => [
+                        "@type" => "Organization",
+                        "name" => config('app.name', 'Viewlix'),
+                        "url" => url('/'),
+                    ]
+                ], JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE|JSON_PRETTY_PRINT) !!}
+            </script>
+        @endpush
 
     @section('content')
     <div class="lg:min-h-[calc(100vh-200px)]">
