@@ -2,7 +2,8 @@
 // Homepage interactive helpers: carousel swipe/pointer, clickable cards, keyboard support.
 
 (function(){
-    // Basic swipe and pointer support for hs-carousel
+    // Basic swipe and pointer s
+    // upport for hs-carousel
     document.querySelectorAll('.hs-carousel').forEach(function(carousel){
         var startX = 0;
         var startTime = 0;

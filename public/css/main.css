@@ -1,35 +1,5 @@
-/* Hero logo sizing: make the container a fixed height per breakpoint and force the image to fill 100% height
-This ensures the logo's height is exactly the container height (no gap) while preserving aspect ratio. */
-.viewlix-hero-logo {
-    position: relative;
-    height: auto; /* base — reduced for a smaller logo */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-}
 
-.viewlix-hero-logo-shadow {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    border-radius: 9999px;
-    filter: blur(20px);
-    opacity: 0.8;
-    width: 10rem;
-    height: 2.6rem;
-    background: radial-gradient(ellipse at center, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.25) 40%, rgba(0,0,0,0) 100%);
-    pointer-events: none;
-}
 
-/* Force the logo image to occupy full container height while keeping width auto (preserve aspect ratio). */
-.viewlix-hero-logo-img {
-    display: block;
-    height: 100%;
-    width: auto;
-    max-width: 50%; /* tighten width so logo doesn't span the hero */
-}
 
 /* Slightly larger on small screens and above */
 @media (min-width: 640px) {
@@ -63,7 +33,6 @@ This ensures the logo's height is exactly the container height (no gap) while pr
     transition: transform 700ms cubic-bezier(.2,.8,.2,1) !important;
     width: 100%;
     height: 100%;
-    object-fit: cover;
     /* Keep the image centered when using object-fit so crops remain consistent
        as slides translate on larger screens */
     object-position: center center;
@@ -94,6 +63,28 @@ This ensures the logo's height is exactly the container height (no gap) while pr
     pointer-events: auto;
 }
 
+/* Overlay alignment: ensure overlay inner container sits at the bottom on mobile
+   and becomes perfectly centered (both axes) on medium+ screens. This provides
+   a robust fallback if utility classes are overridden elsewhere. */
+.hs-carousel-slide > .absolute.inset-0 {
+    display: flex;
+    align-items: flex-end;    /* mobile: bottom-aligned */
+    justify-content: center;  /* mobile: centered horizontally */
+}
+
+/* Keep child interactive while the overlay wrapper itself ignores pointer events */
+.hs-carousel-slide > .absolute.inset-0 > .max-w-3xl,
+.hs-carousel-slide > .absolute.inset-0 > .max-w-3xl * {
+    pointer-events: auto;
+}
+
+@media (min-width: 768px) {
+    .hs-carousel-slide > .absolute.inset-0 {
+        align-items: center;   /* md+: vertically center */
+        justify-content: center; /* md+: horizontally center */
+    }
+}
+
 /* Prevent any accidental scale on images (no hover zoom) by ensuring
    only transforms from the carousel wrapper are applied; clear image-level
    scale transforms if present. */
@@ -108,7 +99,11 @@ This ensures the logo's height is exactly the container height (no gap) while pr
     that matches the Tailwind utility heights used on the images (h-[260px], sm:h-[360px], md:h-[520px], lg:h-[520px]) */
 .hs-carousel {
     position: relative;
-    overflow: hidden;
+    /* Allow the carousel to size itself according to the responsive
+       .hs-carousel-body heights defined below. Setting a fixed
+       viewport height here caused oversized / clipped layouts on
+       desktop (was 100vh). */
+    height: auto;
     /* DON'T change display; Preline assumes default block behavior. Previously setting
         display:flex caused the carousel body to calculate widths incorrectly and show
         adjacent slides. */
@@ -127,13 +122,19 @@ This ensures the logo's height is exactly the container height (no gap) while pr
 
 /* Medium screens */
 @media (min-width: 768px) {
-    .hs-carousel .hs-carousel-body { height: 480px; }
+    /* Taller hero on medium screens */
+    .hs-carousel .hs-carousel-body { height: 560px; }
 }
 
 /* Large screens - REDUCED from 720px to 520px */
 @media (min-width: 1024px) {
-    .hs-carousel .hs-carousel-body { height: 480px; }
+    /* Even taller hero on large screens */
+    .hs-carousel .hs-carousel-body { height: 640px; }
 }
+
+/* Desktop: nudge overlay inner container slightly upward for better visual balance
+   without changing layout or alignment. Adjust the translateY value to fine-tune. */
+
 
 /* Ensure slides fill the carousel height and occupy exactly 100% of the carousel width
 so only one slide is visible at a time. Don't use auto margins which previously caused
@@ -161,12 +162,10 @@ can conflict with media-query heights and cause layout issues). */
                (prevents oversized or partially visible adjacent slides). Use !important
                because Preline/Tailwind utilities may set inline styles or higher-specificity rules. */
             .hs-carousel .hs-carousel-body > .hs-carousel-slide {
-                flex: 0 0 100% !important;
-                max-width: 100% !important;
+                max-width: 100% ;
                 box-sizing: border-box;
                 height: 100%;
             }
-
 
 /* Ensure the carousel body spans the full available inner width so
    each slide is exactly the visible carousel width. Using a
@@ -214,4 +213,15 @@ can conflict with media-query heights and cause layout issues). */
     .viewlix-hero-logo-img { max-width: clamp(40%, 60%, 75%); height: auto; }
     /* Shadow should scale with logo but remain subtle */
     .viewlix-hero-logo-shadow { width: clamp(6.5rem, 14vw, 12rem); height: clamp(1.4rem, 3.2vw, 2.8rem); }
+
+    /* Mobile: nudge the overlay content up slightly (change vertical position only).
+       This increases the bottom spacing of the overlay inner container without
+       changing its overall layout or alignment. Tweak the value as needed. */
+    .hs-carousel-slide > .absolute.inset-0 .max-w-3xl {
+        /* Move overlay content lower on mobile by removing inner bottom
+           padding so the inner container's content sits closer to the
+           bottom edge of the carousel. */
+        padding-bottom: 0 !important; /* overrides pb-4 */
+        margin-bottom: 0 !important;
+    }
 }

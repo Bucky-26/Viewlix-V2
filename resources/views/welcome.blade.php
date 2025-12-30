@@ -6,7 +6,8 @@
         @section('description', 'Discover, search, and watch the best movies, TV shows, and anime on Viewlix — curated trending picks, top rated titles, and a modern streaming experience.')
 
         @push('styles')
-    <link rel="stylesheet" href="{{ url('css/main.css') }}" />
+    {{-- Append file modification time to force browsers to fetch the latest CSS during development --}}
+    <link rel="stylesheet" href="{{ url('css/main.css') }}?v={{ filemtime(public_path('css/main.css')) }}" />
             @php
                 $pageUrl = url()->current();
                 $pageTitle = 'Welcome to Viewlix | ' . config('app.name', 'Viewlix');
@@ -77,16 +78,17 @@
                                 <div role="link" tabindex="0" aria-label="Open details for {{ $movie['title'] ?? $movie['name'] }}" class="block relative group viewlix-clickable-card" data-url="{{ route('movie.show', ['slug' => $movie['id'].'-'.\Illuminate\Support\Str::slug($movie['title'] ?? $movie['name'])]) }}">
                                     @if(isset($tmdb) && ($movie['backdrop_path'] ?? null))
                                     <img src="{{ $tmdb->getImageUrl($movie['backdrop_path'], 'original') }}" alt="{{ $movie['title'] ?? $movie['name'] }}"   class="w-full h-[260px] sm:h-[360px] md:h-[480px] lg:h-[480px] object-cover">
-                                    <div class="w-full h-[260px] sm:h-[360px] md:h-[480px] lg:h-[480px] bg-viewlix-darker"></div>
+                                    <div class="w-full h-[300px] sm:h-[360px] md:h-[480px] lg:h-[480px] bg-viewlix-darker"></div>
                                     @endif
 
-                                    <!-- Move overlay content toward the top and increase sizing for better prominence -->
-                                    <div class="absolute inset-0 bg-gradient-to-b from-black/90 via-transparent to-transparent flex items-start justify-center">
-                                        <div class="max-w-3xl text-center px-4 sm:px-6 pt-8 sm:pt-12 md:pt-16 lg:pt-24 pb-6 md:pb-0">
+                                    <!-- Responsive overlay: bottom-centered on mobile; centered (both axes) on md+ -->
+                                    <!-- On mobile keep content bottom-centered; on md+ center horizontally and vertically -->
+                                    <div class="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-b from-black/90 via-transparent to-transparent flex items-end md:items-center justify-center md:justify-center">
+                                            <div class="w-full max-w-3xl text-center px-4 pt-0 sm:pt-6 md:py-0 pb-0 sm:pb-4 md:pb-8 self-end">
                                             <span class="inline-block bg-white/10 text-white text-sm rounded-full px-3 py-1 mb-4">Trending Now</span>
                                             <h3 class="text-2xl sm:text-3xl md:text-6xl lg:text-7xl font-extrabold text-white tracking-tight mb-4">{{ $movie['title'] ?? $movie['name'] }}</h3>
 
-                                            <div class="flex items-center justify-center gap-4 text-sm text-gray-300 mb-4">
+                                            <div class="flex items-center  gap-4 text-sm text-gray-300">
                                                 @php
                                                     $date = $movie['release_date'] ?? ($movie['first_air_date'] ?? null);
                                                 @endphp
@@ -112,9 +114,9 @@
                                                 @endif
                                             </div>
 
-                                            <p class="text-gray-300 hidden md:block mb-8 text-lg">{{ \Illuminate\Support\Str::limit($movie['overview'] ?? '', 220) }}</p>
+                                            <p class="text-gray-300 block md:block mb-4 md:mb-8 text-base md:text-lg">{{ \Illuminate\Support\Str::limit($movie['overview'] ?? '', 220) }}</p>
 
-                                            <div class="flex items-center justify-center gap-4 mt-2">
+                                            <div class="flex items-center justify-center md:justify-start gap-4 mt-2">
                                                 <a href="{{ route('movie.show', ['slug' => $movie['id'].'-'.\Illuminate\Support\Str::slug($movie['title'] ?? $movie['name'])]) }}" onclick="event.stopPropagation();" onpointerdown="event.stopPropagation();" class="inline-flex items-center gap-2 bg-white text-black px-5 py-3 rounded-md font-medium">Details
                                                 </a>
 
