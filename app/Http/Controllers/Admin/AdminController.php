@@ -7,6 +7,9 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Auth\Events\Verified;
+use App\Services\FirebaseService;
+use Illuminate\Support\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class AdminController extends Controller
 {
@@ -25,6 +28,103 @@ class AdminController extends Controller
         $recentUsers = User::latest()->take(5)->get();
 
         return view('admin.dashboard', compact('stats', 'recentUsers'));
+    }
+
+    /**
+     * Show a user's favorites (admin)
+     */
+    public function userFavorites(User $user)
+    {
+        // If Firebase is configured, prefer reading favorites from Firebase Realtime Database
+        try {
+            $firebase = app(FirebaseService::class);
+        } catch (\Throwable $e) {
+            $firebase = null;
+        }
+
+        if ($firebase && $firebase->isConfigured()) {
+            $firebaseUuid = $user->getFirebaseUuid();
+            $path = "users/{$firebaseUuid}/favorites";
+
+            $data = $firebase->getDatabasePath($path);
+
+            $items = collect();
+
+            if (is_array($data)) {
+                foreach ($data as $key => $val) {
+                    $item = is_array($val) ? $val : ['value' => $val];
+                    $item['id'] = $key;
+                    $items->push($item);
+                }
+            }
+
+            // Map firebase items to the view's expected fields
+            $mapped = $items->map(function ($i) {
+                return [
+                    'id' => $i['id'] ?? null,
+                    'title' => $i['title'] ?? ($i['name'] ?? null),
+                    'poster_url' => $i['poster_url'] ?? ($i['poster_path'] ?? null),
+                    'media_type' => $i['media_type'] ?? ($i['type'] ?? null),
+                    'release_date' => $i['release_date'] ?? ($i['first_air_date'] ?? null),
+                ];
+            });
+
+            // Paginate the firebase-backed collection so the existing view's links() still work
+            $perPage = 24;
+            $page = (int) request()->get('page', 1);
+            $total = $mapped->count();
+            $offset = ($page - 1) * $perPage;
+            $slice = $mapped->slice($offset, $perPage)->values();
+
+            $favorites = new LengthAwarePaginator($slice, $total, $perPage, $page, [
+                'path' => request()->url(),
+                'query' => request()->query(),
+            ]);
+
+            return view('admin.users.favorites', compact('user', 'favorites'));
+        }
+
+        // Fallback to database-stored favorites
+        $favorites = $user->favorites()->latest()->paginate(24);
+
+        return view('admin.users.favorites', compact('user', 'favorites'));
+    }
+
+    /**
+     * Show a user's watch history (reads from Firebase Realtime Database)
+     */
+    public function userWatchHistory(User $user, FirebaseService $firebaseService)
+    {
+        $firebaseUuid = $user->getFirebaseUuid();
+        $path = "users/{$firebaseUuid}/watchProgress";
+
+        $data = $firebaseService->getDatabasePath($path);
+
+        // normalize into array of items sorted by last_updated desc
+        $items = collect();
+
+        if (is_array($data)) {
+            foreach ($data as $key => $val) {
+                $item = is_array($val) ? $val : [];
+                $item['id'] = $key;
+                $items->push($item);
+            }
+
+            $items = $items->sortByDesc(function ($i) {
+                return $i['last_updated'] ?? 0;
+            })->values();
+        }
+
+        // Provide raw data and config info to the view for debugging
+        $firebaseConfigured = $firebaseService->isConfigured();
+
+        return view('admin.users.watch-history', [
+            'user' => $user,
+            'items' => $items,
+            'rawData' => $data,
+            'firebaseConfigured' => $firebaseConfigured,
+            'firebaseUuid' => $firebaseUuid,
+        ]);
     }
 
     /**

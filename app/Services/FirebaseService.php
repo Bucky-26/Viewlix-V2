@@ -64,6 +64,45 @@ class FirebaseService
     }
 
     /**
+     * Get a Realtime Database instance (if configured)
+     * @return \Kreait\Firebase\Database|null
+     */
+    public function getDatabase()
+    {
+        if (!$this->factory) {
+            return null;
+        }
+
+        try {
+            return $this->factory->createDatabase();
+        } catch (\Throwable $e) {
+            \Log::error('Firebase database create failed: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Read a path from the Realtime Database and return its value as array/null
+     */
+    public function getDatabasePath(string $path)
+    {
+        $db = $this->getDatabase();
+
+        if (!$db) {
+            return null;
+        }
+
+        try {
+            $ref = $db->getReference($path);
+            $value = $ref->getValue();
+            return $value;
+        } catch (\Throwable $e) {
+            \Log::error('Firebase getDatabasePath failed for ' . $path . ': ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
      * Check if Firebase is configured
      */
     public function isConfigured(): bool

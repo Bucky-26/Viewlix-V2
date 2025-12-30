@@ -188,6 +188,25 @@
                             @endif
 
                             {{-- Edit Button --}}
+                            {{-- View Favorites (Admin) --}}
+                            <a href="{{ route('admin.users.favorites', $user) }}" 
+                               title="View Favorites"
+                               class="py-1.5 px-2 inline-flex justify-center items-center rounded-lg text-gray-300 hover:text-white hover:bg-viewlix-gray focus:outline-none focus:ring-2 focus:ring-viewlix-red transition-colors">
+                                <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.8z"/>
+                                </svg>
+                            </a>
+
+                            {{-- View Watch History (Admin) --}}
+                            <a href="{{ route('admin.users.watch-history', $user) }}" 
+                               title="View Watch History"
+                               class="py-1.5 px-2 inline-flex justify-center items-center rounded-lg text-gray-300 hover:text-white hover:bg-viewlix-gray focus:outline-none focus:ring-2 focus:ring-viewlix-red transition-colors">
+                                <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M2 12s4-8 10-8 10 8 10 8-4 8-10 8S2 12 2 12z"/>
+                                    <circle cx="12" cy="12" r="3"/>
+                                </svg>
+                            </a>
+
                             <a href="{{ route('admin.users.edit', $user) }}" 
                                title="Edit User"
                                class="py-1.5 px-2 inline-flex justify-center items-center rounded-lg text-gray-300 hover:text-white hover:bg-viewlix-gray focus:outline-none focus:ring-2 focus:ring-viewlix-red transition-colors">

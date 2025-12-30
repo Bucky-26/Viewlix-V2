@@ -146,6 +146,10 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::post('/users/{user}/verify', [AdminController::class, 'verifyUser'])->name('users.verify');
     Route::post('/users/{user}/resend-verification', [AdminController::class, 'resendVerification'])->name('users.resend-verification');
     
+    // Admin: view a single user's favorites and Firebase watch history
+    Route::get('/users/{user}/favorites', [AdminController::class, 'userFavorites'])->name('users.favorites');
+    Route::get('/users/{user}/watch-history', [AdminController::class, 'userWatchHistory'])->name('users.watch-history');
+    
     // Notifications
     Route::get('/notifications', [\App\Http\Controllers\Admin\NotificationController::class, 'index'])->name('notifications');
     Route::get('/notifications/create', [\App\Http\Controllers\Admin\NotificationController::class, 'create'])->name('notifications.create');

@@ -10,6 +10,12 @@
     </svg>
     Back to Users
 </a>
+<a href="{{ route('admin.users.favorites', $user) }}" class="ml-2 py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-viewlix-border bg-viewlix-dark text-gray-300 shadow-sm hover:bg-viewlix-border hover:text-white focus:outline-none focus:ring-2 focus:ring-viewlix-red transition-colors">
+    View Favorites
+</a>
+<a href="{{ route('admin.users.watch-history', $user) }}" class="ml-2 py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-viewlix-border bg-viewlix-dark text-gray-300 shadow-sm hover:bg-viewlix-border hover:text-white focus:outline-none focus:ring-2 focus:ring-viewlix-red transition-colors">
+    View Watch History
+</a>
 @endsection
 
 @section('content')
