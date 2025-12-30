@@ -17,6 +17,14 @@ class FirebaseService
         
         if (file_exists($serviceAccountPath)) {
             $this->factory = (new Factory)->withServiceAccount($serviceAccountPath);
+
+            // If a Realtime Database URL is configured, ensure the factory uses it.
+            // Other parts of the app use config('services.firebase.database_url') so we follow the same pattern.
+            $databaseUrl = config('services.firebase.database_url');
+            if (!empty($databaseUrl)) {
+                $this->factory = $this->factory->withDatabaseUri($databaseUrl);
+            }
+
             $this->auth = $this->factory->createAuth();
         }
     }
@@ -77,6 +85,58 @@ class FirebaseService
             return $this->factory->createDatabase();
         } catch (\Throwable $e) {
             \Log::error('Firebase database create failed: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Read a path from Firestore and return its value as array/null
+     * Supports simple paths like:
+     * - collection/document
+     * - collection/document/collection
+     *
+     * Example: users/{uid}/watchProgress
+     */
+    public function getFirestorePath(string $path)
+    {
+        if (!$this->factory) {
+            return null;
+        }
+
+        try {
+            $firestore = $this->factory->createFirestore();
+            $db = $firestore->database(); // Google\Cloud\Firestore\FirestoreClient
+
+            $parts = array_values(array_filter(explode('/', trim($path, '/'))));
+            $count = count($parts);
+
+            if ($count === 2) {
+                // collection/document -> return document data
+                [$collection, $docId] = $parts;
+                $snapshot = $db->collection($collection)->document($docId)->snapshot();
+                if ($snapshot->exists()) {
+                    return $snapshot->data();
+                }
+                return null;
+            }
+
+            if ($count === 3) {
+                // collection/document/collection -> return all documents in the child collection
+                [$collection, $docId, $childCollection] = $parts;
+                $documents = $db->collection($collection)->document($docId)->collection($childCollection)->documents();
+                $result = [];
+                foreach ($documents as $doc) {
+                    if ($doc->exists()) {
+                        $result[$doc->id()] = $doc->data();
+                    }
+                }
+                return $result;
+            }
+
+            // Unsupported depth: return null to keep behavior predictable
+            return null;
+        } catch (\Throwable $e) {
+            \Log::error('Firebase getFirestorePath failed for ' . $path . ': ' . $e->getMessage());
             return null;
         }
     }

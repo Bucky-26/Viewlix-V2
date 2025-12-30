@@ -115,8 +115,57 @@ class AdminController extends Controller
             })->values();
         }
 
+        // If Realtime DB returned nothing, try Firestore (some clients may write there)
+        if ($items->isEmpty()) {
+            try {
+                $firestoreData = $firebaseService->getFirestorePath($path);
+                if (is_array($firestoreData)) {
+                    $items = collect();
+                    foreach ($firestoreData as $key => $val) {
+                        $item = is_array($val) ? $val : [];
+                        $item['id'] = $key;
+                        $items->push($item);
+                    }
+
+                    $items = $items->sortByDesc(function ($i) {
+                        return $i['last_updated'] ?? 0;
+                    })->values();
+                    // replace rawData so view can show Firestore JSON when needed
+                    $data = $firestoreData;
+                }
+            } catch (\Throwable $e) {
+                // ignore and continue to DB fallback
+            }
+        }
+
         // Provide raw data and config info to the view for debugging
         $firebaseConfigured = $firebaseService->isConfigured();
+
+        $source = 'firebase';
+
+        // If no items found in Firebase, try fallback to DB watch history
+        if ($items->count() === 0) {
+            $dbHistory = $user->watchHistory()->latest()->get();
+
+            if ($dbHistory->count()) {
+                $items = $dbHistory->map(function ($h) {
+                    // Map DB model to the same shape the view expects
+                    return [
+                        'id' => 'db-' . $h->id,
+                        'title' => $h->title,
+                        'episode_title' => null,
+                        'type' => $h->media_type,
+                        'progress' => [
+                            'watched' => $h->watched_time ?? null,
+                            'duration' => $h->duration ?? null,
+                        ],
+                        'last_updated' => $h->updated_at ? ($h->updated_at->getTimestamp() * 1000) : null,
+                    ];
+                })->collect();
+
+                $source = 'db';
+            }
+        }
 
         return view('admin.users.watch-history', [
             'user' => $user,
@@ -124,6 +173,7 @@ class AdminController extends Controller
             'rawData' => $data,
             'firebaseConfigured' => $firebaseConfigured,
             'firebaseUuid' => $firebaseUuid,
+            'source' => $source,
         ]);
     }
 
