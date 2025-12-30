@@ -3,33 +3,7 @@
 @section('title', ($title ?? 'Watch') . ' - Viewlix')
 
 @push('styles')
-<style>
-    .video-container {
-        position: relative;
-        padding-bottom: 56.25%; /* 16:9 aspect ratio */
-        height: 0;
-        overflow: hidden;
-        background: #000;
-        border-radius: 1rem;
-    }
-    .video-container iframe,
-    .video-container video {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        border: none;
-        border-radius: 1rem;
-    }
-    /* Hide native scrollbars on the iframe where possible */
-    .video-container iframe {
-        overflow: hidden;
-        -ms-overflow-style: none; /* IE and Edge */
-        scrollbar-width: none; /* Firefox */
-    }
-    .video-container iframe::-webkit-scrollbar { display: none; }
-</style>
+<link rel="stylesheet" href="{{ asset('css/watch.css') }}">
 @endpush
 
 @section('content')
@@ -187,7 +161,7 @@
 
 @push('scripts')
 <script>
-// Media data for tracking
+// Media data for tracking (Blade-populated)
 const mediaData = {
     id: {{ $id }},
     type: '{{ $type }}',
@@ -202,35 +176,26 @@ const mediaData = {
 
 let isFavorited = false;
 
-// Check if favorited on load
+// Check if favorited on load (uses Blade route helper, keep inline)
 @auth
 document.addEventListener('DOMContentLoaded', async function() {
     try {
         const response = await fetch(`{{ route('favorites.check') }}?media_id=${mediaData.id}&media_type=${mediaData.type}`);
         const data = await response.json();
         isFavorited = data.favorited;
-        updateFavoriteIcon();
+        // updateFavoriteIcon is defined in external file; attempt immediate call or short retry
+        if (typeof updateFavoriteIcon === 'function') {
+            updateFavoriteIcon();
+        } else {
+            setTimeout(() => { if (typeof updateFavoriteIcon === 'function') updateFavoriteIcon(); }, 250);
+        }
     } catch (error) {
         console.error('Error checking favorite status:', error);
     }
 });
 @endauth
 
-function updateFavoriteIcon() {
-    const icon = document.getElementById('favoriteIcon');
-    if (!icon) return;
-    
-    if (isFavorited) {
-        icon.setAttribute('fill', 'currentColor');
-        icon.classList.remove('text-gray-400');
-        icon.classList.add('text-viewlix-red');
-    } else {
-        icon.setAttribute('fill', 'none');
-        icon.classList.remove('text-viewlix-red');
-        icon.classList.add('text-gray-400');
-    }
-}
-
+// Toggle favorite (uses Blade route helper and CSRF token — keep inline)
 async function toggleFavorite() {
     try {
         const response = await fetch('{{ route("favorites.toggle") }}', {
@@ -249,277 +214,19 @@ async function toggleFavorite() {
                 release_date: mediaData.releaseDate
             })
         });
-        
+
         const data = await response.json();
         isFavorited = data.status === 'added';
-        updateFavoriteIcon();
+        if (typeof updateFavoriteIcon === 'function') updateFavoriteIcon();
     } catch (error) {
         console.error('Error toggling favorite:', error);
     }
 }
 
-// ============================================================
-// VidLink Continue Watching Progress Tracking
-// Saves to Firebase (authenticated) + localStorage (fallback)
-// ============================================================
-
-let lastSavedProgress = 0;
-let lastSavedTime = 0;
-const SAVE_INTERVAL_SECONDS = 30; // Save to Firebase every 30 seconds
-
-// Build progress data object for saving
-function buildProgressData(watchedTime, duration) {
-    const progressData = {
-        id: mediaData.id,
-        type: mediaData.type,
-        title: mediaData.title,
-        poster_path: mediaData.posterPath,
-        backdrop_path: mediaData.backdropPath,
-        progress: {
-            watched: watchedTime,
-            duration: duration
-        },
-        last_updated: Date.now()
-    };
-    
-    // Add TV/Anime specific fields
-    if (mediaData.type !== 'movie' && mediaData.season && mediaData.episode) {
-        progressData.last_season_watched = String(mediaData.season);
-        progressData.last_episode_watched = String(mediaData.episode);
-        
-        const seasonKey = `s${mediaData.season}e${mediaData.episode}`;
-        progressData.show_progress = {
-            [seasonKey]: {
-                season: String(mediaData.season),
-                episode: String(mediaData.episode),
-                progress: {
-                    watched: watchedTime,
-                    duration: duration
-                }
-            }
-        };
-    }
-    
-    return progressData;
-}
-
-// Listen for VidLink postMessage events
-window.addEventListener('message', function(event) {
-    // Accept messages from VidLink
-    if (event.origin !== 'https://vidlink.pro') return;
-    
-    // Handle MEDIA_DATA from VidLink
-    if (event.data?.type === 'MEDIA_DATA') {
-        const data = event.data.data;
-        const mediaKey = String(mediaData.id);
-        
-        if (data[mediaKey]) {
-            const progress = data[mediaKey].progress;
-            if (progress) {
-                const timeSinceLastSave = Math.abs(progress.watched - lastSavedTime);
-                
-                // Save to Firebase/localStorage using global function
-                if (typeof window.saveWatchProgress === 'function') {
-                    const progressData = buildProgressData(progress.watched, progress.duration);
-                    
-                    // Save frequently to localStorage, less frequently to Firebase
-                    if (timeSinceLastSave >= SAVE_INTERVAL_SECONDS) {
-                        window.saveWatchProgress(mediaData.id, progressData);
-                        lastSavedTime = progress.watched;
-                    } else {
-                        // Just update localStorage for quick saves
-                        try {
-                            const allProgress = JSON.parse(localStorage.getItem('vidLinkProgress') || '{}');
-                            allProgress[mediaKey] = progressData;
-                            localStorage.setItem('vidLinkProgress', JSON.stringify(allProgress));
-                        } catch (e) {}
-                    }
-                }
-            }
-        }
-        return;
-    }
-    
-    // Handle manual progress tracking (fallback)
-    try {
-        const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
-        
-        if (data.currentTime !== undefined && data.duration !== undefined) {
-            const watchedTime = data.currentTime;
-            const duration = data.duration;
-            
-            if (duration > 0) {
-                const timeSinceLastSave = Math.abs(watchedTime - lastSavedTime);
-                const progressData = buildProgressData(watchedTime, duration);
-                
-                // Save to Firebase/localStorage
-                if (typeof window.saveWatchProgress === 'function') {
-                    if (timeSinceLastSave >= SAVE_INTERVAL_SECONDS) {
-                        window.saveWatchProgress(mediaData.id, progressData);
-                        lastSavedTime = watchedTime;
-                    } else {
-                        // Just update localStorage
-                        try {
-                            const allProgress = JSON.parse(localStorage.getItem('vidLinkProgress') || '{}');
-                            allProgress[String(mediaData.id)] = progressData;
-                            localStorage.setItem('vidLinkProgress', JSON.stringify(allProgress));
-                        } catch (e) {}
-                    }
-                }
-            }
-        }
-    } catch (error) {
-        // Silently ignore parsing errors
-    }
-});
-
-// Save progress when leaving the page
-window.addEventListener('beforeunload', function() {
-    try {
-        const allProgress = JSON.parse(localStorage.getItem('vidLinkProgress') || '{}');
-        const mediaKey = String(mediaData.id);
-        const currentMedia = allProgress[mediaKey];
-        
-        if (currentMedia?.progress && typeof window.saveWatchProgress === 'function') {
-            // Force save to Firebase on page exit
-            window.saveWatchProgress(mediaData.id, currentMedia);
-        }
-    } catch (e) {}
-});
-
-// Load saved progress on page load
-document.addEventListener('DOMContentLoaded', async function() {
-    // Try to get progress from Firebase first, then localStorage
-    if (typeof window.getWatchProgress === 'function') {
-        const saved = await window.getWatchProgress(mediaData.id);
-        
-        if (saved) {
-            if (mediaData.type === 'movie') {
-                if (saved.progress?.watched > 0) {
-                    lastSavedProgress = (saved.progress.watched / saved.progress.duration) * 100;
-                    lastSavedTime = saved.progress.watched;
-                    console.log(`📺 Resuming from ${Math.floor(saved.progress.watched)}s`);
-                }
-            } else {
-                // For TV shows, check episode-specific progress
-                const seasonKey = `s${mediaData.season}e${mediaData.episode}`;
-                if (saved.show_progress?.[seasonKey]?.progress?.watched > 0) {
-                    const epProgress = saved.show_progress[seasonKey].progress;
-                    lastSavedProgress = (epProgress.watched / epProgress.duration) * 100;
-                    lastSavedTime = epProgress.watched;
-                    console.log(`📺 Resuming S${mediaData.season}E${mediaData.episode} from ${Math.floor(epProgress.watched)}s`);
-                }
-            }
-        }
-    }
-});
-
-// ============================================================
-// Multi-source / server switching (iframe source selection)
-// Expectation: Controller may pass $sources = [ ['name'=>'Vidsrcme','embed'=>'https://vidsrcme.ru/embed/...'], ... ]
-// Fallback: use existing `{{ $embedUrl }}` as a single source named 'Default'.
-// ============================================================
-
+// Pass server-provided sources/embed to external script via globals
 const providedSources = @json($sources ?? null);
 const defaultEmbed = @json($embedUrl);
-
-function buildSources() {
-    if (Array.isArray(providedSources) && providedSources.length > 0) {
-        // Ensure each source has {name, embed}
-        return providedSources.map(s => ({ name: s.name || 'Source', embed: s.embed || defaultEmbed }));
-    }
-
-    // fallback single source
-    return [{ name: 'Default', embed: defaultEmbed }];
-}
-
-const sources = buildSources();
-const sourceSelect = document.getElementById('sourceSelect');
-const openSourceBtn = document.getElementById('openSourceBtn');
-const playerIframe = document.getElementById('playerIframe') || document.querySelector('.video-container iframe');
-
-function populateSourceOptions() {
-    if (!sourceSelect) return;
-    sourceSelect.innerHTML = '';
-    sources.forEach((s, idx) => {
-        const opt = document.createElement('option');
-        opt.value = idx;
-        opt.text = s.name;
-        sourceSelect.appendChild(opt);
-    });
-
-    // Restore saved choice for this media
-    try {
-        const key = `preferredSource_${mediaData.type}_${mediaData.id}`;
-        const saved = localStorage.getItem(key);
-        if (saved !== null && !isNaN(parseInt(saved)) && sources[parseInt(saved)]) {
-            sourceSelect.value = saved;
-        } else {
-            sourceSelect.value = 0;
-        }
-    } catch (e) {
-        sourceSelect.value = 0;
-    }
-
-    // Apply initial selection
-    applySelectedSource();
-}
-
-function applySelectedSource() {
-    if (!playerIframe || !sourceSelect) return;
-    const idx = parseInt(sourceSelect.value || 0);
-    const src = sources[idx]?.embed || defaultEmbed;
-    // update iframe src if different
-    if (playerIframe.getAttribute('src') !== src) {
-        playerIframe.setAttribute('src', src);
-    }
-
-    // If the selected source is the Viewlix player, force-hide scrollbars on the iframe.
-    // Detect by hostname fragment to avoid hardcoding exact full URL.
-    try {
-        const lower = String(src || '').toLowerCase();
-        const isViewlix = lower.includes('player.viewlix.site') || lower.includes('viewlix.site') || lower.includes('viewlix');
-        if (isViewlix) {
-            playerIframe.setAttribute('scrolling', 'no');
-            playerIframe.style.overflow = 'hidden';
-            playerIframe.classList.add('hide-iframe-scrollbar');
-        } else {
-            playerIframe.removeAttribute('scrolling');
-            playerIframe.style.overflow = '';
-            playerIframe.classList.remove('hide-iframe-scrollbar');
-        }
-    } catch (e) {
-        // silent fallback
-    }
-
-   
-
-    // persist selection per media
-    try {
-        const key = `preferredSource_${mediaData.type}_${mediaData.id}`;
-        localStorage.setItem(key, String(idx));
-    } catch (e) {}
-
-    // toggle open button visibility (some mobile layouts hide it)
-    if (openSourceBtn) {
-        openSourceBtn.classList.remove('hidden');
-    }
-}
-
-if (sourceSelect) {
-    sourceSelect.addEventListener('change', applySelectedSource);
-}
-
-if (openSourceBtn) {
-    openSourceBtn.addEventListener('click', function() {
-        const idx = parseInt(sourceSelect.value || 0);
-        const url = sources[idx]?.embed || defaultEmbed;
-        // open raw embed in new tab
-        window.open(url, '_blank');
-    });
-}
-
-// Initialize after DOM loaded
-document.addEventListener('DOMContentLoaded', populateSourceOptions);
 </script>
+
+<script src="{{ asset('js/watch.js') }}"></script>
 @endpush

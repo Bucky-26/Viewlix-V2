@@ -1,0 +1,217 @@
+/* Hero logo sizing: make the container a fixed height per breakpoint and force the image to fill 100% height
+This ensures the logo's height is exactly the container height (no gap) while preserving aspect ratio. */
+.viewlix-hero-logo {
+    position: relative;
+    height: auto; /* base — reduced for a smaller logo */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.viewlix-hero-logo-shadow {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 9999px;
+    filter: blur(20px);
+    opacity: 0.8;
+    width: 10rem;
+    height: 2.6rem;
+    background: radial-gradient(ellipse at center, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.25) 40%, rgba(0,0,0,0) 100%);
+    pointer-events: none;
+}
+
+/* Force the logo image to occupy full container height while keeping width auto (preserve aspect ratio). */
+.viewlix-hero-logo-img {
+    display: block;
+    height: 100%;
+    width: auto;
+    max-width: 50%; /* tighten width so logo doesn't span the hero */
+}
+
+/* Slightly larger on small screens and above */
+@media (min-width: 640px) {
+    .viewlix-hero-logo { height: 40px; }
+    .viewlix-hero-logo-shadow { width: 10rem; height: 2.6rem; }
+}
+
+@media (min-width: 768px) {
+    .viewlix-hero-logo { height: 48px; }
+    .viewlix-hero-logo-shadow { width: 12rem; height: 3rem; }
+}
+
+@media (min-width: 1024px) {
+    /* Keep desktop logo modest so it doesn't dominate the hero */
+    .viewlix-hero-logo { height: 56px; }
+    .viewlix-hero-logo-shadow { width: 14rem; height: 3.4rem; }
+}
+
+/* Smooth transform for carousel movement */
+.hs-carousel-body {
+    transition: transform 700ms cubic-bezier(.2,.8,.2,1) !important;
+}
+
+/* Smooth transitions for slides and images */
+.hs-carousel-slide {
+    transition: transform 700ms cubic-bezier(.2,.8,.2,1), opacity 400ms ease !important;
+    will-change: transform, opacity;
+    box-sizing: border-box;
+}
+.hs-carousel-slide img {
+    transition: transform 700ms cubic-bezier(.2,.8,.2,1) !important;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    /* Keep the image centered when using object-fit so crops remain consistent
+       as slides translate on larger screens */
+    object-position: center center;
+    transform-origin: center center;
+    -webkit-transform-origin: center center;
+    /* Promote to its own layer to reduce jank during transition */
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+    display: block;
+}
+
+/* Ensure overlay content (title, description, buttons) sits above the image
+   and remains interactive. Some transforms can create stacking contexts so
+   we force z-index on the image and overlay. */
+.hs-carousel-slide img {
+    position: relative;
+    z-index: 0;
+}
+
+.hs-carousel-slide > .absolute.inset-0 {
+    z-index: 20; /* overlay container */
+    pointer-events: none; /* let child interactive elements opt-in */
+}
+
+/* Make the overlay inner container interactive (buttons/links) */
+.hs-carousel-slide .max-w-3xl,
+.hs-carousel-slide .max-w-3xl * {
+    pointer-events: auto;
+}
+
+/* Prevent any accidental scale on images (no hover zoom) by ensuring
+   only transforms from the carousel wrapper are applied; clear image-level
+   scale transforms if present. */
+.hs-carousel-slide img {
+    /* don't force a 3d transform here; let the carousel move slides via
+       the container transform. But reset any scale that might be applied
+       by other rules. */
+    transform: translateZ(0) !important;
+}
+
+/* Prevent the page from jumping when slides change by forcing a fixed responsive height
+    that matches the Tailwind utility heights used on the images (h-[260px], sm:h-[360px], md:h-[520px], lg:h-[520px]) */
+.hs-carousel {
+    position: relative;
+    overflow: hidden;
+    /* DON'T change display; Preline assumes default block behavior. Previously setting
+        display:flex caused the carousel body to calculate widths incorrectly and show
+        adjacent slides. */
+    display: block;
+}
+
+/* Base height (mobile) */
+.hs-carousel .hs-carousel-body {
+    height: 260px;
+}
+
+/* Small screens */
+@media (min-width: 640px) {
+    .hs-carousel .hs-carousel-body { height: 360px; }
+}
+
+/* Medium screens */
+@media (min-width: 768px) {
+    .hs-carousel .hs-carousel-body { height: 480px; }
+}
+
+/* Large screens - REDUCED from 720px to 520px */
+@media (min-width: 1024px) {
+    .hs-carousel .hs-carousel-body { height: 480px; }
+}
+
+/* Ensure slides fill the carousel height and occupy exactly 100% of the carousel width
+so only one slide is visible at a time. Don't use auto margins which previously caused
+partial slides to appear. We also override Preline's absolute positioning on the carousel
+body so desktop sizing is consistent (Preline may add `absolute top-0 bottom-0` which
+can conflict with media-query heights and cause layout issues). */
+            .hs-carousel .hs-carousel-body {
+                /* Only override positioning and layout behaviors from Preline.
+                   Do NOT set height here so the responsive pixel heights
+                   defined above remain in effect. Keep display:flex so slides
+                   line up horizontally for transforms. */
+                position: relative !important;
+                top: auto !important;
+                bottom: auto !important;
+                left: 0;
+                right: 0;
+                margin: 0;
+                display: flex; /* body should remain flex so slides line up horizontally for transforms */
+                align-items: center;
+                width: 100%;
+                max-width: 100%;
+            }
+
+            /* Ensure each slide takes exactly the visible carousel width on all viewports
+               (prevents oversized or partially visible adjacent slides). Use !important
+               because Preline/Tailwind utilities may set inline styles or higher-specificity rules. */
+            .hs-carousel .hs-carousel-body > .hs-carousel-slide {
+                flex: 0 0 100% !important;
+                max-width: 100% !important;
+                box-sizing: border-box;
+                height: 100%;
+            }
+
+
+/* Ensure the carousel body spans the full available inner width so
+   each slide is exactly the visible carousel width. Using a
+   centered max-width here caused the body to be slightly narrower
+   than the container which allowed the next slide to peek in. */
+
+/* Make the whole slide feel clickable */
+.viewlix-clickable-card { cursor: pointer; }
+
+/* Mobile: make the hero carousel feel full-screen */
+@media (max-width: 639px) {
+    /* Let the carousel occupy the full viewport height on phones */
+    .hs-carousel {
+        height: 80vh;
+        overflow: hidden;
+    }
+
+    /* Carousel body and slides should fill the viewport height */
+    .hs-carousel .hs-carousel-body {
+        height: 100vh !important;
+        width: 100%;
+        max-width: 100%;
+        display: flex;
+        align-items: center;
+        margin: 0 auto;
+    }
+
+    .hs-carousel .hs-carousel-body > .hs-carousel-slide {
+        height: 100vh !important;
+        flex: 0 0 100% !important;
+        max-width: 100% !important;
+    }
+
+    /* Force images to cover the viewport and preserve aspect ratio */
+    .hs-carousel .hs-carousel-body img {
+        height: 100vh !important;
+        width: 100% !important;
+        object-fit: cover !important;
+    }
+
+    /* Responsive hero logo sizing for mobile: keep the logo modest on very small phones
+        - reduce the minimum to avoid oversized logos on narrow screens
+        - prefer a slightly larger scale on mid-size phones, but cap the max */
+    /* Limit image width so it doesn't span the hero; ensure height scales naturally */
+    .viewlix-hero-logo-img { max-width: clamp(40%, 60%, 75%); height: auto; }
+    /* Shadow should scale with logo but remain subtle */
+    .viewlix-hero-logo-shadow { width: clamp(6.5rem, 14vw, 12rem); height: clamp(1.4rem, 3.2vw, 2.8rem); }
+}

@@ -208,7 +208,11 @@ document.addEventListener('DOMContentLoaded', async function() {
         const response = await fetch(`{{ route('favorites.check') }}?media_id=${mediaData.id}&media_type=${mediaData.type}`);
         const data = await response.json();
         isFavorited = data.favorited;
-        updateFavoriteButton();
+        if (typeof updateFavoriteButton === 'function') {
+            updateFavoriteButton();
+        } else {
+            setTimeout(() => { if (typeof updateFavoriteButton === 'function') updateFavoriteButton(); }, 250);
+        }
     } catch (error) {
         console.error('Error checking favorite status:', error);
     }
@@ -216,18 +220,10 @@ document.addEventListener('DOMContentLoaded', async function() {
 @endauth
 
 function updateFavoriteButton() {
-    const icon = document.getElementById('favoriteIcon');
-    const text = document.getElementById('favoriteBtnText');
-    if (!icon || !text) return;
-    
-    if (isFavorited) {
-        icon.setAttribute('fill', 'currentColor');
-        icon.classList.add('text-viewlix-red');
-        text.textContent = 'Remove from Favorites';
-    } else {
-        icon.setAttribute('fill', 'none');
-        icon.classList.remove('text-viewlix-red');
-        text.textContent = 'Add to Favorites';
+    // Delegates to external implementation if available.
+    const fn = window.updateFavoriteButton;
+    if (typeof fn === 'function') {
+        return fn();
     }
 }
 
@@ -258,4 +254,5 @@ async function toggleFavorite() {
     }
 }
 </script>
+<script src="{{ asset('js/movie-detail.js') }}"></script>
 @endpush

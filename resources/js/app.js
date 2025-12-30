@@ -3,7 +3,7 @@ import './bootstrap';
 import Alpine from 'alpinejs';
 
 // Preline UI - Import all components
-import { HSDropdown, HSOverlay } from 'preline/preline';
+import { HSDropdown, HSOverlay, HSCarousel } from 'preline/preline';
 import './overlays';
 
 // Firebase imports - Realtime Database + Messaging
@@ -24,6 +24,8 @@ function initPreline() {
         // Auto-initialize all Preline components
         HSDropdown.autoInit();
         HSOverlay.autoInit();
+        // Initialize carousel so elements with data-hs-carousel are activated
+        try { HSCarousel && HSCarousel.autoInit && HSCarousel.autoInit(); } catch(e) { console.warn('HSCarousel init failed', e); }
     } catch (e) {
         console.warn('Preline init failed', e);
     }
@@ -210,6 +212,7 @@ if (document.readyState === 'loading') {
 document.addEventListener('livewire:navigated', () => {
     HSDropdown.autoInit();
     HSOverlay.autoInit();
+    try { HSCarousel && HSCarousel.autoInit && HSCarousel.autoInit(); } catch(e) { console.warn('HSCarousel reinit failed', e); }
 });
 
 // Search autocomplete / prediction
