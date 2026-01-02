@@ -436,7 +436,7 @@ class TMDBService
 
         $encoded = rawurlencode($tmdbUrl);
         // Use wsrv.nl to proxy/resize and deliver webp; matches the sample link pattern
-        return "https://wsrv.nl/?url={$encoded}&w=280&output=webp&q=80";
+        return "https://wsrv.nl/?url={$encoded}&w=280&h=150&output=webp&q=80";
     }
 
     /**
@@ -447,5 +447,70 @@ class TMDBService
         return Cache::remember('genres.tv', 86400, function () {
             return $this->request('/genre/tv/list');
         });
+    }
+
+    /**
+     * Get TV images (posters, backdrops, logos)
+     */
+    public function getTvImages(int $id): ?array
+    {
+        return Cache::remember("tv.{$id}.images", 3600, function () use ($id) {
+            return $this->request("/tv/{$id}/images");
+        });
+    }
+
+    /**
+     * Return a preferred TV logo file path (tries country first, falls back to first available)
+     */
+    public function getTvLogoPath(int $id, string $country = 'US'): ?string
+    {
+        $images = $this->getTvImages($id);
+
+        if (!$images || empty($images['logos'])) {
+            return null;
+        }
+
+        // Try to find a logo matching the requested country
+        foreach ($images['logos'] as $logo) {
+            if (!empty($logo['iso_3166_1']) && strtoupper($logo['iso_3166_1']) === strtoupper($country)) {
+                return $logo['file_path'] ?? null;
+            }
+        }
+
+        // Fallback to first available logo
+        return $images['logos'][0]['file_path'] ?? null;
+    }
+
+    /**
+     * Return a fully-qualified TV logo image URL or empty string.
+     * By default this will return a wsrv.nl proxied URL (webp, quality 80).
+     * Set $useProxy = false to return the direct TMDB image URL instead.
+     */
+    public function getTvLogoUrl(int $id, string $country = 'US', string $size = 'w500', bool $useProxy = true): string
+    {
+        $path = $this->getTvLogoPath($id, $country);
+        if (!$path) {
+            return '';
+        }
+
+        if (!$useProxy) {
+            return $this->getImageUrl($path, $size);
+        }
+
+        $tmdbUrl = $this->getImageUrl($path, 'original');
+
+        $width = 0;
+        if (preg_match('/^w(\d+)$/i', $size, $m)) {
+            $width = (int) $m[1];
+        } elseif (is_numeric($size)) {
+            $width = (int) $size;
+        }
+
+        if ($width <= 0) {
+            $width = 500;
+        }
+
+        $encoded = rawurlencode($tmdbUrl);
+        return "https://wsrv.nl/?url={$encoded}&w=280&output=webp&q=80";
     }
 }

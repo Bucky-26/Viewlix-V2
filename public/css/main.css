@@ -2,15 +2,8 @@
 
 
 /* Slightly larger on small screens and above */
-@media (min-width: 640px) {
-    .viewlix-hero-logo { height: 40px; }
-    .viewlix-hero-logo-shadow { width: 10rem; height: 2.6rem; }
-}
 
-@media (min-width: 768px) {
-    .viewlix-hero-logo { height: 48px; }
-    .viewlix-hero-logo-shadow { width: 12rem; height: 3rem; }
-}
+
 
 @media (min-width: 1024px) {
     /* Keep desktop logo modest so it doesn't dominate the hero */
@@ -19,117 +12,28 @@
 }
 
 /* Smooth transform for carousel movement */
-.hs-carousel-body {
-    transition: transform 700ms cubic-bezier(.2,.8,.2,1) !important;
-}
+
 
 /* Smooth transitions for slides and images */
-.hs-carousel-slide {
-    transition: transform 700ms cubic-bezier(.2,.8,.2,1), opacity 400ms ease !important;
-    will-change: transform, opacity;
-    box-sizing: border-box;
-}
-.hs-carousel-slide img {
-    transition: transform 700ms cubic-bezier(.2,.8,.2,1) !important;
-    width: 100%;
-    height: 100%;
-    /* Keep the image centered when using object-fit so crops remain consistent
-       as slides translate on larger screens */
-    object-position: center center;
-    transform-origin: center center;
-    -webkit-transform-origin: center center;
-    /* Promote to its own layer to reduce jank during transition */
-    will-change: transform, opacity;
-    backface-visibility: hidden;
-    display: block;
-}
 
-/* Ensure overlay content (title, description, buttons) sits above the image
-   and remains interactive. Some transforms can create stacking contexts so
-   we force z-index on the image and overlay. */
-.hs-carousel-slide img {
-    position: relative;
-    z-index: 0;
-}
 
-.hs-carousel-slide > .absolute.inset-0 {
-    z-index: 20; /* overlay container */
-    pointer-events: none; /* let child interactive elements opt-in */
-}
 
-/* Make the overlay inner container interactive (buttons/links) */
-.hs-carousel-slide .max-w-3xl,
-.hs-carousel-slide .max-w-3xl * {
-    pointer-events: auto;
-}
 
-/* Overlay alignment: ensure overlay inner container sits at the bottom on mobile
-   and becomes perfectly centered (both axes) on medium+ screens. This provides
-   a robust fallback if utility classes are overridden elsewhere. */
-.hs-carousel-slide > .absolute.inset-0 {
-    display: flex;
-    align-items: flex-end;    /* mobile: bottom-aligned */
-    justify-content: center;  /* mobile: centered horizontally */
-}
 
-/* Keep child interactive while the overlay wrapper itself ignores pointer events */
-.hs-carousel-slide > .absolute.inset-0 > .max-w-3xl,
-.hs-carousel-slide > .absolute.inset-0 > .max-w-3xl * {
-    pointer-events: auto;
-}
 
-@media (min-width: 768px) {
-    .hs-carousel-slide > .absolute.inset-0 {
-        align-items: center;   /* md+: vertically center */
-        justify-content: center; /* md+: horizontally center */
-    }
-}
-
-/* Prevent any accidental scale on images (no hover zoom) by ensuring
-   only transforms from the carousel wrapper are applied; clear image-level
-   scale transforms if present. */
-.hs-carousel-slide img {
-    /* don't force a 3d transform here; let the carousel move slides via
-       the container transform. But reset any scale that might be applied
-       by other rules. */
-    transform: translateZ(0) !important;
-}
-
-/* Prevent the page from jumping when slides change by forcing a fixed responsive height
-    that matches the Tailwind utility heights used on the images (h-[260px], sm:h-[360px], md:h-[520px], lg:h-[520px]) */
-.hs-carousel {
-    position: relative;
-    /* Allow the carousel to size itself according to the responsive
-       .hs-carousel-body heights defined below. Setting a fixed
-       viewport height here caused oversized / clipped layouts on
-       desktop (was 100vh). */
-    height: auto;
-    /* DON'T change display; Preline assumes default block behavior. Previously setting
-        display:flex caused the carousel body to calculate widths incorrectly and show
-        adjacent slides. */
-    display: block;
-}
-
-/* Base height (mobile) */
-.hs-carousel .hs-carousel-body {
-    height: 260px;
-}
 
 /* Small screens */
 @media (min-width: 640px) {
-    .hs-carousel .hs-carousel-body { height: 360px; }
 }
 
 /* Medium screens */
 @media (min-width: 768px) {
     /* Taller hero on medium screens */
-    .hs-carousel .hs-carousel-body { height: 560px; }
 }
 
 /* Large screens - REDUCED from 720px to 520px */
 @media (min-width: 1024px) {
     /* Even taller hero on large screens */
-    .hs-carousel .hs-carousel-body { height: 640px; }
 }
 
 /* Desktop: nudge overlay inner container slightly upward for better visual balance
@@ -141,31 +45,11 @@ so only one slide is visible at a time. Don't use auto margins which previously 
 partial slides to appear. We also override Preline's absolute positioning on the carousel
 body so desktop sizing is consistent (Preline may add `absolute top-0 bottom-0` which
 can conflict with media-query heights and cause layout issues). */
-            .hs-carousel .hs-carousel-body {
-                /* Only override positioning and layout behaviors from Preline.
-                   Do NOT set height here so the responsive pixel heights
-                   defined above remain in effect. Keep display:flex so slides
-                   line up horizontally for transforms. */
-                position: relative !important;
-                top: auto !important;
-                bottom: auto !important;
-                left: 0;
-                right: 0;
-                margin: 0;
-                display: flex; /* body should remain flex so slides line up horizontally for transforms */
-                align-items: center;
-                width: 100%;
-                max-width: 100%;
-            }
+
 
             /* Ensure each slide takes exactly the visible carousel width on all viewports
                (prevents oversized or partially visible adjacent slides). Use !important
-               because Preline/Tailwind utilities may set inline styles or higher-specificity rules. */
-            .hs-carousel .hs-carousel-body > .hs-carousel-slide {
-                max-width: 100% ;
-                box-sizing: border-box;
-                height: 100%;
-            }
+          
 
 /* Ensure the carousel body spans the full available inner width so
    each slide is exactly the visible carousel width. Using a
@@ -178,33 +62,11 @@ can conflict with media-query heights and cause layout issues). */
 /* Mobile: make the hero carousel feel full-screen */
 @media (max-width: 639px) {
     /* Let the carousel occupy the full viewport height on phones */
-    .hs-carousel {
-        height: 80vh;
-        overflow: hidden;
-    }
+    
 
     /* Carousel body and slides should fill the viewport height */
-    .hs-carousel .hs-carousel-body {
-        height: 100vh !important;
-        width: 100%;
-        max-width: 100%;
-        display: flex;
-        align-items: center;
-        margin: 0 auto;
-    }
+ 
 
-    .hs-carousel .hs-carousel-body > .hs-carousel-slide {
-        height: 100vh !important;
-        flex: 0 0 100% !important;
-        max-width: 100% !important;
-    }
-
-    /* Force images to cover the viewport and preserve aspect ratio */
-    .hs-carousel .hs-carousel-body img {
-        height: 100vh !important;
-        width: 100% !important;
-        object-fit: cover !important;
-    }
 
     /* Responsive hero logo sizing for mobile: keep the logo modest on very small phones
         - reduce the minimum to avoid oversized logos on narrow screens
@@ -216,12 +78,26 @@ can conflict with media-query heights and cause layout issues). */
 
     /* Mobile: nudge the overlay content up slightly (change vertical position only).
        This increases the bottom spacing of the overlay inner container without
-       changing its overall layout or alignment. Tweak the value as needed. */
-    .hs-carousel-slide > .absolute.inset-0 .max-w-3xl {
-        /* Move overlay content lower on mobile by removing inner bottom
-           padding so the inner container's content sits closer to the
-           bottom edge of the carousel. */
-        padding-bottom: 0 !important; /* overrides pb-4 */
-        margin-bottom: 0 !important;
-    }
+*/
 }
+     /* Mobile-friendly carousel adjustments */
+        @media (max-width: 768px) {
+            .carousel-container { min-height: 280px; }
+            .carousel-trending-badge { font-size: 0.65rem; padding: 0.35rem 0.75rem; }
+            .carousel-title { font-size: 1.5rem; }
+            .carousel-logo { height: 20px; }
+            .carousel-meta { font-size: 0.7rem; gap: 0.5rem; }
+            .carousel-meta span { padding: 0.25rem 0.5rem; }
+            .carousel-description { font-size: 0.85rem; padding-left: 1rem; padding-right: 1rem; line-height: 1.4; margin-top: 0.75rem; }
+            .carousel-buttons { flex-direction: column; gap: 0.5rem; margin-top: 0.75rem; }
+            .carousel-buttons a, .carousel-buttons button { width: 100%; font-size: 0.875rem; padding: 0.5rem 1rem; }
+        }
+        @media (max-width: 480px) {
+            .carousel-container { min-height: 240px; }
+            .carousel-trending-badge { font-size: 0.6rem; padding: 0.3rem 0.6rem; }
+            .carousel-title { font-size: 1.25rem; }
+            .carousel-logo { height: 16px; }
+            .carousel-meta { font-size: 0.65rem; gap: 0.35rem; }
+            .carousel-meta span { padding: 0.2rem 0.4rem; }
+            .carousel-description { font-size: 0.8rem; padding-left: 0.75rem; padding-right: 0.75rem; }
+        }
