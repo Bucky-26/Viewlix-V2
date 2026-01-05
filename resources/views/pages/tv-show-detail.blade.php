@@ -69,6 +69,17 @@
             </svg>
             Watch S1 E1
         </a>
+        <button 
+            id="downloadBtn"
+            onclick="openTVDownloadModal(mediaData.id, mediaData.type, mediaData.title, {{ $tvShow['number_of_seasons'] ?? 1 }})"
+            class="flex items-center gap-2 px-6 py-3 bg-viewlix-gray hover:bg-viewlix-gray-light text-white font-semibold rounded-xl border border-viewlix-border transition-colors"
+            title="Download"
+        >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+            </svg>
+            Download
+        </button>
         @auth
         <button 
             id="favoriteBtn"

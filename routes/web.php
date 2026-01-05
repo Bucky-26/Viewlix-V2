@@ -7,6 +7,7 @@ use App\Http\Controllers\AnimeController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\WatchHistoryController;
+use App\Http\Controllers\DownloadController;
 use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Developer\DeveloperController;
@@ -27,16 +28,6 @@ Route::get('/search/suggest', [HomeController::class, 'suggest'])->name('search.
 
 // Filipino / Tagalog hub (movies + series)
 Route::get('/filipino', [HomeController::class, 'filipino'])->name('filipino');
-
-// Download Page
-Route::get('/download', function () {
-    $iosApp = \App\Models\MobileApp::ios();
-    $androidApp = \App\Models\MobileApp::android();
-    return view('pages.download', compact('iosApp', 'androidApp'));
-})->name('download');
-
-// Public App Download Route
-Route::get('/app/download/android', [\App\Http\Controllers\Admin\MobileAppController::class, 'downloadAndroid'])->name('app.download');
 
 // Movies (browsing is public)
 Route::get('/movies', [MovieController::class, 'index'])->name('movies');
@@ -71,6 +62,23 @@ Route::get('/privacy', function () {
 // Anime (browsing is public)
 Route::get('/anime', [AnimeController::class, 'index'])->name('anime');
 Route::get('/anime/{id}', [AnimeController::class, 'show'])->name('anime.show');
+
+// Download app page
+Route::get('/download', function () {
+    return view('pages.download', [
+        'SEOData' => new SEOData(
+            title: 'Download Viewlix App - Stream Anywhere',
+            description: 'Download the Viewlix Android app. Stream your favorite movies, TV shows, and anime anywhere, anytime. Free to download and use!',
+            url: route('download'),
+        ),
+    ]);
+})->name('download');
+
+// Download endpoints (public, no authentication required)
+Route::get('/api/downloads/movie/{tmdbId}', [DownloadController::class, 'getMovieDownloads'])->name('downloads.movie');
+Route::get('/api/downloads/tv/{tmdbId}', [DownloadController::class, 'getTvDownloads'])->name('downloads.tv');
+// Proxy route to stream remote files through our server with the required Referer header
+Route::get('/download/proxy', [DownloadController::class, 'proxyFile'])->name('download.proxy');
 
 // Auth routes
 require __DIR__.'/auth.php';
@@ -162,23 +170,11 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::get('/users/{user}/favorites', [AdminController::class, 'userFavorites'])->name('users.favorites');
     Route::get('/users/{user}/watch-history', [AdminController::class, 'userWatchHistory'])->name('users.watch-history');
     
-    // User Management with Sessions
-    Route::get('/users-management', [\App\Http\Controllers\Admin\UserManagementController::class, 'index'])->name('users-management.index');
-    Route::get('/users-management/{user}', [\App\Http\Controllers\Admin\UserManagementController::class, 'show'])->name('users-management.show');
-    Route::post('/users-management/{user}/logout-session/{session}', [\App\Http\Controllers\Admin\UserManagementController::class, 'logoutSession'])->name('users-management.logout-session');
-    Route::post('/users-management/{user}/logout-all', [\App\Http\Controllers\Admin\UserManagementController::class, 'logoutAllSessions'])->name('users-management.logout-all');
-    Route::delete('/users-management/{user}', [\App\Http\Controllers\Admin\UserManagementController::class, 'delete'])->name('users-management.delete');
-    
     // Notifications
     Route::get('/notifications', [\App\Http\Controllers\Admin\NotificationController::class, 'index'])->name('notifications');
     Route::get('/notifications/create', [\App\Http\Controllers\Admin\NotificationController::class, 'create'])->name('notifications.create');
     Route::post('/notifications/send', [\App\Http\Controllers\Admin\NotificationController::class, 'send'])->name('notifications.send');
     Route::delete('/notifications/{id}', [\App\Http\Controllers\Admin\NotificationController::class, 'destroy'])->name('notifications.destroy');
-    
-    // Mobile App Management
-    Route::get('/mobile-app', [\App\Http\Controllers\Admin\MobileAppController::class, 'index'])->name('mobile-app.index');
-    Route::post('/mobile-app/{platform}', [\App\Http\Controllers\Admin\MobileAppController::class, 'store'])->name('mobile-app.store');
-    Route::get('/mobile-app/{platform}/download', [\App\Http\Controllers\Admin\MobileAppController::class, 'download'])->name('mobile-app.download');
 });
 
 // Developer Routes (Public portfolio and blog)

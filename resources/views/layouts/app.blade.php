@@ -119,8 +119,11 @@
     
     <!-- Pull-to-refresh (PWA) - swipe down to reload on touch devices -->
     <script src="{{ asset('js/pull-to-refresh.js') }}"></script>
+    
+    <!-- Download Manager -->
+    <script src="{{ asset('js/download-manager.js') }}"></script>
       
-<script src="{{ asset('js/main.js') }}"></script>
+    <script src="{{ asset('js/main.js') }}"></script>
 
     @stack('scripts')
 </body>
