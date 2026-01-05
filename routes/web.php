@@ -36,7 +36,7 @@ Route::get('/download', function () {
 })->name('download');
 
 // Public App Download Route
-Route::get('/app/download/android', [\App\Http\Controllers\Admin\MobileAppController::class, 'download'])->name('app.download');
+Route::get('/app/download/android', [\App\Http\Controllers\Admin\MobileAppController::class, 'downloadAndroid'])->name('app.download');
 
 // Movies (browsing is public)
 Route::get('/movies', [MovieController::class, 'index'])->name('movies');

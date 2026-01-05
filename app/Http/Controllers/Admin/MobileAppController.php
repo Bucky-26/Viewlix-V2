@@ -69,7 +69,7 @@ class MobileAppController extends Controller
     }
 
     /**
-     * Download the app file
+     * Download the app file (admin route)
      */
     public function download($platform)
     {
@@ -77,6 +77,26 @@ class MobileAppController extends Controller
             return back()->with('error', 'Only Android apps are supported');
         }
 
+        $app = MobileApp::where('platform', 'android')->first();
+
+        if (!$app || !$app->file_path) {
+            return back()->with('error', 'App not found or file not available');
+        }
+
+        // Increment download count
+        $app->incrementDownloads();
+
+        return response()->download(
+            storage_path('app/public/' . $app->file_path),
+            "viewlix-android-{$app->version}.apk"
+        );
+    }
+
+    /**
+     * Download the app file (public route)
+     */
+    public function downloadAndroid()
+    {
         $app = MobileApp::where('platform', 'android')->first();
 
         if (!$app || !$app->file_path) {
