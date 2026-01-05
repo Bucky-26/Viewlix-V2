@@ -35,6 +35,9 @@ Route::get('/download', function () {
     return view('pages.download', compact('iosApp', 'androidApp'));
 })->name('download');
 
+// Public App Download Route
+Route::get('/app/download/android', [\App\Http\Controllers\Admin\MobileAppController::class, 'download'])->name('app.download');
+
 // Movies (browsing is public)
 Route::get('/movies', [MovieController::class, 'index'])->name('movies');
 // Use slug format: {tmdbId}-{slugified-title}
