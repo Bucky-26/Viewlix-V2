@@ -1,6 +1,6 @@
 {{-- Mobile App Popup Modal --}}
-<div id="mobile-app-popup" class="hidden fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 p-4 md:hidden" role="dialog">
-    <div class="bg-viewlix-darker border border-viewlix-border rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden animate-in fade-in zoom-in-95 duration-300">
+<div id="mobile-app-popup" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 md:hidden" role="dialog">
+    <div class="bg-viewlix-darker border border-viewlix-border rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden animate-in fade-in zoom-in-95 duration-300 relative z-50">
         {{-- Header Badge --}}
         <div class="bg-gradient-to-r from-yellow-500 to-orange-500 text-center py-2 px-4">
             <p class="text-xs font-bold uppercase tracking-wider text-white">📱 Mobile App Available</p>
