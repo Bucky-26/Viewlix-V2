@@ -162,6 +162,13 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::get('/users/{user}/favorites', [AdminController::class, 'userFavorites'])->name('users.favorites');
     Route::get('/users/{user}/watch-history', [AdminController::class, 'userWatchHistory'])->name('users.watch-history');
     
+    // User Management with Sessions
+    Route::get('/users-management', [\App\Http\Controllers\Admin\UserManagementController::class, 'index'])->name('users-management.index');
+    Route::get('/users-management/{user}', [\App\Http\Controllers\Admin\UserManagementController::class, 'show'])->name('users-management.show');
+    Route::post('/users-management/{user}/logout-session/{session}', [\App\Http\Controllers\Admin\UserManagementController::class, 'logoutSession'])->name('users-management.logout-session');
+    Route::post('/users-management/{user}/logout-all', [\App\Http\Controllers\Admin\UserManagementController::class, 'logoutAllSessions'])->name('users-management.logout-all');
+    Route::delete('/users-management/{user}', [\App\Http\Controllers\Admin\UserManagementController::class, 'delete'])->name('users-management.delete');
+    
     // Notifications
     Route::get('/notifications', [\App\Http\Controllers\Admin\NotificationController::class, 'index'])->name('notifications');
     Route::get('/notifications/create', [\App\Http\Controllers\Admin\NotificationController::class, 'create'])->name('notifications.create');

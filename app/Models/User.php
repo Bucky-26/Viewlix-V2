@@ -108,6 +108,14 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Get user's sessions
+     */
+    public function sessions(): HasMany
+    {
+        return $this->hasMany(UserSession::class);
+    }
+
+    /**
      * Return if the user is currently online.
      */
     public function isOnline(): bool

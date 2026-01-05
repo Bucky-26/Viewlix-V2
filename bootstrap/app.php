@@ -12,6 +12,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->web(append: [
+            \App\Http\Middleware\LogUserSession::class,
+        ]);
+        
         $middleware->alias([
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
             'block.mobile.auth' => \App\Http\Middleware\BlockMobileAuth::class,
