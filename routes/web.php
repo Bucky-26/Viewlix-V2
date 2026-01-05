@@ -10,6 +10,8 @@ use App\Http\Controllers\WatchHistoryController;
 use App\Http\Controllers\DownloadController;
 use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\Admin\UserManagementController;
+use App\Models\MobileApp;
 use App\Http\Controllers\Developer\DeveloperController;
 use App\Http\Controllers\Developer\DeveloperAdminController;
 use App\Http\Controllers\SitemapController;
@@ -65,12 +67,15 @@ Route::get('/anime/{id}', [AnimeController::class, 'show'])->name('anime.show');
 
 // Download app page
 Route::get('/download', function () {
+    $androidApp = MobileApp::android();
+
     return view('pages.download', [
         'SEOData' => new SEOData(
             title: 'Download Viewlix App - Stream Anywhere',
             description: 'Download the Viewlix Android app. Stream your favorite movies, TV shows, and anime anywhere, anytime. Free to download and use!',
             url: route('download'),
         ),
+        'androidApp' => $androidApp,
     ]);
 })->name('download');
 
@@ -175,6 +180,12 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::get('/notifications/create', [\App\Http\Controllers\Admin\NotificationController::class, 'create'])->name('notifications.create');
     Route::post('/notifications/send', [\App\Http\Controllers\Admin\NotificationController::class, 'send'])->name('notifications.send');
     Route::delete('/notifications/{id}', [\App\Http\Controllers\Admin\NotificationController::class, 'destroy'])->name('notifications.destroy');
+
+    // User management: sessions, session details and session controls
+    Route::get('/users-management', [UserManagementController::class, 'index'])->name('users-management.index');
+    Route::get('/users-management/{user}', [UserManagementController::class, 'show'])->name('users-management.show');
+    Route::post('/users-management/{user}/logout-all', [UserManagementController::class, 'logoutAllSessions'])->name('users-management.logout-all');
+    Route::post('/users-management/{user}/{session}/logout', [UserManagementController::class, 'logoutSession'])->name('users-management.logout-session');
 });
 
 // Developer Routes (Public portfolio and blog)
