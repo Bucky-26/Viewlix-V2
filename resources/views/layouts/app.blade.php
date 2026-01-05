@@ -39,6 +39,12 @@
     @stack('styles')
 </head>
 <body class="bg-viewlix-dark min-h-screen">
+    {{-- Mobile App Banner - Very Top (Static, No Overlay) --}}
+    @include('components.mobile-app-banner')
+    
+    <!-- Mobile App Popup -->
+    @include('components.mobile-app-popup')
+    
     <!-- Mini Sidebar (hidden on mobile) -->
     @include('partials.sidebar')
     

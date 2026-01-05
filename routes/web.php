@@ -9,6 +9,8 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\WatchHistoryController;
 use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\Developer\DeveloperController;
+use App\Http\Controllers\Developer\DeveloperAdminController;
 use App\Http\Controllers\SitemapController;
 use Illuminate\Support\Facades\Route;
 use RalphJSmit\Laravel\SEO\Support\SEOData;
@@ -25,6 +27,13 @@ Route::get('/search/suggest', [HomeController::class, 'suggest'])->name('search.
 
 // Filipino / Tagalog hub (movies + series)
 Route::get('/filipino', [HomeController::class, 'filipino'])->name('filipino');
+
+// Download Page
+Route::get('/download', function () {
+    $iosApp = \App\Models\MobileApp::ios();
+    $androidApp = \App\Models\MobileApp::android();
+    return view('pages.download', compact('iosApp', 'androidApp'));
+})->name('download');
 
 // Movies (browsing is public)
 Route::get('/movies', [MovieController::class, 'index'])->name('movies');
@@ -155,4 +164,30 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::get('/notifications/create', [\App\Http\Controllers\Admin\NotificationController::class, 'create'])->name('notifications.create');
     Route::post('/notifications/send', [\App\Http\Controllers\Admin\NotificationController::class, 'send'])->name('notifications.send');
     Route::delete('/notifications/{id}', [\App\Http\Controllers\Admin\NotificationController::class, 'destroy'])->name('notifications.destroy');
+    
+    // Mobile App Management
+    Route::get('/mobile-app', [\App\Http\Controllers\Admin\MobileAppController::class, 'index'])->name('mobile-app.index');
+    Route::post('/mobile-app/{platform}', [\App\Http\Controllers\Admin\MobileAppController::class, 'store'])->name('mobile-app.store');
+    Route::get('/mobile-app/{platform}/download', [\App\Http\Controllers\Admin\MobileAppController::class, 'download'])->name('mobile-app.download');
+});
+
+// Developer Routes (Public portfolio and blog)
+Route::prefix('developer')->name('developer.')->group(function () {
+    // Portfolio and blog are public
+    Route::get('/', [DeveloperController::class, 'portfolio'])->name('portfolio');
+    Route::get('/blogs', [DeveloperController::class, 'blogIndex'])->name('blogs');
+    Route::get('/blog/{slug}', [DeveloperController::class, 'showBlog'])->name('blog.show');
+    
+    // Developer admin panel (requires auth and admin privileges)
+    Route::middleware(['auth', 'verified', 'admin'])->prefix('adminpane')->name('admin.')->group(function () {
+        Route::get('/', [DeveloperAdminController::class, 'dashboard'])->name('dashboard');
+        
+        // Blog Post Management
+        Route::get('/posts', [DeveloperAdminController::class, 'index'])->name('posts');
+        Route::get('/posts/create', [DeveloperAdminController::class, 'create'])->name('posts.create');
+        Route::post('/posts', [DeveloperAdminController::class, 'store'])->name('posts.store');
+        Route::get('/posts/{blogPost}/edit', [DeveloperAdminController::class, 'edit'])->name('posts.edit');
+        Route::put('/posts/{blogPost}', [DeveloperAdminController::class, 'update'])->name('posts.update');
+        Route::delete('/posts/{blogPost}', [DeveloperAdminController::class, 'destroy'])->name('posts.destroy');
+    });
 });
