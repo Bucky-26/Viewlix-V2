@@ -8,7 +8,7 @@ use GuzzleHttp\Client as GuzzleClient;
 
 class DownloadController extends Controller
 {
-    private $downloadApiBase = 'https://lawngreen-lapwing-922867.hostingersite.com';
+    private $downloadApiBase = 'https://content.viewlix.site';
 
     /**
      * Get download options for a movie
