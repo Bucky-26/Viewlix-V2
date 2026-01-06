@@ -109,8 +109,11 @@ class MovieController extends Controller
         // Assumption: Vidsrcme accepts a movie endpoint like: https://vidsrcme.ru/api/movie/{tmdb_id}
         // If the API expects a different path or needs server-side fetching, this can be adjusted later.
         $sources = [
-                ['name' => 'Viewlix - Default(ad-free)', 'embed' => "https://content.viewlix.site/embed/movie/{$id}"],
-            ['name' => 'VidLink', 'embed' => $embedUrl],
+
+            ['name' => 'Viewlix (ad-free)', 'embed' => "https://content.viewlix.site/embed/movie/{$id}"],
+            
+                ['name' => 'VidLink', 'embed' => $embedUrl],
+
             ["name" => "FilMex(Ad-Free)Suggessted", "embed" => "https://fmovies4u.com/embed/tmdb-movie-{$id}?autoPlay=true&hideTitle=true&?fullscreenButton=true"],
           ["name" => "VidRock", "embed" => "https://vidrock.net/movie/{$id}"],
         ];
