@@ -67,7 +67,7 @@ class MovieController extends Controller
 
         $title = $movie['title'] ?? 'Movie';
         $description = $movie['overview'] ?? "Watch {$title} on Viewlix. Stream movies online in HD quality.";
-        $imageUrl = $this->tmdb->getImageUrl($movie['poster_path'] ?? null, 'w500');
+    $imageUrl = $this->tmdb->getImageUrl($movie['poster_path'] ?? null, 'w500', true);
         $releaseYear = !empty($movie['release_date']) ? \Carbon\Carbon::parse($movie['release_date'])->format('Y') : '';
 
         return view('pages.movie-detail', [
@@ -75,7 +75,7 @@ class MovieController extends Controller
             'credits' => $credits ?? [],
             'similar' => $similar['results'] ?? [],
             'posterUrl' => $imageUrl,
-            'backdropUrl' => $this->tmdb->getImageUrl($movie['backdrop_path'] ?? null, 'original'),
+            'backdropUrl' => $this->tmdb->getImageUrl($movie['backdrop_path'] ?? null, 'original', true),
             'tmdb' => $this->tmdb,
             'SEOData' => new SEOData(
                 title: "{$title}" . ($releaseYear ? " ({$releaseYear})" : '') . " - Viewlix",

@@ -98,7 +98,7 @@ class HomeController extends Controller
                 $link = route('tv-show.show', ['slug' => $item['id'] . '-' . \Illuminate\Support\Str::slug($title)]);
             }
 
-            $image = $this->tmdb->getImageUrl($item['poster_path'] ?? $item['profile_path'] ?? null, 'w92');
+            $image = $this->tmdb->getImageUrl($item['poster_path'] ?? $item['profile_path'] ?? null, 'w92', true);
 
             $suggestions[] = [
                 'id' => $item['id'] ?? null,

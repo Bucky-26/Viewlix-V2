@@ -15,7 +15,7 @@
                 $pageDescription = trim(View::yieldContent('description', 'Discover, search, and watch the best movies, TV shows, and anime on Viewlix — curated trending picks, top rated titles, and a modern streaming experience.'));
                 $ogImage = null;
                 if(isset($trendingMovies) && count($trendingMovies) > 0 && isset($tmdb) && ($trendingMovies[0]['backdrop_path'] ?? null)) {
-                    $ogImage = $tmdb->getImageUrl($trendingMovies[0]['backdrop_path'], 'original');
+                    $ogImage = $tmdb->getImageUrl($trendingMovies[0]['backdrop_path'], 'original', true);
                 } else {
                     $ogImage = asset('splash.png');
                 }

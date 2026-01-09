@@ -23,7 +23,7 @@
 
                 <a href="{{ route('movie.show', ['slug' => $movie['id'] . '-' . \Illuminate\Support\Str::slug($movie['title'] ?? $movie['name'])]) }}" class="group">
                     @if($poster && isset($tmdb))
-                        <img src="{{ $tmdb->getImageUrl($poster, 'w500') }}"
+                        <img src="{{ $tmdb->getImageUrl($poster, 'w500', true) }}"
                              alt="{{ $title }}"
                              loading="lazy"
                              class="w-full rounded-lg shadow-lg object-cover">
@@ -63,7 +63,7 @@
 
                 <a href="{{ route('tv-show.show', ['slug' => $tv['id'] . '-' . \Illuminate\Support\Str::slug($tv['name'])]) }}" class="group">
                     @if($poster && isset($tmdb))
-                        <img src="{{ $tmdb->getImageUrl($poster, 'w500') }}"
+                        <img src="{{ $tmdb->getImageUrl($poster, 'w500', true) }}"
                              alt="{{ $title }}"
                              loading="lazy"
                              class="w-full rounded-lg shadow-lg object-cover">

@@ -18,7 +18,7 @@
 <div class="group relative bg-viewlix-gray rounded-xl overflow-hidden border border-viewlix-border hover:border-viewlix-red transition-colors">
     <a href="{{ $route }}">
         @if($posterPath && isset($tmdb))
-            <img src="{{ $tmdb->getImageUrl($posterPath, 'w342') }}" 
+            <img src="{{ $tmdb->getImageUrl($posterPath, 'w342', true) }}" 
                  alt="{{ $title }}" 
                  class="aspect-[2/3] w-full object-cover"
                  loading="lazy">

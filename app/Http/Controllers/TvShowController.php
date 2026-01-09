@@ -66,7 +66,7 @@ class TvShowController extends Controller
 
         $title = $tvShow['name'] ?? 'TV Show';
         $description = $tvShow['overview'] ?? "Watch {$title} on Viewlix. Stream TV shows online in HD quality.";
-        $imageUrl = $this->tmdb->getImageUrl($tvShow['poster_path'] ?? null, 'w500');
+    $imageUrl = $this->tmdb->getImageUrl($tvShow['poster_path'] ?? null, 'w500', true);
         $releaseYear = !empty($tvShow['first_air_date']) ? \Carbon\Carbon::parse($tvShow['first_air_date'])->format('Y') : '';
 
         return view('pages.tv-show-detail', [
@@ -74,7 +74,7 @@ class TvShowController extends Controller
             'credits' => $credits ?? [],
             'similar' => $similar['results'] ?? [],
             'posterUrl' => $imageUrl,
-            'backdropUrl' => $this->tmdb->getImageUrl($tvShow['backdrop_path'] ?? null, 'original'),
+            'backdropUrl' => $this->tmdb->getImageUrl($tvShow['backdrop_path'] ?? null, 'original', true),
             'tmdb' => $this->tmdb,
             'SEOData' => new SEOData(
                 title: "{$title}" . ($releaseYear ? " ({$releaseYear})" : '') . " - Viewlix",

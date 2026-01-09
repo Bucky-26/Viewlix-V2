@@ -35,13 +35,49 @@ class TMDBService
 
     /**
      * Get image URL
+     *
+     * By default this returns the direct TMDB image URL (no proxy).
+     * Set $useProxy = true to return a wsrv.nl proxied URL which can
+     * be used for caching/resizing/webp output. This is opt-in so
+     * internal service methods that expect a direct TMDB URL aren't
+     * affected.
+     *
+     * @param string|null $path TMDB file path (e.g. /abc123.jpg)
+     * @param string $size TMDB size token (e.g. 'w500' or 'original') or numeric width
+     * @param bool $useProxy Return a wsrv.nl proxied URL when true
+     * @return string
      */
-    public function getImageUrl(?string $path, string $size = 'w500'): string
+    public function getImageUrl(?string $path, string $size = 'w500', bool $useProxy = false): string
     {
         if (!$path) {
             return '';
         }
-        return "{$this->imageBaseUrl}/{$size}{$path}";
+
+        // Build direct TMDB URL first
+        $tmdbUrl = "{$this->imageBaseUrl}/{$size}{$path}";
+
+        if (!$useProxy) {
+            return $tmdbUrl;
+        }
+
+        // If proxying, use the original TMDB image so the proxy can resize reliably
+        $tmdbOriginal = "{$this->imageBaseUrl}/original{$path}";
+
+        // Determine numeric width from TMDB size token or numeric size
+        $width = 0;
+        if (preg_match('/^w(\d+)$/i', $size, $m)) {
+            $width = (int) $m[1];
+        } elseif (is_numeric($size)) {
+            $width = (int) $size;
+        }
+
+        if ($width <= 0) {
+            $width = 500;
+        }
+
+        $encoded = rawurlencode($tmdbOriginal);
+        // Use wsrv.nl to proxy/resize and deliver webp; default quality 80
+        return "https://wsrv.nl/?url={$encoded}&w={$width}&output=webp&q=80";
     }
 
     // ==================== MOVIES ====================

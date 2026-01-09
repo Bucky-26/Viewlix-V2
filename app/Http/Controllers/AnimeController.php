@@ -57,7 +57,7 @@ class AnimeController extends Controller
 
         $title = $anime['name'] ?? 'Anime';
         $description = $anime['overview'] ?? "Watch {$title} on Viewlix. Stream anime online in HD quality.";
-        $imageUrl = $this->tmdb->getImageUrl($anime['poster_path'] ?? null, 'w500');
+    $imageUrl = $this->tmdb->getImageUrl($anime['poster_path'] ?? null, 'w500', true);
         $releaseYear = !empty($anime['first_air_date']) ? \Carbon\Carbon::parse($anime['first_air_date'])->format('Y') : '';
 
         return view('pages.anime-detail', [
@@ -66,7 +66,7 @@ class AnimeController extends Controller
             'episodes' => $seasonData['episodes'] ?? [],
             'similar' => $similar['results'] ?? [],
             'posterUrl' => $imageUrl,
-            'backdropUrl' => $this->tmdb->getImageUrl($anime['backdrop_path'] ?? null, 'original'),
+            'backdropUrl' => $this->tmdb->getImageUrl($anime['backdrop_path'] ?? null, 'original', true),
             'tmdb' => $this->tmdb,
             'SEOData' => new SEOData(
                 title: "{$title}" . ($releaseYear ? " ({$releaseYear})" : '') . " - Viewlix",
