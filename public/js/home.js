@@ -214,23 +214,70 @@
         if(next) next.addEventListener('click', (e)=>{ e.preventDefault(); current = (current+1)%slides.length; show(current); clearInterval(timer); timer = setInterval(()=>{ current = (current+1)%slides.length; show(current); },5000); });
     }
 
+    // Adjust the hero carousel height so it fits the remaining viewport
+    // after accounting for the page header and mobile bottom nav.
+    function adjustHeroHeight(){
+        const hero = document.getElementById('hero-carousel');
+        if(!hero) return;
+
+        // Try to find header and bottom nav elements by common selectors.
+        const header = document.querySelector('header') || document.querySelector('.site-header') || document.querySelector('.topbar');
+        const bottomNav = document.querySelector('.mobile-nav') || document.querySelector('#mobile-bottom-nav') || document.querySelector('.bottom-nav') || document.querySelector('footer');
+
+        // Fallback sizes (px) if elements not found
+        const defaultHeaderHeight = window.innerWidth < 768 ? 56 : 80;
+        const defaultBottomNavHeight = window.innerWidth < 768 ? 56 : 0;
+
+        const headerHeight = header ? Math.ceil(header.getBoundingClientRect().height) : defaultHeaderHeight;
+        // Only treat bottomNav as present on narrow screens
+        let bottomNavHeight = 0;
+        if(window.innerWidth < 768){
+            bottomNavHeight = bottomNav ? Math.ceil(bottomNav.getBoundingClientRect().height) : defaultBottomNavHeight;
+        }
+
+        // Small padding to avoid touching edges
+        const extraPadding = 24;
+
+        let available = window.innerHeight - headerHeight - bottomNavHeight - extraPadding;
+        // Cap the hero at 85vh to avoid it becoming too large on tall viewports
+        const cap = Math.floor(window.innerHeight * 0.85);
+        if(available > cap) available = cap;
+        if(available < 240) available = 240; // minimum reasonable hero height
+
+        hero.style.height = available + 'px';
+    }
+
+    // Recalculate hero height on resize or orientation change
+    window.addEventListener('resize', () => {
+        adjustHeroHeight();
+    });
+    window.addEventListener('orientationchange', () => {
+        setTimeout(adjustHeroHeight, 250);
+    });
+
     async function init(){
         // Show skeletons while data is fetched so the page doesn't look empty
-        showSkeletons('trending-movies-grid', 6);
-        showSkeletons('top-rated-movies-grid', 6);
-        showSkeletons('trending-tv-grid', 6);
-        showSkeletons('popular-anime-grid', 6);
+    showSkeletons('trending-movies-grid', 6);
+    showSkeletons('top-rated-movies-grid', 6);
+    showSkeletons('trending-tv-grid', 6);
+    showSkeletons('popular-anime-grid', 6);
 
         const heroPlaceholder = document.getElementById('hero-carousel-body');
         if(heroPlaceholder){
             heroPlaceholder.innerHTML = '<div class="hero-carousel-slide absolute inset-0 h-full"><div class="relative h-full rounded-lg overflow-hidden bg-gray-800"><div class="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-700 animate-pulse"></div></div></div>';
         }
 
+        // Choose image sizes based on viewport width (smaller on mobile)
+        const isMobile = window.innerWidth < 768;
+        const posterSize = isMobile ? 'w342' : 'w500';
+        const backdropSize = isMobile ? 'w780' : 'w1280';
+
+        // Fetch minimal payloads for grids. Only request logos for the movie list used in the hero (include_logos=true)
         const [moviesRes, tvRes, animeRes, topRatedRes] = await Promise.all([
-            fetchJson('/api/movies?filter=popular&page=1'),
-            fetchJson('/api/tv-shows?filter=popular&page=1'),
-            fetchJson('/api/anime?filter=popular&page=1'),
-            fetchJson('/api/movies?filter=top_rated&page=1'),
+            fetchJson(`/api/movies?filter=popular&page=1&minimal=1&include_logos=1&poster_size=${posterSize}&backdrop_size=${backdropSize}`),
+            fetchJson(`/api/tv-shows?filter=popular&page=1&minimal=1&poster_size=${posterSize}&backdrop_size=${backdropSize}`),
+            fetchJson(`/api/anime?filter=popular&page=1&minimal=1&poster_size=${posterSize}&backdrop_size=${backdropSize}`),
+            fetchJson(`/api/movies?filter=top_rated&page=1&minimal=1&poster_size=${posterSize}&backdrop_size=${backdropSize}`),
         ]);
 
         const movies = moviesRes?.results || [];

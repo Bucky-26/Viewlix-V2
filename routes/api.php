@@ -38,6 +38,12 @@ Route::get('/movies', function (\Illuminate\Http\Request $request, TMDBService $
     $filter = $request->get('filter', 'popular');
     $page = (int) $request->get('page', 1);
 
+    // Performance options
+    $minimal = (bool) $request->get('minimal', false);
+    $includeLogos = (bool) $request->get('include_logos', false);
+    $posterSize = $request->get('poster_size', 'w342');
+    $backdropSize = $request->get('backdrop_size', 'w780');
+
     try {
         $movies = match ($filter) {
             'top_rated' => $tmdb->getTopRatedMovies($page),
@@ -46,12 +52,37 @@ Route::get('/movies', function (\Illuminate\Http\Request $request, TMDBService $
             default => $tmdb->getPopularMovies($page),
         };
 
-        // Enrich results with proxied image URLs and logo if available
         if (!empty($movies['results']) && is_array($movies['results'])) {
-            $movies['results'] = array_map(function ($item) use ($tmdb) {
-                $item['poster_url'] = $tmdb->getImageUrl($item['poster_path'] ?? null, 'w500', true);
-                $item['backdrop_url'] = $tmdb->getImageUrl($item['backdrop_path'] ?? null, 'w1280', true);
-                $item['logo_url'] = isset($item['id']) ? $tmdb->getMovieLogoUrl((int) $item['id'], 'US', 'w500', true) : '';
+            // Map results to either full TMDB item (default) or a compact payload
+            $movies['results'] = array_map(function ($item) use ($tmdb, $minimal, $includeLogos, $posterSize, $backdropSize) {
+                // Provide proxied poster/backdrop URLs with requested sizes
+                $poster = $tmdb->getImageUrl($item['poster_path'] ?? null, $posterSize, true);
+                $backdrop = $tmdb->getImageUrl($item['backdrop_path'] ?? null, $backdropSize, true);
+
+                if ($minimal) {
+                    $compact = [
+                        'id' => $item['id'] ?? null,
+                        'title' => $item['title'] ?? $item['name'] ?? null,
+                        'overview' => $item['overview'] ?? '',
+                        'release_date' => $item['release_date'] ?? $item['first_air_date'] ?? null,
+                        'vote_average' => $item['vote_average'] ?? 0,
+                        'poster_url' => $poster,
+                        'backdrop_url' => $backdrop,
+                    ];
+
+                    if ($includeLogos && isset($item['id'])) {
+                        $compact['logo_url'] = $tmdb->getMovieLogoUrl((int) $item['id'], 'US', 'w280', true);
+                    } else {
+                        $compact['logo_url'] = '';
+                    }
+
+                    return $compact;
+                }
+
+                // Default: enrich the original payload
+                $item['poster_url'] = $poster;
+                $item['backdrop_url'] = $backdrop;
+                $item['logo_url'] = $includeLogos && isset($item['id']) ? $tmdb->getMovieLogoUrl((int) $item['id'], 'US', 'w500', true) : '';
                 return $item;
             }, $movies['results']);
         }
@@ -100,6 +131,12 @@ Route::get('/tv-shows', function (\Illuminate\Http\Request $request, TMDBService
     $filter = $request->get('filter', 'popular');
     $page = (int) $request->get('page', 1);
 
+    // Performance options
+    $minimal = (bool) $request->get('minimal', false);
+    $includeLogos = (bool) $request->get('include_logos', false);
+    $posterSize = $request->get('poster_size', 'w342');
+    $backdropSize = $request->get('backdrop_size', 'w780');
+
     try {
         $tv = match ($filter) {
             'top_rated' => $tmdb->getTopRatedTvShows($page),
@@ -109,10 +146,33 @@ Route::get('/tv-shows', function (\Illuminate\Http\Request $request, TMDBService
         };
 
         if (!empty($tv['results']) && is_array($tv['results'])) {
-            $tv['results'] = array_map(function ($item) use ($tmdb) {
-                $item['poster_url'] = $tmdb->getImageUrl($item['poster_path'] ?? null, 'w500', true);
-                $item['backdrop_url'] = $tmdb->getImageUrl($item['backdrop_path'] ?? null, 'w1280', true);
-                $item['logo_url'] = isset($item['id']) ? $tmdb->getTvLogoUrl((int) $item['id'], 'US', 'w500', true) : '';
+            $tv['results'] = array_map(function ($item) use ($tmdb, $minimal, $includeLogos, $posterSize, $backdropSize) {
+                $poster = $tmdb->getImageUrl($item['poster_path'] ?? null, $posterSize, true);
+                $backdrop = $tmdb->getImageUrl($item['backdrop_path'] ?? null, $backdropSize, true);
+
+                if ($minimal) {
+                    $compact = [
+                        'id' => $item['id'] ?? null,
+                        'title' => $item['title'] ?? $item['name'] ?? null,
+                        'overview' => $item['overview'] ?? '',
+                        'first_air_date' => $item['first_air_date'] ?? null,
+                        'vote_average' => $item['vote_average'] ?? 0,
+                        'poster_url' => $poster,
+                        'backdrop_url' => $backdrop,
+                    ];
+
+                    if ($includeLogos && isset($item['id'])) {
+                        $compact['logo_url'] = $tmdb->getTvLogoUrl((int) $item['id'], 'US', 'w280', true);
+                    } else {
+                        $compact['logo_url'] = '';
+                    }
+
+                    return $compact;
+                }
+
+                $item['poster_url'] = $poster;
+                $item['backdrop_url'] = $backdrop;
+                $item['logo_url'] = $includeLogos && isset($item['id']) ? $tmdb->getTvLogoUrl((int) $item['id'], 'US', 'w500', true) : '';
                 return $item;
             }, $tv['results']);
         }
@@ -160,6 +220,12 @@ Route::get('/anime', function (\Illuminate\Http\Request $request, TMDBService $t
     $filter = $request->get('filter', 'popular');
     $page = (int) $request->get('page', 1);
 
+    // Performance options
+    $minimal = (bool) $request->get('minimal', false);
+    $includeLogos = (bool) $request->get('include_logos', false);
+    $posterSize = $request->get('poster_size', 'w342');
+    $backdropSize = $request->get('backdrop_size', 'w780');
+
     try {
         $anime = match ($filter) {
             'top_rated' => $tmdb->getTopRatedAnime($page),
@@ -168,11 +234,33 @@ Route::get('/anime', function (\Illuminate\Http\Request $request, TMDBService $t
         };
 
         if (!empty($anime['results']) && is_array($anime['results'])) {
-            $anime['results'] = array_map(function ($item) use ($tmdb) {
-                $item['poster_url'] = $tmdb->getImageUrl($item['poster_path'] ?? null, 'w500', true);
-                $item['backdrop_url'] = $tmdb->getImageUrl($item['backdrop_path'] ?? null, 'w1280', true);
-                // Anime are TV shows under the hood; use TV logo helper
-                $item['logo_url'] = isset($item['id']) ? $tmdb->getTvLogoUrl((int) $item['id'], 'US', 'w500', true) : '';
+            $anime['results'] = array_map(function ($item) use ($tmdb, $minimal, $includeLogos, $posterSize, $backdropSize) {
+                $poster = $tmdb->getImageUrl($item['poster_path'] ?? null, $posterSize, true);
+                $backdrop = $tmdb->getImageUrl($item['backdrop_path'] ?? null, $backdropSize, true);
+
+                if ($minimal) {
+                    $compact = [
+                        'id' => $item['id'] ?? null,
+                        'title' => $item['title'] ?? $item['name'] ?? null,
+                        'overview' => $item['overview'] ?? '',
+                        'first_air_date' => $item['first_air_date'] ?? null,
+                        'vote_average' => $item['vote_average'] ?? 0,
+                        'poster_url' => $poster,
+                        'backdrop_url' => $backdrop,
+                    ];
+
+                    if ($includeLogos && isset($item['id'])) {
+                        $compact['logo_url'] = $tmdb->getTvLogoUrl((int) $item['id'], 'US', 'w280', true);
+                    } else {
+                        $compact['logo_url'] = '';
+                    }
+
+                    return $compact;
+                }
+
+                $item['poster_url'] = $poster;
+                $item['backdrop_url'] = $backdrop;
+                $item['logo_url'] = $includeLogos && isset($item['id']) ? $tmdb->getTvLogoUrl((int) $item['id'], 'US', 'w500', true) : '';
                 return $item;
             }, $anime['results']);
         }
