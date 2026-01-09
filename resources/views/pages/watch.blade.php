@@ -7,10 +7,10 @@
 @endpush
 
 @section('content')
-<div class="min-h-[calc(100vh-200px)]">
+<div id="page-wrapper">
     {{-- Video Player with VidLink --}}
     <div class="mb-6">
-        <div class="video-container" style="position: relative; width: 100%; height: 0; padding-bottom: 56.25%;">
+        <div class="video-container" style="position: relative; width: 100%; height: 0; padding-bottom: 56.25%; max-height: 60vh; overflow: hidden;">
             <iframe 
                 id="playerIframe"
                 src="blob:{{ $embedUrl }}" 
@@ -24,7 +24,7 @@
     </div>
     
     {{-- Player Controls --}}
-    <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
         <div>
             <h1 class="text-2xl font-bold text-white">{{ $title ?? 'Unknown Title' }}</h1>
             <p class="text-gray-400">
@@ -39,34 +39,34 @@
             </p>
         </div>
         
-        <div class="flex items-center gap-3">
+        <div class="flex flex-wrap items-center gap-3">
                 {{-- Source / Server selector --}}
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 flex-wrap">
                     <label for="sourceSelect" class="text-sm text-gray-400 hidden md:inline">Source</label>
                     <select id="sourceSelect" class="text-sm bg-viewlix-gray text-white px-3 py-2 rounded-xl border border-viewlix-border hover:bg-viewlix-gray-light transition-colors">
                         {{-- Options injected by JS from server-provided $sources or fallback --}}
                     </select>
-                    <button id="openSourceBtn" class="hidden md:inline-flex items-center gap-2 px-3 py-2 bg-viewlix-gray text-white text-sm font-medium rounded-xl border border-viewlix-border hover:bg-viewlix-gray-light transition-colors">
+                    <button id="openSourceBtn" class="hidden md:inline-flex items-center gap-2 px-3 py-2 bg-viewlix-gray text-white text-sm font-medium rounded-xl border border-viewlix-border hover:bg-viewlix-gray-light transition-colors whitespace-nowrap">
                         Open
                     </button>
                 </div>
             {{-- Back to Details --}}
             @if($type === 'movie')
-            <a href="{{ route('movie.show', ['slug' => $id . '-' . \Illuminate\Support\Str::slug($title)]) }}" class="flex items-center gap-2 px-4 py-2 bg-viewlix-gray text-white text-sm font-medium rounded-xl border border-viewlix-border hover:bg-viewlix-gray-light transition-colors">
+            <a href="{{ route('movie.show', ['slug' => $id . '-' . \Illuminate\Support\Str::slug($title)]) }}" class="flex items-center gap-2 px-4 py-2 bg-viewlix-gray text-white text-sm font-medium rounded-xl border border-viewlix-border hover:bg-viewlix-gray-light transition-colors whitespace-nowrap">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
                 Details
             </a>
             @elseif($type === 'tv')
-            <a href="{{ route('tv-show.show', ['slug' => $id . '-' . \Illuminate\Support\Str::slug($title)]) }}" class="flex items-center gap-2 px-4 py-2 bg-viewlix-gray text-white text-sm font-medium rounded-xl border border-viewlix-border hover:bg-viewlix-gray-light transition-colors">
+            <a href="{{ route('tv-show.show', ['slug' => $id . '-' . \Illuminate\Support\Str::slug($title)]) }}" class="flex items-center gap-2 px-4 py-2 bg-viewlix-gray text-white text-sm font-medium rounded-xl border border-viewlix-border hover:bg-viewlix-gray-light transition-colors whitespace-nowrap">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
                 Details
             </a>
             @else
-            <a href="{{ route('anime.show', ['id' => $id]) }}" class="flex items-center gap-2 px-4 py-2 bg-viewlix-gray text-white text-sm font-medium rounded-xl border border-viewlix-border hover:bg-viewlix-gray-light transition-colors">
+            <a href="{{ route('anime.show', ['id' => $id]) }}" class="flex items-center gap-2 px-4 py-2 bg-viewlix-gray text-white text-sm font-medium rounded-xl border border-viewlix-border hover:bg-viewlix-gray-light transition-colors whitespace-nowrap">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
@@ -229,4 +229,68 @@ const defaultEmbed = @json($embedUrl);
 </script>
 
 <script src="{{ asset('js/watch.js') }}"></script>
+@endpush
+
+@push('scripts')
+<script>
+// Adjust page wrapper and video container to fit available viewport on mobile
+function adjustWatchLayout(){
+    const wrapper = document.getElementById('page-wrapper');
+    if(!wrapper) return;
+
+    const header = document.querySelector('header') || document.querySelector('.site-header') || document.querySelector('.topbar');
+    const bottomNav = document.querySelector('.mobile-nav') || document.querySelector('#mobile-bottom-nav') || document.querySelector('.bottom-nav') || document.querySelector('footer');
+
+    const defaultHeaderHeight = window.innerWidth < 768 ? 56 : 80;
+    const defaultBottomHeight = window.innerWidth < 768 ? 56 : 0;
+
+    const headerH = header ? Math.ceil(header.getBoundingClientRect().height) : defaultHeaderHeight;
+    const bottomH = (window.innerWidth < 768) ? (bottomNav ? Math.ceil(bottomNav.getBoundingClientRect().height) : defaultBottomHeight) : 0;
+
+    const padding = 24; // avoid touching edges
+    let available = window.innerHeight - headerH - bottomH - padding;
+    // cap to 85vh and minimum
+    const cap = Math.floor(window.innerHeight * 0.85);
+    if(available > cap) available = cap;
+    if(available < 300) available = 300;
+
+    wrapper.style.minHeight = available + 'px';
+    // Ensure there's enough bottom padding so controls/buttons are not covered by mobile nav
+    try {
+        // Use calc with env(safe-area-inset-bottom) when available
+        const extra = 20; // extra spacing above bottom nav
+        wrapper.style.paddingBottom = `calc(${bottomH + extra}px + env(safe-area-inset-bottom))`;
+    } catch (e) {
+        wrapper.style.paddingBottom = (bottomH + 20) + 'px';
+    }
+
+    // Adjust video container size: maintain 16:9 but don't exceed available height
+    const videoContainer = wrapper.querySelector('.video-container');
+    if(videoContainer){
+        // compute width and desired height
+        const width = Math.floor(videoContainer.getBoundingClientRect().width) || window.innerWidth;
+        const desiredHeight = Math.min(Math.round(width * 9 / 16), Math.floor(available * 0.6));
+        // apply explicit height to keep player visible and prevent overflow under nav
+        videoContainer.style.height = desiredHeight + 'px';
+        videoContainer.style.paddingBottom = '0';
+        videoContainer.style.maxHeight = Math.floor(available * 0.75) + 'px';
+
+        const iframe = videoContainer.querySelector('#playerIframe');
+        if(iframe){
+            iframe.style.width = '100%';
+            iframe.style.height = '100%';
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+    adjustWatchLayout();
+    // make a couple of delayed passes for fonts/layout shifts
+    setTimeout(adjustWatchLayout, 200);
+    setTimeout(adjustWatchLayout, 800);
+});
+
+window.addEventListener('resize', adjustWatchLayout);
+window.addEventListener('orientationchange', function(){ setTimeout(adjustWatchLayout, 250); });
+</script>
 @endpush
