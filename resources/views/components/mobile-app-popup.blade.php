@@ -47,7 +47,7 @@
         {{-- Buttons --}}
         <div class="px-6 pb-6 space-y-3">
             {{-- Primary Button - App Store/Play Store --}}
-            <a href="{{ route('download') }}" id="mobile-app-download-btn" 
+                <a href="{{ route('download.android') }}" id="mobile-app-download-btn" 
                class="flex items-center justify-center w-full px-4 py-3 bg-gradient-to-r from-viewlix-red to-red-600 text-white font-semibold rounded-lg hover:from-red-600 hover:to-red-700 transition-all shadow-lg gap-2">
                 <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M3 1a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V1zm0 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V5zm0 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V9zm0 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2z"/>

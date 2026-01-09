@@ -11,6 +11,7 @@ use App\Http\Controllers\DownloadController;
 use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\UserManagementController;
+use App\Http\Controllers\Admin\MobileAppController;
 use App\Models\MobileApp;
 use App\Http\Controllers\Developer\DeveloperController;
 use App\Http\Controllers\Developer\DeveloperAdminController;
@@ -78,6 +79,9 @@ Route::get('/download', function () {
         'androidApp' => $androidApp,
     ]);
 })->name('download');
+
+// Direct APK download (public)
+Route::get('/download/android', [\App\Http\Controllers\Admin\MobileAppController::class, 'downloadAndroid'])->name('download.android');
 
 // Download endpoints (public, no authentication required)
 Route::get('/api/downloads/movie/{tmdbId}', [DownloadController::class, 'getMovieDownloads'])->name('downloads.movie');
@@ -186,6 +190,11 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::get('/users-management/{user}', [UserManagementController::class, 'show'])->name('users-management.show');
     Route::post('/users-management/{user}/logout-all', [UserManagementController::class, 'logoutAllSessions'])->name('users-management.logout-all');
     Route::post('/users-management/{user}/{session}/logout', [UserManagementController::class, 'logoutSession'])->name('users-management.logout-session');
+
+    // Mobile App management (Android)
+    Route::get('/mobile-app', [MobileAppController::class, 'index'])->name('mobile-app.index');
+    Route::post('/mobile-app/{platform}', [MobileAppController::class, 'store'])->name('mobile-app.store');
+    Route::get('/mobile-app/{platform}/download', [MobileAppController::class, 'download'])->name('mobile-app.download');
 });
 
 // Developer Routes (Public portfolio and blog)

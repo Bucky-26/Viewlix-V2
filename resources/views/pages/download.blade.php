@@ -75,7 +75,7 @@
             </div>
 
             @if ($androidApp && $androidApp->file_path)
-                <a href="{{ route('download') }}" class="inline-block w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg text-center transition-colors">
+                <a href="{{ route('download.android') }}" class="inline-block w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg text-center transition-colors">
                     Download APK
                 </a>
             @else
