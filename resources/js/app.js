@@ -422,6 +422,56 @@ window.initFirebase = function(config) {
 };
 
 /**
+ * Ensure the frontend has the Firebase config available. Prefer embedded
+ * `window.firebaseConfig` (set in Blade); otherwise fetch from the JSON
+ * endpoint `/api/app-config`. This allows a decoupled frontend to initialize
+ * SDKs without server-side embedding.
+ */
+async function ensureFirebaseConfigFromApi() {
+    try {
+        // If Blade already injected config, prefer it (keeps backward compat)
+        if (window.firebaseConfig) {
+            try { window.initFirebase(window.firebaseConfig); } catch (e) { console.debug('initFirebase failed with embedded config', e); }
+            if (window.firebaseVapidKey) {
+                // already set
+            }
+            return;
+        }
+
+        const resp = await fetch('/api/app-config', { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' });
+        if (!resp.ok) return;
+        const data = await resp.json();
+        const fb = data?.firebase;
+        if (!fb) return;
+
+        window.firebaseVapidKey = fb.vapidKey || null;
+        if (fb.config) {
+            // Map keys to the SDK expected names (camelCase is already used)
+            window.firebaseConfig = {
+                apiKey: fb.config.apiKey,
+                authDomain: fb.config.authDomain,
+                databaseURL: fb.config.databaseURL,
+                projectId: fb.config.projectId,
+                storageBucket: fb.config.storageBucket,
+                messagingSenderId: fb.config.messagingSenderId,
+                appId: fb.config.appId,
+                measurementId: fb.config.measurementId,
+            };
+
+            try { window.initFirebase(window.firebaseConfig); } catch (e) { console.debug('initFirebase failed after API fetch', e); }
+        }
+    } catch (e) {
+        console.debug('Failed to fetch app config', e);
+    }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', ensureFirebaseConfigFromApi);
+} else {
+    ensureFirebaseConfigFromApi();
+}
+
+/**
  * Sign in to Firebase using custom token from Laravel backend
  */
 window.signInToFirebase = async function() {
@@ -432,12 +482,13 @@ window.signInToFirebase = async function() {
     
     try {
         // Use web route (not API) for session-based auth
-        const response = await fetch('/firebase-token', {
+        const response = await fetch('/api/firebase-token', {
             headers: {
                 'Accept': 'application/json',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content
             },
-            credentials: 'same-origin'
+            // send cookies for sanctum/session authentication
+            credentials: 'include'
         });
         
         if (!response.ok) {
@@ -1067,12 +1118,67 @@ function showToastNotification(payload) {
 }
 
 // Avatar upload function
+/**
+ * Attempt to open a file picker with permission handling.
+ * Uses the File System Access API when available (Chrome/Edge/Android),
+ * and falls back to a hidden input[type=file] for Safari/iOS and other browsers.
+ * Returns a File object or null if the user cancels.
+ */
+window.pickFileWithPermission = async function(accept = { accept: { 'image/*': ['.png', '.jpg', '.jpeg', '.webp'] } }) {
+    // Prefer native file system picker when available
+    if (window.showOpenFilePicker) {
+        try {
+            const handles = await window.showOpenFilePicker({ multiple: false, types: [accept] });
+            if (!handles || !handles.length) return null;
+            const file = await handles[0].getFile();
+            return file;
+        } catch (err) {
+            // NotAllowedError = user denied permission or dismissed picker
+            console.debug('File System Access API picker failed or cancelled', err && err.name);
+            return null;
+        }
+    }
+
+    // Fallback: create a hidden input element and await user selection
+    return await new Promise((resolve) => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = Object.keys(accept.accept || {}).join(',') || 'image/*';
+        input.style.display = 'none';
+        document.body.appendChild(input);
+
+        input.addEventListener('change', () => {
+            const file = input.files && input.files[0] ? input.files[0] : null;
+            resolve(file);
+            input.remove();
+        }, { once: true });
+
+        // If the user cancels the picker, resolve null after a short timeout
+        input.addEventListener('cancel', () => { resolve(null); input.remove(); }, { once: true });
+
+        // Trigger click
+        input.click();
+    });
+};
+
+/**
+ * Upload avatar file to Firebase Storage. If `file` is omitted, open a file picker
+ * with mobile-friendly permission flow and use the selected file.
+ */
 window.uploadAvatarToFirebase = async function(file) {
     if (!firebaseApp) throw new Error('Firebase not initialized');
     const storage = getStorage(firebaseApp);
     const userId = currentFirebaseUser?.uid;
     if (!userId) throw new Error('User not authenticated');
-    const avatarRef = storageRef(storage, `avatars/${userId}/${Date.now()}_${file.name}`);
-    await uploadBytes(avatarRef, file);
+
+    let chosenFile = file || null;
+    if (!chosenFile) {
+        // Prompt the user to pick a file (mobile-safe)
+        chosenFile = await window.pickFileWithPermission();
+        if (!chosenFile) throw new Error('No file selected');
+    }
+
+    const avatarRef = storageRef(storage, `avatars/${userId}/${Date.now()}_${chosenFile.name}`);
+    await uploadBytes(avatarRef, chosenFile);
     return await getDownloadURL(avatarRef);
 };
