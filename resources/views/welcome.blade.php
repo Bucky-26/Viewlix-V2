@@ -69,15 +69,16 @@
         
                 {{-- Carousel: trending movies + tv (logos, backdrop, description, actions) --}}
                 @if((isset($trendingMovies) && count($trendingMovies) > 0) || (isset($trendingTv) && count($trendingTv) > 0))
-                <section class="py-6">
-                        <div class="max-w-6xl mx-auto px-4">
-                                <div data-hs-carousel='{
-                                        "loadingClasses": "opacity-0",
-                                        "dotsItemClasses": "hs-carousel-active:bg-viewlix-red hs-carousel-active:border-viewlix-red size-3 border border-gray-400 rounded-full cursor-pointer",
-                                        "isAutoPlay": true
-                                    }' class="relative">
-                                    <div class="hs-carousel relative overflow-hidden w-full carousel-container min-h-96 md:min-h-96 bg-gray-900 rounded-lg">
-                                        <div class="hs-carousel-body absolute inset-0 flex flex-nowrap h-full transition-transform duration-700 opacity-0">
+                    {{-- Hero / Trending carousel: dedicated responsive section that fills the current screen height --}}
+                    <section id="hero-carousel" class="h-screen md:h-[80vh] lg:h-[85vh]">
+                            <div class="max-w-6xl mx-auto px-4 h-full">
+                                    <div data-hero-carousel='{
+                                            "loadingClasses": "opacity-0",
+                                            "dotsItemClasses": "hero-active:bg-viewlix-red hero-active:border-viewlix-red size-3 border border-gray-400 rounded-full cursor-pointer",
+                                            "isAutoPlay": true
+                                        }' class="relative h-full">
+                                        <div class="hero-carousel-container relative overflow-hidden w-full carousel-container h-full bg-gray-900 rounded-lg">
+                                            <div class="hero-carousel-body absolute inset-0 h-full">
                                             @php
                                                 $slides = [];
                                                 foreach(array_slice($trendingMovies ?? [], 0, 6) as $m) {
@@ -101,7 +102,7 @@
                                             @endphp
 
                                             @foreach($slides as $s)
-                                            <div class="hs-carousel-slide w-full flex-shrink-0 h-full">
+                                            <div class="hero-carousel-slide absolute inset-0 h-full opacity-0">
                                                 <div class="relative flex items-center justify-center h-full rounded-lg overflow-hidden bg-gray-800">
                             @php
                             $bgUrl = '';
@@ -195,7 +196,97 @@
                                 </div>
                         </div>
                 </section>
+
                 @endif
+
+                @push('styles')
+                <style>
+                    /* Scoped styles to create a fade transition carousel independent from Preline */
+                    #hero-carousel .hero-carousel-body { position: relative; }
+                    /* 5s fade transition as requested */
+                    #hero-carousel .hero-carousel-slide { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; transition: opacity 5s ease-in-out; }
+                    /* Active slide shown */
+                    #hero-carousel .hero-carousel-slide.active { opacity: 1; z-index: 10; }
+                    /* Ensure background image covers the slide */
+                    #hero-carousel img.object-cover { width: 100%; height: 100%; object-fit: cover; }
+                </style>
+                @endpush
+
+                {{-- Inline JS fallback to control hero carousel fade transitions without depending on built assets --}}
+                <script>
+                    (function(){
+                        function initHeroFade() {
+                            const carousel = document.getElementById('hero-carousel');
+                            if (!carousel) return;
+                            const slides = Array.from(carousel.querySelectorAll('.hero-carousel-slide'));
+                            if (!slides.length) return;
+
+                            let current = slides.findIndex(s => s.classList.contains('active'));
+                            if (current < 0) current = 0;
+
+                            // Ensure exactly one active
+                            function show(idx) {
+                                slides.forEach((s, i) => {
+                                    if (i === idx) {
+                                        s.classList.add('active');
+                                        s.setAttribute('aria-hidden', 'false');
+                                    } else {
+                                        s.classList.remove('active');
+                                        s.setAttribute('aria-hidden', 'true');
+                                    }
+                                });
+                            }
+
+                            show(current);
+
+                            let autoplayDelay = 5000; // default 5s
+                            // try to read from data attribute on container (our custom attribute)
+                            try {
+                                const cfg = carousel.querySelector('[data-hero-carousel]');
+                                if (cfg) {
+                                    const json = cfg.getAttribute('data-hero-carousel');
+                                    if (json) {
+                                        const parsed = JSON.parse(json.replace(/(['\"])\s*([a-zA-Z0-9_]+)\s*\1\s*:/g, '"$2":'));
+                                        if (parsed && parsed.isAutoPlay === true && parsed.delay) {
+                                            autoplayDelay = parseInt(parsed.delay) || autoplayDelay;
+                                        }
+                                    }
+                                }
+                            } catch (e) {
+                                // ignore
+                            }
+
+                            let timer = null;
+                            function startTimer() {
+                                stopTimer();
+                                timer = setInterval(() => {
+                                    current = (current + 1) % slides.length;
+                                    show(current);
+                                }, autoplayDelay);
+                            }
+                            function stopTimer() { if (timer) { clearInterval(timer); timer = null; } }
+
+                            // Prev / Next buttons inside carousel
+                            const prev = carousel.querySelector('.hs-carousel-prev');
+                            const next = carousel.querySelector('.hs-carousel-next');
+                            if (prev) prev.addEventListener('click', (e) => { e.preventDefault(); current = (current - 1 + slides.length) % slides.length; show(current); startTimer(); });
+                            if (next) next.addEventListener('click', (e) => { e.preventDefault(); current = (current + 1) % slides.length; show(current); startTimer(); });
+
+                            // Pause on hover
+                            carousel.addEventListener('mouseenter', stopTimer);
+                            carousel.addEventListener('mouseleave', startTimer);
+
+                            // Start autoplay only if more than 1 slide
+                            if (slides.length > 1) startTimer();
+                        }
+
+                        if (document.readyState === 'loading') {
+                            document.addEventListener('DOMContentLoaded', initHeroFade);
+                        } else {
+                            initHeroFade();
+                        }
+                    })();
+                </script>
 
         {{-- Continue Watching Section (from localStorage) --}}
         <div class="max-w-6xl mx-auto px-4">
