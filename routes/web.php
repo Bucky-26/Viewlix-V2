@@ -62,6 +62,16 @@ Route::get('/privacy', function () {
         ),
     ]);
 })->name('privacy');
+// About page
+Route::get('/about', function () {
+    return view('pages.about', [
+        'SEOData' => new SEOData(
+            title: 'About Viewlix',
+            description: 'Learn about Viewlix — watch movies and TV shows for free without ads or subscription.',
+            url: route('about'),
+        ),
+    ]);
+})->name('about');
 // Anime (browsing is public)
 Route::get('/anime', [AnimeController::class, 'index'])->name('anime');
 Route::get('/anime/{id}', [AnimeController::class, 'show'])->name('anime.show');
