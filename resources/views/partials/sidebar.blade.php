@@ -3,7 +3,6 @@
     {{-- Logo --}}
     <div class="flex items-center justify-center h-16 border-b border-viewlix-border">
         <a href="{{ route('home') }}" class="flex items-center justify-center">
-            {{-- Use the reusable logo component --}}
             <x-logo />
         </a>
     </div>

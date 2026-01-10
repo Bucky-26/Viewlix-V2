@@ -77,7 +77,7 @@ class TMDBService
 
         $encoded = rawurlencode($tmdbOriginal);
         // Use wsrv.nl to proxy/resize and deliver webp; default quality 80
-        return "https://wsrv.nl/?url={$encoded}&w={$width}&output=webp&q=80";
+        return "https://cdn-img.viewlix.site/?url={$encoded}&w={$width}&output=webp&q=80";
     }
 
     // ==================== MOVIES ====================
@@ -472,7 +472,7 @@ class TMDBService
 
         $encoded = rawurlencode($tmdbUrl);
         // Use wsrv.nl to proxy/resize and deliver webp; matches the sample link pattern
-        return "https://wsrv.nl/?url={$encoded}&w=280&h=150&output=webp&q=80";
+        return "https://cdn-img.viewlix.site/?url={$encoded}&w=280&h=150&output=webp&q=80";
     }
 
     /**
