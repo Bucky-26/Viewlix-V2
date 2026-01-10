@@ -497,6 +497,11 @@ window.signInToFirebase = async function() {
         }
         
         const data = await response.json();
+        if (!data || !data.token) {
+            console.warn('No Firebase token returned from backend', data?.debug ?? data);
+            return false;
+        }
+
         await signInWithCustomToken(firebaseAuth, data.token);
         return true;
         

@@ -49,7 +49,8 @@ export async function signInWithLaravelToken() {
                 'Accept': 'application/json',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content
             },
-            credentials: 'same-origin'
+            // Use include so cookies are sent when using local vhosts or different ports
+            credentials: 'include'
         });
         
         if (!response.ok) {
@@ -58,6 +59,12 @@ export async function signInWithLaravelToken() {
         
         const data = await response.json();
         
+        // If the backend returned debug information instead of a token, surface it locally
+        if (!data || !data.token) {
+            console.warn('No Firebase token returned from backend', data?.debug ?? data);
+            return false;
+        }
+
         // Sign in to Firebase with the custom token
         await signInWithCustomToken(auth, data.token);
         return true;

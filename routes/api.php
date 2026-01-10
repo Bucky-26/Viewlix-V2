@@ -328,15 +328,96 @@ Route::get('/app-config', function () {
 // API route to request a Firebase custom token for the currently authenticated user
 // This uses sanctum/session authentication; callers should include credentials.
 Route::middleware('auth:sanctum')->get('/firebase-token', function (\App\Services\FirebaseService $firebase) {
+    $isLocalRequest = app()->environment('local') || in_array(request()->ip(), ['127.0.0.1', '::1'], true);
+
     if (! $firebase->isConfigured()) {
-        return response()->json(['error' => 'Firebase not configured'], 503);
+        $payload = ['error' => 'Firebase not configured'];
+        if ($isLocalRequest) {
+            $serviceAccountPath = storage_path('app/firebase/service-account.json');
+            $payload['debug'] = [
+                'service_account_exists' => file_exists($serviceAccountPath),
+                'service_account_path' => $serviceAccountPath,
+                // Do not dump the entire service account contents; only show that path and existence
+                'config_services_firebase' => array_intersect_key(config('services.firebase', []), array_flip(['project_id','database_url','api_key','messaging_sender_id']))
+            ];
+        }
+
+        return response()->json($payload, 503);
     }
 
     $token = $firebase->createCustomToken();
 
     if (! $token) {
-        return response()->json(['error' => 'Failed to create token'], 500);
+        $payload = ['error' => 'Failed to create token'];
+
+        if ($isLocalRequest) {
+            $payload['debug'] = [
+                'authenticated' => \Illuminate\Support\Facades\Auth::check(),
+                'user' => optional(\Illuminate\Support\Facades\Auth::user())->only(['id','email','firebase_uuid']),
+            ];
+        }
+
+        return response()->json($payload, 500);
     }
 
     return response()->json(['token' => $token]);
+});
+
+// Development-only helper: create a Firebase custom token for user id 1
+// This route is intentionally only active in the local environment to aid testing.
+Route::get('/firebase-token-debug', function (\App\Services\FirebaseService $firebase) {
+    // Allow in local environment or when request originates from localhost (127.0.0.1 / ::1)
+    $isLocalIp = in_array(request()->ip(), ['127.0.0.1', '::1'], true);
+    if (! (app()->environment('local') || $isLocalIp)) {
+        return response()->json(['error' => 'Not available'], 403);
+    }
+
+    if (! $firebase->isConfigured()) {
+        return response()->json(['error' => 'Firebase not configured'], 503);
+    }
+
+    $user = \App\Models\User::find(1);
+    if (! $user) {
+        return response()->json(['error' => 'User not found (id 1)'], 404);
+    }
+
+    try {
+        $auth = $firebase->getAuth();
+        if (! $auth) {
+            return response()->json(['error' => 'Firebase auth not available'], 503);
+        }
+
+        $firebaseUuid = $user->getFirebaseUuid();
+        $customToken = $auth->createCustomToken($firebaseUuid, [
+            'email' => $user->email,
+            'name' => $user->name,
+        ]);
+
+        return response()->json(['token' => $customToken->toString()]);
+    } catch (\Throwable $e) {
+        \Log::error('Firebase debug token generation failed: ' . $e->getMessage());
+        return response()->json(['error' => 'Failed to create token'], 500);
+    }
+});
+
+// Local-only debug: show whether the current request is authenticated and session cookie presence
+Route::get('/debug-session', function () {
+    // Only allow from local environment or localhost IPs
+    $isLocalIp = in_array(request()->ip(), ['127.0.0.1', '::1'], true);
+    if (! (app()->environment('local') || $isLocalIp)) {
+        return response()->json(['error' => 'Not available'], 403);
+    }
+
+    $sessionName = config('session.cookie');
+    $cookieSent = array_key_exists($sessionName, request()->cookies->all());
+
+    return response()->json([
+        'authenticated' => \Illuminate\Support\Facades\Auth::check(),
+        'user' => optional(\Illuminate\Support\Facades\Auth::user())->only(['id','email','firebase_uuid']),
+        'session_id' => session()->getId(),
+        'session_cookie_name' => $sessionName,
+        'session_cookie_sent' => $cookieSent,
+        'request_ip' => request()->ip(),
+        'cookies' => array_keys(request()->cookies->all()),
+    ]);
 });
