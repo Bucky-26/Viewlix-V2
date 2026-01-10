@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
 <head>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-5WWKDRS7Q0"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-5WWKDRS7Q0');
+</script>
     <meta charset="utf-8">
     
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -38,6 +46,7 @@
     
     @stack('styles')
 </head>
+
 <body class="bg-viewlix-dark min-h-screen">
     {{-- Mobile App Banner - Very Top (Static, No Overlay) --}}
     @include('components.mobile-app-banner')
@@ -117,14 +126,7 @@
     </script>
     @endauth
     <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-5WWKDRS7Q0"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
 
-  gtag('config', 'G-5WWKDRS7Q0');
-</script>
     <!-- Pull-to-refresh (PWA) - swipe down to reload on touch devices -->
     <script src="{{ asset('js/pull-to-refresh.js') }}"></script>
     
