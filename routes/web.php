@@ -217,3 +217,15 @@ Route::prefix('developer')->name('developer.')->group(function () {
         Route::delete('/posts/{blogPost}', [DeveloperAdminController::class, 'destroy'])->name('posts.destroy');
     });
 });
+
+// Logo endpoint (serves the SVG logo).
+// NOTE: This endpoint is available at /logo.png but returns SVG content (Content-Type: image/svg+xml).
+// If you need a true raster PNG, we can generate and serve a PNG either by pre-generating
+// `public/logo.png` or using Imagick/Intervention on the server.
+Route::get('/logo.png', function () {
+    $svg = '<svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M4 4h4l4 12 4-12h4L12 22 4 4z"/></svg>';
+
+    return response($svg, 200)
+        ->header('Content-Type', 'image/svg+xml')
+        ->header('Content-Disposition', 'inline; filename="logo.png"');
+})->name('logo');

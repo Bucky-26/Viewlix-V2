@@ -2,9 +2,8 @@
 <footer class="mt-auto py-6 px-4 lg:px-6 border-t border-viewlix-border">
     <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
         <div class="flex items-center gap-2">
-            <svg class="w-6 h-6 text-viewlix-red" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M4 4h4l4 12 4-12h4L12 22 4 4z"/>
-            </svg>
+            {{-- Use the vielix.png image from the public folder. Make sure public/vielix.png exists. --}}
+            <img src="{{ asset('viewlix.png') }}" alt="Viewlix" class="w-20 h-auto object-contain">
             <span class="text-sm text-gray-400">
                 &copy; {{ date('Y') }} <span class="text-white font-medium">Viewlix</span>. All rights reserved.
             </span>

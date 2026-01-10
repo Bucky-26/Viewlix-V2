@@ -3,9 +3,8 @@
     {{-- Logo --}}
     <div class="flex items-center justify-center h-16 border-b border-viewlix-border">
         <a href="{{ route('home') }}" class="flex items-center justify-center">
-            <svg class="w-8 h-8 text-viewlix-red" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M4 4h4l4 12 4-12h4L12 22 4 4z"/>
-            </svg>
+            {{-- Use the reusable logo component --}}
+            <x-logo />
         </a>
     </div>
     

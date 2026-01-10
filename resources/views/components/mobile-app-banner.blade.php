@@ -1,5 +1,5 @@
 {{-- Mobile App Banner - Static at Top (Not Fixed) --}}
-<div id="mobile-app-banner" class="hidden bg-gradient-to-r from-viewlix-red to-red-600 text-white px-4 py-3 shadow-lg md:hidden w-full">
+<div id="mobile-app-banner" class="hidden bg-viewlix-red text-white px-4 py-3 shadow-lg md:hidden w-full">
     {{-- Header Text --}}
     <p class="text-center text-xs font-bold uppercase tracking-wider mb-2 opacity-90">📱 Mobile App Available</p>
     
