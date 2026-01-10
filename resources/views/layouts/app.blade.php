@@ -116,7 +116,15 @@
         });
     </script>
     @endauth
-    
+    <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-5WWKDRS7Q0"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-5WWKDRS7Q0');
+</script>
     <!-- Pull-to-refresh (PWA) - swipe down to reload on touch devices -->
     <script src="{{ asset('js/pull-to-refresh.js') }}"></script>
     
