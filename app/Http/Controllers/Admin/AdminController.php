@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Auth\Events\Verified;
 use App\Services\FirebaseService;
+use App\Services\GoogleAnalyticsService;
 use Illuminate\Support\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -28,6 +29,31 @@ class AdminController extends Controller
         $recentUsers = User::latest()->take(5)->get();
 
         return view('admin.dashboard', compact('stats', 'recentUsers'));
+    }
+
+    /**
+     * Google Analytics via Firebase
+     * Displays an embedded Google Analytics dashboard
+     */
+    public function analytics()
+    {
+        // Get Firebase configuration for the view
+        $firebaseConfig = [
+            'project_id' => config('services.firebase.project_id'),
+            'measurement_id' => config('services.firebase.measurement_id'),
+        ];
+
+        return view('admin.analytics', compact('firebaseConfig'));
+    }
+
+    /**
+     * Get analytics data via AJAX
+     */
+    public function analyticsData(GoogleAnalyticsService $analyticsService)
+    {
+        $data = $analyticsService->getDashboardStats();
+        
+        return response()->json($data);
     }
 
     /**

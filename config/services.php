@@ -87,4 +87,13 @@ return [
         'credentials' => storage_path('app/firebase/service-account.json'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Google Analytics Configuration (for Data API)
+    |--------------------------------------------------------------------------
+    */
+    'google_analytics' => [
+        'property_id' => env('GOOGLE_ANALYTICS_PROPERTY_ID'),
+    ],
+
 ];

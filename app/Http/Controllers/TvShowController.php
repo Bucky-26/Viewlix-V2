@@ -134,7 +134,7 @@ class TvShowController extends Controller
         $sources = [
                         ['name' => 'Viewlix (ad-free)', 'embed' => "https://content.viewlix.site/embed/tv/{$id}/{$season}/{$episode}"],
             ['name' => 'VidLink', 'embed' => $embedUrl],
-            ['name' => 'FilMex (Ad-Free) Suggested', 'embed' => "https://fmovies4u.com/embed/tmdb-tv-{$id}/{$season}/{$episode}?autoPlay=true&hideTitle=true"],
+            ['name' => 'FilMex (Ad-Free) Suggested', 'embed' => "https://fmovies4u.com/embed/tv/{$id}/{$season}/{$episode}?autoPlay=true&hideTitle=true"],
             ['name' => 'Vidsrcme', 'embed' => "https://vidsrcme.ru/embed/tv?tmdb={$id}&season={$season}&episode={$episode}"],
         ];
 

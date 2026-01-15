@@ -98,6 +98,14 @@
                         </svg>
                         Dashboard
                     </a>
+                    <a href="{{ route('admin.analytics') }}" 
+                       class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm {{ request()->routeIs('admin.analytics') ? 'bg-viewlix-red text-white' : 'text-gray-300 hover:bg-viewlix-gray hover:text-white' }}">
+                        <svg class="size-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 3v18h18"/>
+                            <path d="m19 9-5 5-4-4-3 3"/>
+                        </svg>
+                        Analytics
+                    </a>
                     <a href="{{ route('admin.users') }}" 
                        class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm {{ request()->routeIs('admin.users*') ? 'bg-viewlix-red text-white' : 'text-gray-300 hover:bg-viewlix-gray hover:text-white' }}">
                         <svg class="size-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -170,6 +178,17 @@
                             <polyline points="9 22 9 12 15 12 15 22"/>
                         </svg>
                         <span class="nav-text">Dashboard</span>
+                    </a>
+
+                    {{-- Analytics --}}
+                    <a href="{{ route('admin.analytics') }}" 
+                       class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors {{ request()->routeIs('admin.analytics') ? 'bg-viewlix-red text-white' : 'text-gray-300 hover:bg-viewlix-gray hover:text-white' }}"
+                       title="Analytics">
+                        <svg class="nav-icon shrink-0 size-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 3v18h18"/>
+                            <path d="m19 9-5 5-4-4-3 3"/>
+                        </svg>
+                        <span class="nav-text">Analytics</span>
                     </a>
 
                     {{-- Users Section --}}
@@ -325,5 +344,7 @@
             @yield('content')
         </div>
     </main>
+
+    @stack('scripts')
 </body>
 </html>

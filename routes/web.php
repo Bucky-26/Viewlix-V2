@@ -177,6 +177,8 @@ Route::get('/robots.txt', [SitemapController::class, 'robots'])->name('robots');
 // Admin Routes
 Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
+    Route::get('/analytics', [AdminController::class, 'analytics'])->name('analytics');
+    Route::get('/analytics/data', [AdminController::class, 'analyticsData'])->name('analytics.data');
     Route::get('/users', [AdminController::class, 'users'])->name('users');
     Route::get('/users/{user}/edit', [AdminController::class, 'editUser'])->name('users.edit');
     Route::put('/users/{user}', [AdminController::class, 'updateUser'])->name('users.update');
