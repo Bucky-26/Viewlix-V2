@@ -53,6 +53,13 @@ class AdminController extends Controller
     {
         $data = $analyticsService->getDashboardStats();
         
+        // Add debug info
+        $data['debug'] = [
+            'property_id_configured' => config('services.google_analytics.property_id'),
+            'credentials_exists' => file_exists(storage_path('app/firebase/service-account.json')),
+            'service_configured' => $analyticsService->isConfigured(),
+        ];
+        
         return response()->json($data);
     }
 

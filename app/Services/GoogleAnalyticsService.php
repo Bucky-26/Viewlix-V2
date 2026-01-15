@@ -2,13 +2,15 @@
 
 namespace App\Services;
 
-use Google\Analytics\Data\V1beta\BetaAnalyticsDataClient;
+use Google\Analytics\Data\V1beta\Client\BetaAnalyticsDataClient;
 use Google\Analytics\Data\V1beta\DateRange;
 use Google\Analytics\Data\V1beta\Dimension;
 use Google\Analytics\Data\V1beta\Metric;
 use Google\Analytics\Data\V1beta\OrderBy;
 use Google\Analytics\Data\V1beta\OrderBy\DimensionOrderBy;
 use Google\Analytics\Data\V1beta\OrderBy\MetricOrderBy;
+use Google\Analytics\Data\V1beta\RunReportRequest;
+use Google\Analytics\Data\V1beta\RunRealtimeReportRequest;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
@@ -20,10 +22,8 @@ class GoogleAnalyticsService
     public function __construct()
     {
         $credentialsPath = storage_path('app/firebase/service-account.json');
-        $measurementId = config('services.firebase.measurement_id');
         
-        // Extract property ID from measurement ID (G-XXXXXXX -> numeric property ID)
-        // Note: You need to set GOOGLE_ANALYTICS_PROPERTY_ID in .env
+        // Set property ID from config
         $this->propertyId = config('services.google_analytics.property_id');
         
         if (file_exists($credentialsPath) && $this->propertyId) {
@@ -54,6 +54,14 @@ class GoogleAnalyticsService
     }
 
     /**
+     * Get the property resource name
+     */
+    protected function getPropertyName(): string
+    {
+        return "properties/{$this->propertyId}";
+    }
+
+    /**
      * Get active users for a specific period
      */
     public function getActiveUsers(string $period = '1day'): array
@@ -68,9 +76,9 @@ class GoogleAnalyticsService
             try {
                 $dateRange = $this->getDateRange($period);
                 
-                $response = $this->client->runReport([
-                    'property' => "properties/{$this->propertyId}",
-                    'dateRanges' => [$dateRange],
+                $request = new RunReportRequest([
+                    'property' => $this->getPropertyName(),
+                    'date_ranges' => [$dateRange],
                     'metrics' => [
                         new Metric(['name' => 'activeUsers']),
                         new Metric(['name' => 'newUsers']),
@@ -80,6 +88,8 @@ class GoogleAnalyticsService
                         new Metric(['name' => 'bounceRate']),
                     ],
                 ]);
+                
+                $response = $this->client->runReport($request);
 
                 $row = $response->getRows()[0] ?? null;
                 
@@ -119,9 +129,9 @@ class GoogleAnalyticsService
             try {
                 $dateRange = $this->getDateRange($period);
                 
-                $response = $this->client->runReport([
-                    'property' => "properties/{$this->propertyId}",
-                    'dateRanges' => [$dateRange],
+                $request = new RunReportRequest([
+                    'property' => $this->getPropertyName(),
+                    'date_ranges' => [$dateRange],
                     'dimensions' => [
                         new Dimension(['name' => 'date']),
                     ],
@@ -130,7 +140,7 @@ class GoogleAnalyticsService
                         new Metric(['name' => 'sessions']),
                         new Metric(['name' => 'screenPageViews']),
                     ],
-                    'orderBys' => [
+                    'order_bys' => [
                         new OrderBy([
                             'dimension' => new DimensionOrderBy([
                                 'dimension_name' => 'date',
@@ -138,6 +148,8 @@ class GoogleAnalyticsService
                         ]),
                     ],
                 ]);
+                
+                $response = $this->client->runReport($request);
 
                 $data = [
                     'labels' => [],
@@ -150,13 +162,14 @@ class GoogleAnalyticsService
                     $dimensions = $row->getDimensionValues();
                     $metrics = $row->getMetricValues();
                     
-                    $date = $dimensions[0]?->getValue() ?? '';
-                    // Format date from YYYYMMDD to readable format
-                    if (strlen($date) === 8) {
-                        $formattedDate = substr($date, 4, 2) . '/' . substr($date, 6, 2);
-                        $data['labels'][] = $formattedDate;
+                    // Format date from YYYYMMDD to MM/DD
+                    $dateStr = $dimensions[0]?->getValue() ?? '';
+                    if (strlen($dateStr) === 8) {
+                        $month = substr($dateStr, 4, 2);
+                        $day = substr($dateStr, 6, 2);
+                        $data['labels'][] = "{$month}/{$day}";
                     } else {
-                        $data['labels'][] = $date;
+                        $data['labels'][] = $dateStr;
                     }
                     
                     $data['active_users'][] = (int) ($metrics[0]?->getValue() ?? 0);
@@ -177,7 +190,7 @@ class GoogleAnalyticsService
     /**
      * Get top pages
      */
-    public function getTopPages(int $limit = 5, string $period = '7days'): array
+    public function getTopPages(int $limit = 10, string $period = '7days'): array
     {
         $cacheKey = "analytics_top_pages_{$period}_{$limit}";
         
@@ -189,16 +202,16 @@ class GoogleAnalyticsService
             try {
                 $dateRange = $this->getDateRange($period);
                 
-                $response = $this->client->runReport([
-                    'property' => "properties/{$this->propertyId}",
-                    'dateRanges' => [$dateRange],
+                $request = new RunReportRequest([
+                    'property' => $this->getPropertyName(),
+                    'date_ranges' => [$dateRange],
                     'dimensions' => [
                         new Dimension(['name' => 'pagePath']),
                     ],
                     'metrics' => [
                         new Metric(['name' => 'screenPageViews']),
                     ],
-                    'orderBys' => [
+                    'order_bys' => [
                         new OrderBy([
                             'metric' => new MetricOrderBy([
                                 'metric_name' => 'screenPageViews',
@@ -208,6 +221,8 @@ class GoogleAnalyticsService
                     ],
                     'limit' => $limit,
                 ]);
+                
+                $response = $this->client->runReport($request);
 
                 $pages = [];
                 foreach ($response->getRows() as $row) {
@@ -244,16 +259,16 @@ class GoogleAnalyticsService
             try {
                 $dateRange = $this->getDateRange($period);
                 
-                $response = $this->client->runReport([
-                    'property' => "properties/{$this->propertyId}",
-                    'dateRanges' => [$dateRange],
+                $request = new RunReportRequest([
+                    'property' => $this->getPropertyName(),
+                    'date_ranges' => [$dateRange],
                     'dimensions' => [
                         new Dimension(['name' => 'sessionDefaultChannelGroup']),
                     ],
                     'metrics' => [
                         new Metric(['name' => 'sessions']),
                     ],
-                    'orderBys' => [
+                    'order_bys' => [
                         new OrderBy([
                             'metric' => new MetricOrderBy([
                                 'metric_name' => 'sessions',
@@ -263,6 +278,8 @@ class GoogleAnalyticsService
                     ],
                     'limit' => 6,
                 ]);
+                
+                $response = $this->client->runReport($request);
 
                 $sources = [];
                 foreach ($response->getRows() as $row) {
@@ -285,28 +302,32 @@ class GoogleAnalyticsService
     }
 
     /**
-     * Get real-time active users (approximate using last 30 minutes)
+     * Get realtime users count
      */
     public function getRealTimeUsers(): array
     {
         $cacheKey = 'analytics_realtime_users';
         
-        return Cache::remember($cacheKey, now()->addMinutes(1), function () {
+        return Cache::remember($cacheKey, now()->addSeconds(60), function () {
             if (!$this->isConfigured()) {
                 return ['active_users' => 0, 'configured' => false];
             }
 
             try {
-                // GA4 doesn't have a true realtime API via Data API, but we can get recent data
-                $response = $this->client->runRealtimeReport([
-                    'property' => "properties/{$this->propertyId}",
+                $request = new RunRealtimeReportRequest([
+                    'property' => $this->getPropertyName(),
                     'metrics' => [
                         new Metric(['name' => 'activeUsers']),
                     ],
                 ]);
+                
+                $response = $this->client->runRealtimeReport($request);
 
-                $row = $response->getRows()[0] ?? null;
-                $activeUsers = $row ? (int) $row->getMetricValues()[0]->getValue() : 0;
+                $activeUsers = 0;
+                foreach ($response->getRows() as $row) {
+                    $metrics = $row->getMetricValues();
+                    $activeUsers += (int) ($metrics[0]?->getValue() ?? 0);
+                }
 
                 return ['active_users' => $activeUsers, 'configured' => true];
             } catch (\Exception $e) {
