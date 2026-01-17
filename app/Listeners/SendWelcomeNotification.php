@@ -7,6 +7,7 @@ use Kreait\Firebase\Factory;
 use Kreait\Firebase\Messaging\CloudMessage;
 use Kreait\Firebase\Messaging\Notification as FcmNotification;
 use Kreait\Firebase\Messaging\WebPushConfig;
+use App\Notifications\WelcomeNotification;
 
 class SendWelcomeNotification
 {
@@ -55,6 +56,14 @@ class SendWelcomeNotification
             // Store notification for the user
             $database->getReference('notifications/' . $firebaseUuid . '/' . $notificationId)
                 ->set($data);
+
+            // Also send a welcome email (if mail is configured). Don't let
+            // failures here break registration.
+            try {
+                $user->notify(new WelcomeNotification());
+            } catch (\Throwable $e) {
+                \Log::warning('Failed to send welcome email: ' . $e->getMessage());
+            }
 
             // Attempt to send FCM push to this user's tokens (if any)
             try {
