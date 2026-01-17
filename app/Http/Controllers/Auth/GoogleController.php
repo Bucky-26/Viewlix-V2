@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use Illuminate\Auth\Events\Registered;
+use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -61,8 +63,14 @@ class GoogleController extends Controller
                 'email_verified_at' => now(), // Google emails are verified
             ]);
             
+            // Fire Registered so listeners (welcome notification) run
+            event(new Registered($user));
+
+            // Fire Verified so listeners (account verified email) run
+            event(new Verified($user));
+
             Auth::login($user, true);
-            
+
             return redirect('/')->with('success', 'Account created successfully!');
             
         } catch (\Exception $e) {
