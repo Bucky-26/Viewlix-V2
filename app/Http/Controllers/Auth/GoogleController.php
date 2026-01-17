@@ -63,12 +63,11 @@ class GoogleController extends Controller
             ]);
             
 
-            // Fire Registered so listeners (welcome notification) run
-            event(new Registered($user));
-
             // Mark the user as verified using the framework method which will
             // set the timestamp and dispatch the Verified event (so listeners
-            // like SendVerifiedEmail will run correctly).
+            // like SendVerifiedEmail will run correctly). Do this BEFORE
+            // firing Registered so Laravel's default Registered listeners
+            // (which may send verification emails) see the user as verified.
             if (method_exists($user, 'markEmailAsVerified')) {
                 $user->markEmailAsVerified();
             } else {
@@ -77,6 +76,9 @@ class GoogleController extends Controller
                 $user->save();
                 event(new \Illuminate\Auth\Events\Verified($user));
             }
+
+            // Fire Registered so listeners (welcome notification) run
+            event(new Registered($user));
 
             Auth::login($user, true);
 
