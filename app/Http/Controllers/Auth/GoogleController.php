@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
-use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -60,14 +59,24 @@ class GoogleController extends Controller
                 'avatar' => $googleUser->getAvatar(),
                 'password' => bcrypt(Str::random(24)), // Random password for Google users
                 'firebase_uuid' => Str::uuid()->toString(),
-                'email_verified_at' => now(), // Google emails are verified
+                // email will be marked verified via markEmailAsVerified()
             ]);
             
+
             // Fire Registered so listeners (welcome notification) run
             event(new Registered($user));
 
-            // Fire Verified so listeners (account verified email) run
-            event(new Verified($user));
+            // Mark the user as verified using the framework method which will
+            // set the timestamp and dispatch the Verified event (so listeners
+            // like SendVerifiedEmail will run correctly).
+            if (method_exists($user, 'markEmailAsVerified')) {
+                $user->markEmailAsVerified();
+            } else {
+                // Fallback: set the timestamp manually if method isn't available
+                $user->email_verified_at = now();
+                $user->save();
+                event(new \Illuminate\Auth\Events\Verified($user));
+            }
 
             Auth::login($user, true);
 
