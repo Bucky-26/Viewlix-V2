@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
+use Illuminate\Support\Facades\Log;
 
 class GoogleController extends Controller
 {
@@ -79,6 +80,7 @@ class GoogleController extends Controller
 
             // Fire Registered so listeners (welcome notification) run
             event(new Registered($user));
+            Log::info('GoogleController: dispatched Registered for user id ' . $user->id . ' (' . $user->email . ')');
 
             Auth::login($user, true);
 
