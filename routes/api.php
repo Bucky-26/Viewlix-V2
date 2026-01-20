@@ -45,12 +45,25 @@ Route::get('/movies', function (\Illuminate\Http\Request $request, TMDBService $
     $backdropSize = $request->get('backdrop_size', 'w780');
 
     try {
-        $movies = match ($filter) {
-            'top_rated' => $tmdb->getTopRatedMovies($page),
-            'now_playing' => $tmdb->getNowPlayingMovies($page),
-            'upcoming' => $tmdb->getUpcomingMovies($page),
-            default => $tmdb->getPopularMovies($page),
+        // Attempt to return cached payload immediately when available to
+        // avoid waiting on TMDB for cold-cache requests.
+        $cacheKey = match ($filter) {
+            'top_rated' => "movies.top_rated.{$page}",
+            'now_playing' => "movies.now_playing.{$page}",
+            'upcoming' => "movies.upcoming.{$page}",
+            default => "movies.popular.{$page}",
         };
+
+        if (\Illuminate\Support\Facades\Cache::has($cacheKey)) {
+            $movies = \Illuminate\Support\Facades\Cache::get($cacheKey);
+        } else {
+            $movies = match ($filter) {
+                'top_rated' => $tmdb->getTopRatedMovies($page),
+                'now_playing' => $tmdb->getNowPlayingMovies($page),
+                'upcoming' => $tmdb->getUpcomingMovies($page),
+                default => $tmdb->getPopularMovies($page),
+            };
+        }
 
         if (!empty($movies['results']) && is_array($movies['results'])) {
             // Map results to either full TMDB item (default) or a compact payload
@@ -70,8 +83,31 @@ Route::get('/movies', function (\Illuminate\Http\Request $request, TMDBService $
                         'backdrop_url' => $backdrop,
                     ];
 
+                    // Avoid making per-item TMDB image API calls when returning
+                    // a minimal payload. If the caller explicitly requested
+                    // logos but the images are not cached, we return an empty
+                    // logo_url rather than triggering N extra TMDB requests.
                     if ($includeLogos && isset($item['id'])) {
-                        $compact['logo_url'] = $tmdb->getMovieLogoUrl((int) $item['id'], 'US', 'w280', true);
+                        $imgCacheKey = "movie.{$item['id']}.images";
+                        if (\Illuminate\Support\Facades\Cache::has($imgCacheKey)) {
+                            $images = \Illuminate\Support\Facades\Cache::get($imgCacheKey);
+                            $logoPath = null;
+                            if (!empty($images['logos'])) {
+                                foreach ($images['logos'] as $logo) {
+                                    if (!empty($logo['iso_3166_1']) && strtoupper($logo['iso_3166_1']) === 'US') {
+                                        $logoPath = $logo['file_path'] ?? null;
+                                        break;
+                                    }
+                                }
+                                if (!$logoPath) {
+                                    $logoPath = $images['logos'][0]['file_path'] ?? null;
+                                }
+                            }
+
+                            $compact['logo_url'] = $logoPath ? $tmdb->getImageUrl($logoPath, 'w280', true) : '';
+                        } else {
+                            $compact['logo_url'] = '';
+                        }
                     } else {
                         $compact['logo_url'] = '';
                     }
@@ -138,12 +174,26 @@ Route::get('/tv-shows', function (\Illuminate\Http\Request $request, TMDBService
     $backdropSize = $request->get('backdrop_size', 'w780');
 
     try {
-        $tv = match ($filter) {
-            'top_rated' => $tmdb->getTopRatedTvShows($page),
-            'on_the_air' => $tmdb->getOnTheAirTvShows($page),
-            'airing_today' => $tmdb->getAiringTodayTvShows($page),
-            default => $tmdb->getPopularTvShows($page),
+        // Try to return a cached payload immediately if present. This
+        // avoids waiting on TMDB for cold-cache requests when a cached
+        // copy exists. Keys mirror those used by TMDBService.
+        $cacheKey = match ($filter) {
+            'top_rated' => "tv.top_rated.{$page}",
+            'on_the_air' => "tv.on_the_air.{$page}",
+            'airing_today' => "tv.airing_today.{$page}",
+            default => "tv.popular.{$page}",
         };
+
+        if (\Illuminate\Support\Facades\Cache::has($cacheKey)) {
+            $tv = \Illuminate\Support\Facades\Cache::get($cacheKey);
+        } else {
+            $tv = match ($filter) {
+                'top_rated' => $tmdb->getTopRatedTvShows($page),
+                'on_the_air' => $tmdb->getOnTheAirTvShows($page),
+                'airing_today' => $tmdb->getAiringTodayTvShows($page),
+                default => $tmdb->getPopularTvShows($page),
+            };
+        }
 
         if (!empty($tv['results']) && is_array($tv['results'])) {
             $tv['results'] = array_map(function ($item) use ($tmdb, $minimal, $includeLogos, $posterSize, $backdropSize) {
@@ -227,11 +277,21 @@ Route::get('/anime', function (\Illuminate\Http\Request $request, TMDBService $t
     $backdropSize = $request->get('backdrop_size', 'w780');
 
     try {
-        $anime = match ($filter) {
-            'top_rated' => $tmdb->getTopRatedAnime($page),
-            'airing' => $tmdb->getAiringAnime($page),
-            default => $tmdb->getPopularAnime($page),
+        $cacheKey = match ($filter) {
+            'top_rated' => "anime.top_rated.{$page}",
+            'airing' => "anime.airing.{$page}",
+            default => "anime.popular.{$page}",
         };
+
+        if (\Illuminate\Support\Facades\Cache::has($cacheKey)) {
+            $anime = \Illuminate\Support\Facades\Cache::get($cacheKey);
+        } else {
+            $anime = match ($filter) {
+                'top_rated' => $tmdb->getTopRatedAnime($page),
+                'airing' => $tmdb->getAiringAnime($page),
+                default => $tmdb->getPopularAnime($page),
+            };
+        }
 
         if (!empty($anime['results']) && is_array($anime['results'])) {
             $anime['results'] = array_map(function ($item) use ($tmdb, $minimal, $includeLogos, $posterSize, $backdropSize) {

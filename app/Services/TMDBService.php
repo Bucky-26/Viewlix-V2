@@ -23,11 +23,19 @@ class TMDBService
      */
     protected function request(string $endpoint, array $params = []): ?array
     {
-        $response = Http::withToken($this->accessToken)
-            ->get("{$this->baseUrl}{$endpoint}", $params);
+        try {
+            // Set a sensible timeout so slow TMDB responses fail fast instead
+            // of blocking the whole request for a long time.
+            $response = Http::withToken($this->accessToken)
+                ->timeout(6)
+                ->get("{$this->baseUrl}{$endpoint}", $params);
 
-        if ($response->successful()) {
-            return $response->json();
+            if ($response->successful()) {
+                return $response->json();
+            }
+        } catch (\Throwable $e) {
+            // Log a warning so slow/failed external calls are visible in logs
+            \Log::warning('TMDB request failed for ' . $endpoint . ': ' . $e->getMessage());
         }
 
         return null;
