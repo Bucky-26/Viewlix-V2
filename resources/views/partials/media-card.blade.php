@@ -21,7 +21,7 @@
             {{-- Provide intrinsic image dimensions to avoid layout shifts (w342 -> 2:3 aspect => 342x513) --}}
             <img src="{{ $tmdb->getImageUrl($posterPath, 'w342', true) }}" 
                  alt="{{ $title }}" 
-                 class="aspect-[2/3] w-full object-cover"
+                 class="aspect-[2/3] w-full object-contain md:object-cover"
                  width="342" height="513" decoding="async" loading="lazy">
         @else
             <div class="aspect-[2/3] bg-viewlix-darker flex items-center justify-center">

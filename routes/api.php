@@ -43,7 +43,7 @@ Route::get('/movies', function (\Illuminate\Http\Request $request, TMDBService $
     $includeLogos = (bool) $request->get('include_logos', false);
     $posterSize = $request->get('poster_size', 'w342');
     $backdropSize = $request->get('backdrop_size', 'w780');
-
+    $logoSize = $request->get('logo_size', 'w280');
     try {
         // Attempt to return cached payload immediately when available to
         // avoid waiting on TMDB for cold-cache requests.
@@ -67,7 +67,7 @@ Route::get('/movies', function (\Illuminate\Http\Request $request, TMDBService $
 
         if (!empty($movies['results']) && is_array($movies['results'])) {
             // Map results to either full TMDB item (default) or a compact payload
-            $movies['results'] = array_map(function ($item) use ($tmdb, $minimal, $includeLogos, $posterSize, $backdropSize) {
+            $movies['results'] = array_map(function ($item) use ($tmdb, $minimal, $includeLogos, $posterSize, $backdropSize, $logoSize) {
                 // Provide proxied poster/backdrop URLs with requested sizes
                 $poster = $tmdb->getImageUrl($item['poster_path'] ?? null, $posterSize, true);
                 $backdrop = $tmdb->getImageUrl($item['backdrop_path'] ?? null, $backdropSize, true);
@@ -83,31 +83,10 @@ Route::get('/movies', function (\Illuminate\Http\Request $request, TMDBService $
                         'backdrop_url' => $backdrop,
                     ];
 
-                    // Avoid making per-item TMDB image API calls when returning
-                    // a minimal payload. If the caller explicitly requested
-                    // logos but the images are not cached, we return an empty
-                    // logo_url rather than triggering N extra TMDB requests.
+                    // Populate logo_url when requested. Call TMDB helper so
+                    // callers requesting logos receive a usable proxied URL.
                     if ($includeLogos && isset($item['id'])) {
-                        $imgCacheKey = "movie.{$item['id']}.images";
-                        if (\Illuminate\Support\Facades\Cache::has($imgCacheKey)) {
-                            $images = \Illuminate\Support\Facades\Cache::get($imgCacheKey);
-                            $logoPath = null;
-                            if (!empty($images['logos'])) {
-                                foreach ($images['logos'] as $logo) {
-                                    if (!empty($logo['iso_3166_1']) && strtoupper($logo['iso_3166_1']) === 'US') {
-                                        $logoPath = $logo['file_path'] ?? null;
-                                        break;
-                                    }
-                                }
-                                if (!$logoPath) {
-                                    $logoPath = $images['logos'][0]['file_path'] ?? null;
-                                }
-                            }
-
-                            $compact['logo_url'] = $logoPath ? $tmdb->getImageUrl($logoPath, 'w280', true) : '';
-                        } else {
-                            $compact['logo_url'] = '';
-                        }
+                        $compact['logo_url'] = $tmdb->getMovieLogoUrl((int) $item['id'], 'US', $logoSize, true);
                     } else {
                         $compact['logo_url'] = '';
                     }
@@ -126,39 +105,6 @@ Route::get('/movies', function (\Illuminate\Http\Request $request, TMDBService $
         return response()->json($movies);
     } catch (\Exception $e) {
         return response()->json(['error' => 'Failed to fetch movies: ' . $e->getMessage()], 500);
-    }
-});
-
-// Single movie details (JSON)
-Route::get('/movies/{id}', function (int $id, TMDBService $tmdb) {
-    try {
-        $movie = $tmdb->getMovieDetails($id);
-        if (! $movie) return response()->json(['error' => 'Not found'], 404);
-        $credits = $tmdb->getMovieCredits($id);
-        $similar = $tmdb->getSimilarMovies($id);
-
-        // Add proxied image URLs and logo
-        $movie['poster_url'] = $tmdb->getImageUrl($movie['poster_path'] ?? null, 'w500', true);
-        $movie['backdrop_url'] = $tmdb->getImageUrl($movie['backdrop_path'] ?? null, 'w1280', true);
-        $movie['logo_url'] = $tmdb->getMovieLogoUrl($id, 'US', 'w500', true);
-
-        // Enrich similar results if present
-        $similarResults = [];
-        if (!empty($similar['results']) && is_array($similar['results'])) {
-            $similarResults = array_map(function ($item) use ($tmdb) {
-                $item['poster_url'] = $tmdb->getImageUrl($item['poster_path'] ?? null, 'w500', true);
-                $item['backdrop_url'] = $tmdb->getImageUrl($item['backdrop_path'] ?? null, 'w1280', true);
-                $item['logo_url'] = isset($item['id']) ? $tmdb->getMovieLogoUrl((int) $item['id'], 'US', 'w500', true) : '';
-                return $item;
-            }, $similar['results']);
-        }
-
-        return response()->json(array_merge($movie, [
-            'credits' => $credits ?? [],
-            'similar' => $similarResults,
-        ]));
-    } catch (\Exception $e) {
-        return response()->json(['error' => 'Failed to fetch movie: ' . $e->getMessage()], 500);
     }
 });
 
