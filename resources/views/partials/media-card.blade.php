@@ -18,10 +18,11 @@
 <div class="group relative bg-viewlix-gray rounded-xl overflow-hidden border border-viewlix-border hover:border-viewlix-red transition-colors">
     <a href="{{ $route }}">
         @if($posterPath && isset($tmdb))
+            {{-- Provide intrinsic image dimensions to avoid layout shifts (w342 -> 2:3 aspect => 342x513) --}}
             <img src="{{ $tmdb->getImageUrl($posterPath, 'w342', true) }}" 
                  alt="{{ $title }}" 
                  class="aspect-[2/3] w-full object-cover"
-                 loading="lazy">
+                 width="342" height="513" decoding="async" loading="lazy">
         @else
             <div class="aspect-[2/3] bg-viewlix-darker flex items-center justify-center">
                 <svg class="w-12 h-12 text-gray-600" fill="none" stroke="currentColor" stroke-width="1" viewBox="0 0 24 24">

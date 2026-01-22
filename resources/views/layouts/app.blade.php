@@ -60,10 +60,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <!-- End Google Tag Manager (noscript) -->
     {{-- Mobile App Banner - Very Top (Static, No Overlay) --}}
-    @include('components.mobile-app-banner')
     
     <!-- Mobile App Popup -->
-    @include('components.mobile-app-popup')
     
     <!-- Mini Sidebar (hidden on mobile) -->
     @include('partials.sidebar')

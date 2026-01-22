@@ -410,13 +410,13 @@ function renderPreview(data, mediaType, isExpanded = false) {
         <div class="relative">
             ${backdropUrl ? `
             <div class="absolute inset-0 -mx-4 -mt-4 h-40 overflow-hidden rounded-t-2xl">
-                <img src="${backdropUrl}" alt="" class="w-full h-full object-cover opacity-30">
+                <img src="${backdropUrl}" alt="" class="w-full h-full object-cover opacity-30" width="780" height="334">
                 <div class="absolute inset-0 bg-gradient-to-t from-viewlix-darker to-transparent"></div>
             </div>
             ` : ''}
             
             <div class="relative flex gap-4 ${backdropUrl ? 'pt-20' : ''}">
-                <img src="${posterUrl}" alt="${title}" class="w-24 h-36 object-cover rounded-xl shadow-lg flex-shrink-0">
+                <img src="${posterUrl}" alt="${title}" class="w-24 h-36 object-cover rounded-xl shadow-lg flex-shrink-0" width="300" height="450">
                 
                 <div class="flex-1 min-w-0">
                     <h3 class="text-lg font-bold text-white line-clamp-2">${title}</h3>
@@ -511,7 +511,7 @@ function renderFullDetails(data, mediaType) {
             ${backdropUrl ? `
             <div class="relative -mx-4 -mt-4 mb-6">
                 <div class="aspect-[21/9] bg-viewlix-darker relative overflow-hidden rounded-t-2xl">
-                    <img src="${backdropUrl}" alt="${title}" class="absolute inset-0 w-full h-full object-cover">
+                        <img src="${backdropUrl}" alt="${title}" class="absolute inset-0 w-full h-full object-cover" width="780" height="334">
                     <div class="absolute inset-0 bg-gradient-to-r from-viewlix-dark via-viewlix-dark/80 to-transparent"></div>
                     <div class="absolute inset-0 bg-gradient-to-t from-viewlix-dark via-transparent to-transparent"></div>
                 </div>
@@ -519,7 +519,7 @@ function renderFullDetails(data, mediaType) {
             ` : ''}
             
             <div class="flex gap-4 mb-6">
-                <img src="${posterUrl}" alt="${title}" class="w-24 h-36 object-cover rounded-xl shadow-lg flex-shrink-0 hidden sm:block">
+                <img src="${posterUrl}" alt="${title}" class="w-24 h-36 object-cover rounded-xl shadow-lg flex-shrink-0 hidden sm:block" width="300" height="450">
                 <div class="flex-1">
                     <h1 class="text-2xl sm:text-3xl font-bold text-white mb-3">${title}</h1>
                     <div class="flex flex-wrap items-center gap-3 text-sm text-gray-400 mb-4">
@@ -582,7 +582,7 @@ function renderFullDetails(data, mediaType) {
                         <div class="flex-shrink-0 text-center w-24">
                             <div class="w-20 h-20 mx-auto bg-viewlix-gray rounded-full mb-2 overflow-hidden">
                                 ${actor.profile_path ? `
-                                    <img src="https://image.tmdb.org/t/p/w185${actor.profile_path}" alt="${actor.name}" class="w-full h-full object-cover">
+                                    <img src="https://image.tmdb.org/t/p/w185${actor.profile_path}" alt="${actor.name}" class="w-full h-full object-cover" width="185" height="278">
                                 ` : `
                                     <div class="w-full h-full flex items-center justify-center">
                                         <svg class="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
@@ -610,7 +610,7 @@ function renderFullDetails(data, mediaType) {
                         return `
                             <a href="${itemUrl}" class="group">
                                 <div class="aspect-[2/3] bg-viewlix-gray rounded-xl overflow-hidden border border-viewlix-border hover:border-viewlix-red transition-colors">
-                                    <img src="${itemPoster}" alt="${itemTitle}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                                    <img src="${itemPoster}" alt="${itemTitle}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" width="300" height="450">
                                 </div>
                                 <h3 class="mt-2 text-sm font-medium text-white line-clamp-2">${itemTitle}</h3>
                             </a>

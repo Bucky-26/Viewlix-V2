@@ -28,7 +28,8 @@
         }
     }
 
-    function createSlide(item, type){
+    // Accept size hints so we can add intrinsic dimensions for images (reduces CLS)
+    function createSlide(item, type, backdropSize = 'w780'){
         const slide = document.createElement('div');
         slide.className = 'hero-carousel-slide absolute inset-0 h-full opacity-0';
 
@@ -39,7 +40,17 @@
     img.alt = item.title || item.name || '';
     img.className = 'absolute inset-0 w-full h-full object-cover object-center';
     // Prefer proxied backdrop_url/backdrop_url, fall back to TMDB paths
-    img.src = getImage(item.backdrop_url || item.backdrop_path || item.poster_url || item.poster_path, 'original');
+    const backdropSource = item.backdrop_url || item.backdrop_path || item.poster_url || item.poster_path;
+    img.src = getImage(backdropSource, backdropSize || 'w780');
+    // Try to set intrinsic width/height when size contains a known 'w' prefix
+    const match = (backdropSize || '').match(/^w(\d+)$/);
+    if(match){
+        const w = parseInt(match[1],10);
+        // For backdrops assume a wide aspect (approx 21/9) => height = w * 9/21
+        const h = Math.round(w * 9 / 21);
+        img.setAttribute('width', String(w));
+        img.setAttribute('height', String(h));
+    }
 
         inner.appendChild(img);
         inner.insertAdjacentHTML('beforeend', '<div class="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent"></div>');
@@ -85,7 +96,8 @@
         return slide;
     }
 
-    function createMediaCard(item, type){
+    // Accept posterSize so we can add width/height attributes
+    function createMediaCard(item, type, posterSize = 'w342'){
         const title = item.title || item.name || 'Unknown';
         const date = item.release_date || item.first_air_date || '';
         const year = date ? String(date).slice(0,4) : '';
@@ -107,10 +119,18 @@
         const posterUrl = item.poster_url || posterPath;
         if(posterUrl){
             const img = document.createElement('img');
-            img.src = getImage(posterUrl, 'w342');
+            img.src = getImage(posterUrl, posterSize || 'w342');
             img.alt = title;
             img.className = 'aspect-[2/3] w-full object-cover';
             img.loading = 'lazy';
+            // If posterSize is like 'w342' set intrinsic width/height (2:3)
+            const pMatch = (posterSize || '').match(/^w(\d+)$/);
+            if(pMatch){
+                const w = parseInt(pMatch[1],10);
+                const h = Math.round(w * 3 / 2);
+                img.setAttribute('width', String(w));
+                img.setAttribute('height', String(h));
+            }
             a.appendChild(img);
         } else {
             const placeholder = document.createElement('div'); placeholder.className = 'aspect-[2/3] bg-viewlix-darker flex items-center justify-center';
@@ -180,13 +200,13 @@
         container.appendChild(grid);
     }
 
-    function renderGrid(containerId, items, type){
+    function renderGrid(containerId, items, type, posterSize = 'w342'){
         const container = document.getElementById(containerId);
         if(!container) return;
         container.innerHTML = '';
         const grid = document.createElement('div'); grid.className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4';
         items.slice(0,6).forEach(item => {
-            const card = createMediaCard(item, type);
+            const card = createMediaCard(item, type, posterSize);
             grid.appendChild(card);
         });
         container.appendChild(grid);
@@ -293,16 +313,16 @@
             movies.slice(0,6).forEach(m=>slides.push({item:m,type:'movie'}));
             tvs.slice(0,6).forEach(t=>slides.push({item:t,type:'tv'}));
             slides.slice(0,6).forEach(s=>{
-                const slideEl = createSlide(s.item, s.type);
+                const slideEl = createSlide(s.item, s.type, backdropSize);
                 slidesContainer.appendChild(slideEl);
             });
         }
 
         // Render grids (replace skeletons)
-        renderGrid('trending-movies-grid', movies, 'movie');
-        renderGrid('top-rated-movies-grid', topRated, 'movie');
-        renderGrid('trending-tv-grid', tvs, 'tv');
-        renderGrid('popular-anime-grid', anime, 'anime');
+    renderGrid('trending-movies-grid', movies, 'movie', posterSize);
+    renderGrid('top-rated-movies-grid', topRated, 'movie', posterSize);
+    renderGrid('trending-tv-grid', tvs, 'tv', posterSize);
+    renderGrid('popular-anime-grid', anime, 'anime', posterSize);
 
         initHeroBehavior();
     }
