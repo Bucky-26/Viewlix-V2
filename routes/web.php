@@ -209,7 +209,7 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     // Banner management
     Route::resource('banners', \App\Http\Controllers\Admin\BannerController::class);
     Route::post('/banners/{banner}/toggle', [\App\Http\Controllers\Admin\BannerController::class, 'toggle'])->name('banners.toggle');
-});
+}); // Closes admin group
 
 // Developer Portfolio (static page)
 Route::get('/developer/profile/isoy', function () {
