@@ -205,6 +205,10 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::get('/mobile-app', [MobileAppController::class, 'index'])->name('mobile-app.index');
     Route::post('/mobile-app/{platform}', [MobileAppController::class, 'store'])->name('mobile-app.store');
     Route::get('/mobile-app/{platform}/download', [MobileAppController::class, 'download'])->name('mobile-app.download');
+
+    // Banner management
+    Route::resource('banners', \App\Http\Controllers\Admin\BannerController::class);
+    Route::post('/banners/{banner}/toggle', [\App\Http\Controllers\Admin\BannerController::class, 'toggle'])->name('banners.toggle');
 });
 
 // Developer Portfolio (static page)

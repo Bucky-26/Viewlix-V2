@@ -55,11 +55,27 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 </head>
 
 <body class="bg-viewlix-dark min-h-screen">
+    <!-- Header Banners (Very Top) -->
+    @php
+        $headerBanners = \App\Models\Banner::where('type', 'header')->where('is_active', true)->get();
+        $popupBanners = \App\Models\Banner::where('type', 'popup')->where('is_active', true)->get();
+    @endphp
+    
+    @forelse($headerBanners as $banner)
+        @include('components.banner-header', ['banner' => $banner])
+    @empty
+    @endforelse
+
     <!-- Google Tag Manager (noscript) -->
 <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TK84GXHV"
 height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <!-- End Google Tag Manager (noscript) -->
     {{-- Mobile App Banner - Very Top (Static, No Overlay) --}}
+    
+    <!-- Banner Popups -->
+    @foreach($popupBanners as $banner)
+        @include('components.banner-popup', ['banner' => $banner])
+    @endforeach
     
     <!-- Mobile App Popup -->
     
@@ -67,7 +83,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     @include('partials.sidebar')
     
     <!-- Main Content -->
-    <main class="md:pl-[72px] min-h-screen pb-20 md:pb-0">
+    <main class="md:pl-[72px] min-h-screen pb-20 md:pb-0 @if($headerBanners->count() > 0) mt-20 @endif">
         <!-- Header -->
         @include('partials.header')
         
@@ -143,6 +159,99 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <script src="{{ asset('js/download-manager.js') }}"></script>
       
     <script src="{{ asset('js/main.js') }}"></script>
+
+    <!-- Banner Management Script -->
+    <script>
+        function showBannerPopup(bannerId) {
+            const popup = document.getElementById(`banner-popup-${bannerId}`);
+            if (popup) {
+                popup.classList.remove('hidden');
+            }
+        }
+
+        function closeBannerPopup(bannerId) {
+            const popup = document.getElementById(`banner-popup-${bannerId}`);
+            if (popup) {
+                popup.classList.add('hidden');
+                // Save to localStorage that this banner has been shown
+                localStorage.setItem(`banner-shown-${bannerId}`, 'true');
+            }
+        }
+
+        function closeHeaderBanner(bannerId) {
+            const banner = document.getElementById(`header-banner-${bannerId}`);
+            const mainContent = document.querySelector('main');
+            if (banner) {
+                banner.style.display = 'none';
+                // Remove top margin from main content when banner is closed
+                if (mainContent) {
+                    mainContent.classList.remove('mt-20');
+                }
+                // Save to sessionStorage so it stays closed for this browsing session
+                sessionStorage.setItem(`header-banner-closed-${bannerId}`, 'true');
+            }
+        }
+
+        // Initialize banners on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Popup banners
+            const bannerIds = @json($popupBanners->pluck('id'));
+            
+            bannerIds.forEach(bannerId => {
+                const storageKey = `banner-shown-${bannerId}`;
+                const hasBeenShown = localStorage.getItem(storageKey);
+                
+                // Show banner if it hasn't been shown in this session or if page was closed and reopened
+                // Banner shows on first visit or after page refresh (session based)
+                if (!hasBeenShown) {
+                    // Mark as shown in current session
+                    localStorage.setItem(storageKey, 'true');
+                    // Show the popup after a brief delay for better UX
+                    setTimeout(() => {
+                        showBannerPopup(bannerId);
+                    }, 500);
+                }
+            });
+
+            // Header banners - restore visibility based on sessionStorage (only closed during current session)
+            const headerBannerIds = @json($headerBanners->pluck('id'));
+            const mainContent = document.querySelector('main');
+            let anyBannerClosed = false;
+            
+            headerBannerIds.forEach(bannerId => {
+                const closedKey = `header-banner-closed-${bannerId}`;
+                if (sessionStorage.getItem(closedKey)) {
+                    const banner = document.getElementById(`header-banner-${bannerId}`);
+                    if (banner) {
+                        banner.style.display = 'none';
+                        anyBannerClosed = true;
+                    }
+                }
+            });
+            
+            // Remove margin if any banner is closed
+            if (anyBannerClosed && mainContent) {
+                mainContent.classList.remove('mt-20');
+            }
+        });
+
+        // Show banners again when user returns to the page (after closing and reopening browser/tab)
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted) {
+                // Page was restored from bfcache (back-forward cache)
+                const bannerIds = @json($popupBanners->pluck('id'));
+                bannerIds.forEach(bannerId => {
+                    localStorage.removeItem(`banner-shown-${bannerId}`);
+                    setTimeout(() => {
+                        showBannerPopup(bannerId);
+                    }, 500);
+                });
+
+                // Header banners stay closed even on page restore (user dismissed them)
+                // No need to reset sessionStorage as banners should stay hidden
+            }
+        });
+    </script>
 
     @stack('scripts')
 </body>
