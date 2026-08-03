@@ -39,11 +39,21 @@ class BannerController extends Controller
             'icon' => 'nullable|string',
             'button_text' => 'nullable|string|max:255',
             'button_url' => 'nullable|url',
-            'hotlinks' => 'nullable|json',
+            'hotlinks' => 'nullable|string',
             'is_active' => 'boolean',
         ]);
 
         $validated['is_active'] = $request->has('is_active');
+
+        // Properly decode and re-encode hotlinks JSON
+        if (!empty($validated['hotlinks'])) {
+            try {
+                $decoded = json_decode($validated['hotlinks'], true);
+                $validated['hotlinks'] = json_encode($decoded, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+            } catch (\Exception $e) {
+                $validated['hotlinks'] = null;
+            }
+        }
 
         // If this is a header banner being activated, deactivate all other header banners
         if ($validated['type'] === 'header' && $validated['is_active']) {
@@ -78,11 +88,21 @@ class BannerController extends Controller
             'icon' => 'nullable|string',
             'button_text' => 'nullable|string|max:255',
             'button_url' => 'nullable|url',
-            'hotlinks' => 'nullable|json',
+            'hotlinks' => 'nullable|string',
             'is_active' => 'boolean',
         ]);
 
         $validated['is_active'] = $request->has('is_active');
+
+        // Properly decode and re-encode hotlinks JSON
+        if (!empty($validated['hotlinks'])) {
+            try {
+                $decoded = json_decode($validated['hotlinks'], true);
+                $validated['hotlinks'] = json_encode($decoded, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+            } catch (\Exception $e) {
+                $validated['hotlinks'] = null;
+            }
+        }
 
         // If this is a header banner being activated, deactivate all other header banners
         if ($validated['type'] === 'header' && $validated['is_active']) {

@@ -57,14 +57,24 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 <body class="bg-viewlix-dark min-h-screen">
     <!-- Header Banners (Very Top) -->
     @php
-        $headerBanners = \App\Models\Banner::where('type', 'header')->where('is_active', true)->get();
-        $popupBanners = \App\Models\Banner::where('type', 'popup')->where('is_active', true)->get();
+        try {
+            $headerBanners = \App\Models\Banner::where('type', 'header')->where('is_active', true)->get();
+            $popupBanners = \App\Models\Banner::where('type', 'popup')->where('is_active', true)->get();
+        } catch (\Exception $e) {
+            $headerBanners = collect();
+            $popupBanners = collect();
+            // Log error in production
+            if (app()->environment('production')) {
+                \Log::error('Banner query error: ' . $e->getMessage());
+            }
+        }
     @endphp
     
-    @forelse($headerBanners as $banner)
-        @include('components.banner-header', ['banner' => $banner])
-    @empty
-    @endforelse
+    @if($headerBanners && count($headerBanners) > 0)
+        @foreach($headerBanners as $banner)
+            @include('components.banner-header', ['banner' => $banner])
+        @endforeach
+    @endif
 
     <!-- Google Tag Manager (noscript) -->
 <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TK84GXHV"
@@ -73,9 +83,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     {{-- Mobile App Banner - Very Top (Static, No Overlay) --}}
     
     <!-- Banner Popups -->
-    @foreach($popupBanners as $banner)
-        @include('components.banner-popup', ['banner' => $banner])
-    @endforeach
+    @if($popupBanners && count($popupBanners) > 0)
+        @foreach($popupBanners as $banner)
+            @include('components.banner-popup', ['banner' => $banner])
+        @endforeach
+    @endif
     
     <!-- Mobile App Popup -->
     
