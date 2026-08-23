@@ -535,9 +535,21 @@ window.isFirebaseAuthenticated = function() {
  * Save watch progress to Firebase Realtime Database only
  */
 window.saveWatchProgress = async function(mediaId, progressData) {
-    // Only save to Firebase when authenticated
+    const mediaKey = String(mediaId);
+
+    try {
+        const localProgress = JSON.parse(localStorage.getItem('vidLinkProgress') || '{}');
+        localProgress[mediaKey] = {
+            ...progressData,
+            last_updated: Date.now()
+        };
+        localStorage.setItem('vidLinkProgress', JSON.stringify(localProgress));
+    } catch (error) {
+        console.error('Local watch progress save error:', error);
+    }
+
+    // Firebase sync is best effort; localStorage remains available offline.
     if (!firebaseDb || !currentFirebaseUser) {
-        console.warn('Watch progress not saved: User not authenticated with Firebase');
         return;
     }
     

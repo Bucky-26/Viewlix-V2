@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
 
@@ -40,8 +41,15 @@ class RegisteredUserController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
-
-        event(new Registered($user));
+    
+            try {
+            event(new Registered($user));
+        } catch (\Throwable $exception) {
+            Log::warning('Registration email notifications failed.', [
+                'user_id' => $user->id,
+                'exception' => $exception,
+            ]);
+        }
 
         Auth::login($user);
 

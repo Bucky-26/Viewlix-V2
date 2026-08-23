@@ -61,12 +61,31 @@ function buildProgressData(watchedTime, duration) {
 	return progressData;
 }
 
-// Listen for VidLink postMessage events
+// Listen only for Viewlix player postMessage events.
 window.addEventListener('message', function(event) {
-	// Accept messages from VidLink
-	if (event.origin !== 'https://vidlink.pro') return;
+	if (!['https://content.viewlix.online', 'https://cdn.viewlix.online'].includes(event.origin)) return;
 
-	// Handle MEDIA_DATA from VidLink
+	if (event.data?.type === 'PLAYER_EVENT') {
+		const playerData = event.data.data || {};
+		const watchedTime = Number(playerData.player_progress);
+		const duration = Number(playerData.player_duration);
+
+		if (Number.isFinite(watchedTime) && Number.isFinite(duration) && duration > 0) {
+			const timeSinceLastSave = Math.abs(watchedTime - lastSavedTime);
+			const progressData = buildProgressData(watchedTime, duration);
+
+			if (typeof window.saveWatchProgress === 'function') {
+				window.saveWatchProgress(mediaData.id, progressData);
+				lastSavedTime = watchedTime;
+			} else if (timeSinceLastSave >= SAVE_INTERVAL_SECONDS) {
+				lastSavedTime = watchedTime;
+			}
+		}
+
+		return;
+	}
+
+	// Handle legacy progress data from the Viewlix player.
 	if (event.data?.type === 'MEDIA_DATA') {
 		const data = event.data.data;
 		const mediaKey = String(mediaData.id);

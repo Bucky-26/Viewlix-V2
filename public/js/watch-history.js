@@ -6,6 +6,7 @@ function watchHistoryPage() {
         items: [],
         activeType: 'all',
         loading: true,
+        contentBaseUrl: 'https://content.viewlix.online',
         
         async init() {
             // Sign in to Firebase first (optional, provided by other scripts)
@@ -93,11 +94,26 @@ function watchHistoryPage() {
         getWatchUrl(item) {
             const type = item.type || 'movie';
             const id = item.id || item.media_id;
+            const progress = item.progress && Number(item.progress.watched);
+            const query = new URLSearchParams({ autoplay: '1' });
+
+            if (progress > 0) {
+                query.set('startAt', String(Math.floor(progress)));
+            }
             
-            if (type === 'movie') return '/movie/' + id + '/watch';
-            if (type === 'tv') return '/tv-show/' + id + '/watch?season=' + (item.season || 1) + '&episode=' + (item.episode || 1);
-            if (type === 'anime') return '/anime/' + id + '/watch?season=' + (item.season || 1) + '&episode=' + (item.episode || 1);
-            return '/movie/' + id + '/watch';
+            if (type === 'movie') {
+                return '/movie/' + encodeURIComponent(id) + '/watch?' + query;
+            }
+
+            if (type === 'tv' || type === 'anime') {
+                const season = encodeURIComponent(item.season || 1);
+                const episode = encodeURIComponent(item.episode || 1);
+
+                const path = type === 'tv' ? '/tv-show/' : '/anime/';
+                return path + encodeURIComponent(id) + '/watch/' + season + '/' + episode + '?' + query;
+            }
+
+            return '/movie/' + encodeURIComponent(id) + '/watch?' + query;
         },
         
         formatTimeAgo(timestamp) {

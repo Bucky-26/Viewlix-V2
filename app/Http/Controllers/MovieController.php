@@ -110,7 +110,7 @@ class MovieController extends Controller
         // If the API expects a different path or needs server-side fetching, this can be adjusted later.
         $sources = [
 
-            ['name' => 'Viewlix (ad-free)', 'embed' => "https://content.viewlix.site/embed/movie/{$id}"],
+            ['name' => 'Viewlix (ad-free)', 'embed' => "https://content.viewlix.online/embed/movie/{$id}"],
             
                 ['name' => 'VidLink', 'embed' => $embedUrl],
 
