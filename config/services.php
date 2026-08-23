@@ -84,7 +84,15 @@ return [
         'app_id' => env('FIREBASE_APP_ID'),
         'measurement_id' => env('FIREBASE_MEASUREMENT_ID'),
         'vapid_key' => env('FIREBASE_VAPID_KEY'),
-        'credentials' => storage_path('app/firebase/service-account.json'),
+
+        // Service Account / Admin SDK credentials in .env
+        'client_email' => env('FIREBASE_CLIENT_EMAIL'),
+        'private_key' => env('FIREBASE_PRIVATE_KEY'),
+        'private_key_id' => env('FIREBASE_PRIVATE_KEY_ID'),
+        'client_id' => env('FIREBASE_CLIENT_ID'),
+        'service_account_json' => env('FIREBASE_SERVICE_ACCOUNT_JSON'),
+        'service_account_base64' => env('FIREBASE_SERVICE_ACCOUNT_BASE64'),
+        'credentials' => env('FIREBASE_CREDENTIALS'),
     ],
 
     /*

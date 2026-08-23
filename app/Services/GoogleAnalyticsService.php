@@ -21,15 +21,15 @@ class GoogleAnalyticsService
 
     public function __construct()
     {
-        $credentialsPath = storage_path('app/firebase/service-account.json');
+        $credentials = FirebaseService::getCredentials();
         
         // Set property ID from config
         $this->propertyId = config('services.google_analytics.property_id');
         
-        if (file_exists($credentialsPath) && $this->propertyId) {
+        if ($credentials && $this->propertyId) {
             try {
                 $this->client = new BetaAnalyticsDataClient([
-                    'credentials' => $credentialsPath,
+                    'credentials' => $credentials,
                 ]);
             } catch (\Exception $e) {
                 Log::error('Failed to initialize Google Analytics client: ' . $e->getMessage());

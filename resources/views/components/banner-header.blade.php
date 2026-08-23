@@ -16,8 +16,17 @@
 
     <!-- Right Section: Hotlinks + Close Button -->
     <div class="flex items-center gap-2 flex-shrink-0">
-        @if($banner->hotlinks && count($banner->hotlinks) > 0)
-            @foreach($banner->hotlinks as $hotlink)
+        @php
+            $hotlinks = $banner->hotlinks;
+            if (is_string($hotlinks)) {
+                $hotlinks = json_decode($hotlinks, true);
+                if (is_string($hotlinks)) {
+                    $hotlinks = json_decode($hotlinks, true);
+                }
+            }
+        @endphp
+        @if(!empty($hotlinks) && is_array($hotlinks))
+            @foreach($hotlinks as $hotlink)
                 <a 
                     href="{{ $hotlink['url'] ?? '#' }}"
                     target="{{ $hotlink['target'] ?? '_self' }}"

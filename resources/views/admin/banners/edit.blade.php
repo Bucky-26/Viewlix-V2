@@ -94,7 +94,7 @@
             <!-- Hotlinks (JSON) -->
             <div>
                 <label for="hotlinks" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Hotlinks (JSON - for Header Banner)</label>
-                <textarea name="hotlinks" id="hotlinks" rows="4" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 font-mono text-sm" placeholder='[{"text":"Learn More","url":"/pricing","target":"_self"},{"text":"Subscribe","url":"/subscribe","target":"_blank"}]'>{{ old('hotlinks', json_encode($banner->hotlinks ?? null)) }}</textarea>
+                <textarea name="hotlinks" id="hotlinks" rows="4" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 font-mono text-sm" placeholder='[{"text":"Learn More","url":"/pricing","target":"_self"},{"text":"Subscribe","url":"/subscribe","target":"_blank"}]'>{{ old('hotlinks', !empty($banner->hotlinks) ? (is_array($banner->hotlinks) ? json_encode($banner->hotlinks, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) : $banner->hotlinks) : '') }}</textarea>
                 <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Format: [{"text":"Link Text","url":"https://example.com","target":"_self"}]</p>
                 @error('hotlinks')
                     <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>

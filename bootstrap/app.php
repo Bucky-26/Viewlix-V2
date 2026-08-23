@@ -16,7 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\LogUserSession::class,
         ]);
         // Ensure Sanctum treats frontend SPA requests as stateful when appropriate
-        $middleware->api(append: [
+        $middleware->api(prepend: [
             \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
         ]);
         

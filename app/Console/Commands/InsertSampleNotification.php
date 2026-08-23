@@ -30,16 +30,16 @@ class InsertSampleNotification extends Command
         $title = $this->option('title') ?? 'Welcome to Viewlix!';
         $message = $this->option('message') ?? 'Thanks for joining. Start exploring movies and TV shows now.';
 
-        $serviceAccountPath = storage_path('app/firebase/service-account.json');
+        $credentials = \App\Services\FirebaseService::getCredentials();
         
-        if (!file_exists($serviceAccountPath)) {
-            $this->error('Firebase service account not found!');
+        if (!$credentials) {
+            $this->error('Firebase credentials not found in .env or storage!');
             return 1;
         }
 
         try {
             $factory = (new Factory)
-                ->withServiceAccount($serviceAccountPath)
+                ->withServiceAccount($credentials)
                 ->withDatabaseUri(config('services.firebase.database_url'));
             
             $database = $factory->createDatabase();

@@ -13,33 +13,98 @@ class FirebaseService
 
     public function __construct()
     {
-        $serviceAccountPath = storage_path('app/firebase/service-account.json');
+        $credentials = self::getCredentials();
         
-        if (file_exists($serviceAccountPath)) {
-            $this->factory = (new Factory)->withServiceAccount($serviceAccountPath);
+        if ($credentials) {
+            try {
+                $this->factory = (new Factory)->withServiceAccount($credentials);
 
-            // If a Realtime Database URL is configured, ensure the factory uses it.
-            // Other parts of the app use config('services.firebase.database_url') so we follow the same pattern.
-            $databaseUrl = config('services.firebase.database_url');
-            if (!empty($databaseUrl)) {
-                $this->factory = $this->factory->withDatabaseUri($databaseUrl);
+                // If a Realtime Database URL is configured, ensure the factory uses it.
+                $databaseUrl = config('services.firebase.database_url');
+                if (!empty($databaseUrl)) {
+                    $this->factory = $this->factory->withDatabaseUri($databaseUrl);
+                }
+
+                $this->auth = $this->factory->createAuth();
+            } catch (\Throwable $e) {
+                \Log::error('Firebase initialization failed: ' . $e->getMessage());
+                $this->factory = null;
+                $this->auth = null;
             }
-
-            $this->auth = $this->factory->createAuth();
         }
+    }
+
+    /**
+     * Resolve service account credentials from .env variables, JSON string, or file path.
+     * Returns an array, JSON string, or file path suitable for Kreait Factory::withServiceAccount()
+     */
+    public static function getCredentials()
+    {
+        $fb = config('services.firebase', []);
+
+        // 1. Individual fields in .env (FIREBASE_CLIENT_EMAIL + FIREBASE_PRIVATE_KEY)
+        if (!empty($fb['client_email']) && !empty($fb['private_key'])) {
+            $privateKey = str_replace('\n', "\n", $fb['private_key']);
+            return [
+                'type' => 'service_account',
+                'project_id' => $fb['project_id'] ?? null,
+                'private_key_id' => $fb['private_key_id'] ?? null,
+                'private_key' => $privateKey,
+                'client_email' => $fb['client_email'],
+                'client_id' => $fb['client_id'] ?? null,
+                'auth_uri' => 'https://accounts.google.com/o/oauth2/auth',
+                'token_uri' => 'https://oauth2.googleapis.com/token',
+                'auth_provider_x509_cert_url' => 'https://www.googleapis.com/oauth2/v1/certs',
+                'client_x509_cert_url' => $fb['client_email'] ? ('https://www.googleapis.com/robot/v1/metadata/x509/' . urlencode($fb['client_email'])) : null,
+            ];
+        }
+
+        // 2. Full JSON string in .env (FIREBASE_SERVICE_ACCOUNT_JSON)
+        if (!empty($fb['service_account_json'])) {
+            $json = trim($fb['service_account_json']);
+            $decoded = json_decode($json, true);
+            if (is_array($decoded)) {
+                return $decoded;
+            }
+            return $json;
+        }
+
+        // 3. Base64-encoded JSON string in .env (FIREBASE_SERVICE_ACCOUNT_BASE64)
+        if (!empty($fb['service_account_base64'])) {
+            $decodedJson = base64_decode($fb['service_account_base64']);
+            if ($decodedJson) {
+                $decoded = json_decode($decodedJson, true);
+                if (is_array($decoded)) {
+                    return $decoded;
+                }
+            }
+        }
+
+        // 4. Custom file path in .env (FIREBASE_CREDENTIALS)
+        if (!empty($fb['credentials']) && file_exists($fb['credentials'])) {
+            return $fb['credentials'];
+        }
+
+        // 5. Default local file path fallback
+        $defaultPath = storage_path('app/firebase/service-account.json');
+        if (file_exists($defaultPath)) {
+            return $defaultPath;
+        }
+
+        return null;
     }
 
     /**
      * Generate a custom Firebase token for the authenticated Laravel user
      * Uses the user's firebase_uuid for security (doesn't expose internal user IDs)
      */
-    public function createCustomToken(): ?string
+    public function createCustomToken(?\App\Models\User $user = null): ?string
     {
         if (!$this->auth) {
             return null;
         }
 
-        $user = Auth::user();
+        $user = $user ?? Auth::user();
         
         if (!$user) {
             return null;

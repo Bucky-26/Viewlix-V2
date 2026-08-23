@@ -45,14 +45,14 @@ class BannerController extends Controller
 
         $validated['is_active'] = $request->has('is_active');
 
-        // Properly decode and re-encode hotlinks JSON
+        // Properly decode hotlinks JSON if provided as string
         if (!empty($validated['hotlinks'])) {
-            try {
+            if (is_string($validated['hotlinks'])) {
                 $decoded = json_decode($validated['hotlinks'], true);
-                $validated['hotlinks'] = json_encode($decoded, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-            } catch (\Exception $e) {
-                $validated['hotlinks'] = null;
+                $validated['hotlinks'] = is_array($decoded) ? $decoded : null;
             }
+        } else {
+            $validated['hotlinks'] = null;
         }
 
         // If this is a header banner being activated, deactivate all other header banners
@@ -94,14 +94,14 @@ class BannerController extends Controller
 
         $validated['is_active'] = $request->has('is_active');
 
-        // Properly decode and re-encode hotlinks JSON
+        // Properly decode hotlinks JSON if provided as string
         if (!empty($validated['hotlinks'])) {
-            try {
+            if (is_string($validated['hotlinks'])) {
                 $decoded = json_decode($validated['hotlinks'], true);
-                $validated['hotlinks'] = json_encode($decoded, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-            } catch (\Exception $e) {
-                $validated['hotlinks'] = null;
+                $validated['hotlinks'] = is_array($decoded) ? $decoded : null;
             }
+        } else {
+            $validated['hotlinks'] = null;
         }
 
         // If this is a header banner being activated, deactivate all other header banners

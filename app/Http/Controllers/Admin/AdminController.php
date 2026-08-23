@@ -56,7 +56,7 @@ class AdminController extends Controller
         // Add debug info
         $data['debug'] = [
             'property_id_configured' => config('services.google_analytics.property_id'),
-            'credentials_exists' => file_exists(storage_path('app/firebase/service-account.json')),
+            'credentials_exists' => \App\Services\FirebaseService::getCredentials() !== null,
             'service_configured' => $analyticsService->isConfigured(),
         ];
         

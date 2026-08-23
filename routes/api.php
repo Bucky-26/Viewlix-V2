@@ -332,34 +332,37 @@ Route::get('/app-config', function () {
 });
 
 // API route to request a Firebase custom token for the currently authenticated user
-// This uses sanctum/session authentication; callers should include credentials.
-Route::middleware('auth:sanctum')->get('/firebase-token', function (\App\Services\FirebaseService $firebase) {
-    $isLocalRequest = app()->environment('local') || in_array(request()->ip(), ['127.0.0.1', '::1'], true);
+// Supports web session authentication as well as Sanctum token authentication
+Route::middleware(['web'])->get('/firebase-token', function (Request $request, \App\Services\FirebaseService $firebase) {
+    $user = $request->user('sanctum') ?? $request->user('web') ?? \Illuminate\Support\Facades\Auth::user();
+
+    if (!$user) {
+        return response()->json(['error' => 'Unauthenticated.'], 401);
+    }
+
+    $isLocalRequest = app()->environment('local') || in_array($request->ip(), ['127.0.0.1', '::1'], true);
 
     if (! $firebase->isConfigured()) {
         $payload = ['error' => 'Firebase not configured'];
         if ($isLocalRequest) {
-            $serviceAccountPath = storage_path('app/firebase/service-account.json');
             $payload['debug'] = [
-                'service_account_exists' => file_exists($serviceAccountPath),
-                'service_account_path' => $serviceAccountPath,
-                // Do not dump the entire service account contents; only show that path and existence
-                'config_services_firebase' => array_intersect_key(config('services.firebase', []), array_flip(['project_id','database_url','api_key','messaging_sender_id']))
+                'credentials_configured' => \App\Services\FirebaseService::getCredentials() !== null,
+                'config_services_firebase' => array_intersect_key(config('services.firebase', []), array_flip(['project_id','database_url','api_key','messaging_sender_id','client_email']))
             ];
         }
 
         return response()->json($payload, 503);
     }
 
-    $token = $firebase->createCustomToken();
+    $token = $firebase->createCustomToken($user);
 
     if (! $token) {
         $payload = ['error' => 'Failed to create token'];
 
         if ($isLocalRequest) {
             $payload['debug'] = [
-                'authenticated' => \Illuminate\Support\Facades\Auth::check(),
-                'user' => optional(\Illuminate\Support\Facades\Auth::user())->only(['id','email','firebase_uuid']),
+                'authenticated' => true,
+                'user' => $user->only(['id','email','firebase_uuid']),
             ];
         }
 
