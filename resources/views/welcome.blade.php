@@ -1,229 +1,291 @@
-    @extends('layouts.app')
+@extends('layouts.app')
 
-        @section('title', 'Welcome to Viewlix')
+@section('title', 'Welcome to Viewlix - Watch Free Movies, TV Shows & Anime')
 
-        {{-- SEO: description, Open Graph, Twitter Card, canonical and JSON-LD. Pushed into the head via the `styles` stack. --}}
-        @section('description', 'Discover, search, and watch the best movies, TV shows, and anime on Viewlix — curated trending picks, top rated titles, and a modern streaming experience.')
+@section('description', 'Discover and stream thousands of trending movies, top-rated TV series, and popular anime in full HD on Viewlix. 100% free streaming with no subscriptions.')
 
-        @push('styles')
-    {{-- Append file modification time to force browsers to fetch the latest CSS during development --}}
+@push('styles')
+    {{-- Main custom CSS --}}
     <link rel="stylesheet" href="{{ url('css/main.css') }}?v={{ filemtime(public_path('css/main.css')) }}" />
 
-            @php
-                $pageUrl = url()->current();
-                $pageTitle = 'Welcome to Viewlix | ' . config('app.name', 'Viewlix');
-                $pageDescription = trim(View::yieldContent('description', 'Discover, search, and watch the best movies, TV shows, and anime on Viewlix — curated trending picks, top rated titles, and a modern streaming experience.'));
-                $ogImage = null;
-                if(isset($trendingMovies) && count($trendingMovies) > 0 && isset($tmdb) && ($trendingMovies[0]['backdrop_path'] ?? null)) {
-                    $ogImage = $tmdb->getImageUrl($trendingMovies[0]['backdrop_path'], 'original', true);
-                } else {
-                    $ogImage = asset('splash.png');
-                }
+    @php
+        $pageUrl = url()->current();
+        $pageTitle = 'Viewlix - Watch Free Movies, TV Shows & Anime in HD';
+        $pageDescription = 'Discover, search, and stream the best movies, TV shows, and anime on Viewlix. Enjoy 4K quality, watchlist sync, and a modern cinema experience.';
+        $ogImage = null;
+        if(isset($trendingMovies) && count($trendingMovies) > 0 && isset($tmdb) && ($trendingMovies[0]['backdrop_path'] ?? null)) {
+            $ogImage = $tmdb->getImageUrl($trendingMovies[0]['backdrop_path'], 'original', true);
+        } else {
+            $ogImage = asset('viewlix.png');
+        }
 
-                // Precompute JSON-LD to avoid Blade interpreting keys that start with @ (e.g. @context)
-                $jsonLd = json_encode([
-                    "@context" => "https://schema.org",
-                    "@type" => "WebSite",
-                    "name" => config('app.name', 'Viewlix'),
-                    "url" => url('/'),
-                    "description" => $pageDescription,
-                    "publisher" => [
-                        "@type" => "Organization",
-                        "name" => config('app.name', 'Viewlix'),
-                        "url" => url('/'),
-                    ]
-                ], JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE|JSON_PRETTY_PRINT);
-            @endphp
+        $jsonLd = json_encode([
+            "@context" => "https://schema.org",
+            "@type" => "WebSite",
+            "name" => config('app.name', 'Viewlix'),
+            "url" => url('/'),
+            "description" => $pageDescription,
+            "publisher" => [
+                "@type" => "Organization",
+                "name" => config('app.name', 'Viewlix'),
+                "url" => url('/'),
+                "logo" => asset('viewlix.png'),
+            ]
+        ], JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE|JSON_PRETTY_PRINT);
+    @endphp
 
-            <link rel="canonical" href="{{ $pageUrl }}" />
-            <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="{{ $pageUrl }}" />
+    <meta name="robots" content="index, follow" />
 
-            {{-- Open Graph --}}
-            <meta property="og:locale" content="{{ str_replace('_','-',app()->getLocale()) }}" />
-            <meta property="og:type" content="website" />
-            <meta property="og:title" content="{{ $pageTitle }}" />
-            <meta property="og:description" content="{{ $pageDescription }}" />
-            <meta property="og:url" content="{{ $pageUrl }}" />
-            <meta property="og:image" content="{{ $ogImage }}" />
+    {{-- Open Graph --}}
+    <meta property="og:locale" content="{{ str_replace('_','-',app()->getLocale()) }}" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="{{ $pageTitle }}" />
+    <meta property="og:description" content="{{ $pageDescription }}" />
+    <meta property="og:url" content="{{ $pageUrl }}" />
+    <meta property="og:image" content="{{ $ogImage }}" />
 
-            {{-- Twitter Card --}}
-            <meta name="twitter:card" content="summary_large_image" />
-            <meta name="twitter:title" content="{{ $pageTitle }}" />
-            <meta name="twitter:description" content="{{ $pageDescription }}" />
-            <meta name="twitter:image" content="{{ $ogImage }}" />
-    <script src="{{ asset('js/home.js') }}"></script>
+    {{-- Twitter Card --}}
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="{{ $pageTitle }}" />
+    <meta name="twitter:description" content="{{ $pageDescription }}" />
+    <meta name="twitter:image" content="{{ $ogImage }}" />
 
-            {{-- JSON-LD Structured Data (WebSite + Publisher) --}}
-            <script type="application/ld+json">
-                {!! $jsonLd !!}
-            </script>
-        @endpush
+    <style>
+        /* Scoped styles for high-impact cinematic hero carousel */
+        #hero-carousel { position: relative; }
+        #hero-carousel .hero-carousel-body { position: relative; width: 100%; height: 100%; }
+        #hero-carousel .hero-carousel-slide { 
+            position: absolute; 
+            inset: 0; 
+            width: 100%; 
+            height: 100%; 
+            opacity: 0; 
+            visibility: hidden;
+            transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.8s ease; 
+        }
+        #hero-carousel .hero-carousel-slide.active { 
+            opacity: 1; 
+            visibility: visible;
+            z-index: 10; 
+        }
+    </style>
 
-    @section('content')
-    <div class="lg:min-h-[calc(100vh-200px)]">
+    <script src="{{ asset('js/home.js') }}?v={{ filemtime(public_path('js/home.js')) }}"></script>
 
-        
-        {{-- Trending Now Carousel (Preline) --}}
-        @if(isset($trendingMovies) && count($trendingMovies) > 0)
-        
-                @endif
-        
-                {{-- Carousel: trending movies + tv (logos, backdrop, description, actions) --}}
-                @if((isset($trendingMovies) && count($trendingMovies) > 0) || (isset($trendingTv) && count($trendingTv) > 0))
-                    {{-- Hero / Trending carousel: dedicated responsive section that fills the current screen height --}}
-                    <section id="hero-carousel" class="h-screen md:h-[80vh] lg:h-[85vh]">
-                        <div class="max-w-6xl mx-auto px-4 h-full">
-                            <div data-hero-carousel='{"loadingClasses":"opacity-0","dotsItemClasses":"hero-active:bg-viewlix-red hero-active:border-viewlix-red size-3 border border-gray-400 rounded-full cursor-pointer","isAutoPlay":true}' class="relative h-full">
-                                <div class="hero-carousel-container relative overflow-hidden w-full carousel-container h-full bg-gray-900 rounded-lg">
-                                    <div id="hero-carousel-body" class="hero-carousel-body absolute inset-0 h-full">
-                                        <!-- Server-side skeleton placeholder so UI doesn't look empty before JS runs -->
-                                        <div class="hero-carousel-slide absolute inset-0 h-full">
-                                            <div class="relative h-full rounded-lg overflow-hidden bg-gray-800">
-                                                <div class="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-700 animate-pulse" aria-hidden="true"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+    {{-- JSON-LD Structured Data --}}
+    <script type="application/ld+json">
+        {!! $jsonLd !!}
+    </script>
+@endpush
 
-                                <button type="button" id="hero-prev" class="hs-carousel-prev hs-carousel-disabled:opacity-50 hs-carousel-disabled:pointer-events-none absolute inset-y-0 start-0 inline-flex justify-center items-center w-11.5 h-full text-white hover:bg-white/10 focus:outline-hidden focus:bg-white/10 rounded-s-lg">
-                                    <span class="text-2xl" aria-hidden="true">
-                                        <svg class="shrink-0 size-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="m15 18-6-6 6-6"></path>
-                                        </svg>
-                                    </span>
-                                    <span class="sr-only">Previous</span>
-                                </button>
-                                <button type="button" id="hero-next" class="hs-carousel-next hs-carousel-disabled:opacity-50 hs-carousel-disabled:pointer-events-none absolute inset-y-0 end-0 inline-flex justify-center items-center w-11.5 h-full text-white hover:bg-white/10 focus:outline-hidden focus:bg-white/10 rounded-e-lg">
-                                    <span class="sr-only">Next</span>
-                                    <span class="text-2xl" aria-hidden="true">
-                                        <svg class="shrink-0 size-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="m9 18 6-6-6-6"></path>
-                                        </svg>
-                                    </span>
-                                </button>
+@section('content')
+<div class="space-y-10 sm:space-y-14 -mt-4 -mx-4 lg:-mt-6 lg:-mx-6">
+
+    {{-- Cinematic Hero Carousel Section --}}
+    @if((isset($trendingMovies) && count($trendingMovies) > 0) || (isset($trendingTv) && count($trendingTv) > 0))
+    <section id="hero-carousel" class="relative w-full h-[70vh] sm:h-[75vh] lg:h-[82vh] max-h-[850px] min-h-[500px] overflow-hidden bg-black">
+        <div class="hero-carousel-container relative w-full h-full">
+            <div id="hero-carousel-body" class="hero-carousel-body">
+                <!-- Skeleton Placeholder before JS hydration -->
+                <div class="hero-carousel-slide active">
+                    <div class="relative w-full h-full bg-zinc-950">
+                        <div class="absolute inset-0 bg-gradient-to-r from-black via-black/60 to-transparent z-10"></div>
+                        <div class="absolute inset-0 bg-gradient-to-t from-[#08080a] via-transparent to-transparent z-10"></div>
+                        <div class="absolute bottom-16 left-6 sm:left-12 lg:left-16 z-20 max-w-2xl space-y-4">
+                            <div class="h-6 w-28 bg-white/10 rounded-full animate-pulse"></div>
+                            <div class="h-12 w-96 max-w-full bg-white/10 rounded-2xl animate-pulse"></div>
+                            <div class="h-4 w-64 bg-white/10 rounded-lg animate-pulse"></div>
+                            <div class="h-16 w-full bg-white/5 rounded-2xl animate-pulse"></div>
+                            <div class="flex gap-4 pt-2">
+                                <div class="h-12 w-36 bg-viewlix-red/40 rounded-xl animate-pulse"></div>
+                                <div class="h-12 w-36 bg-white/10 rounded-xl animate-pulse"></div>
                             </div>
                         </div>
-                    </section>
-
-                    @endif
-
-                @push('styles')
-                <style>
-                    /* Scoped styles to create a fade transition carousel independent from Preline */
-                    #hero-carousel .hero-carousel-body { position: relative; }
-                    /* 5s fade transition as requested */
-                    #hero-carousel .hero-carousel-slide { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; transition: opacity 5s ease-in-out; }
-                    /* Active slide shown */
-                    #hero-carousel .hero-carousel-slide.active { opacity: 1; z-index: 10; }
-                    /* Ensure background image covers the slide */
-                    #hero-carousel img.object-cover { width: 100%; height: 100%; object-fit: cover; }
-                </style>
-                @endpush
-
-                <!-- Hero behavior is handled by external JS (public/js/home.js) -->
-
-        {{-- Continue Watching Section (from localStorage) --}}
-        <div class="max-w-6xl mx-auto px-4">
-            @include('partials.continue-watching')
-        </div>
-        
-        {{-- Trending Movies (rendered client-side) --}}
-        <section class="py-8">
-            <div class="max-w-6xl mx-auto px-4">
-                <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-2xl font-bold text-white">🔥 Trending Movies</h2>
-                    <a href="{{ route('movies') }}" class="text-sm text-viewlix-red hover:text-viewlix-red-light transition-colors">View All</a>
-                </div>
-
-                <div id="trending-movies-grid">
-                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                        @for($i = 0; $i < 6; $i++)
-                            <div class="group relative bg-viewlix-gray rounded-xl overflow-hidden border border-viewlix-border">
-                                <div class="aspect-[2/3] bg-gradient-to-br from-gray-800 to-gray-700 animate-pulse" aria-hidden="true"></div>
-                                <div class="md:hidden p-2">
-                                    <div class="h-3 bg-gray-700 rounded w-3/4 mb-2 animate-pulse"></div>
-                                    <div class="h-2 bg-gray-700 rounded w-1/4 animate-pulse"></div>
-                                </div>
-                            </div>
-                        @endfor
                     </div>
                 </div>
             </div>
-        </section>
-        
-        {{-- Top Rated Movies (rendered client-side) --}}
-        <section class="py-8">
-            <div class="max-w-6xl mx-auto px-4">
-                <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-2xl font-bold text-white">⭐ Top Rated</h2>
-                    <a href="{{ route('movies', ['filter' => 'top_rated']) }}" class="text-sm text-viewlix-red hover:text-viewlix-red-light transition-colors">View All</a>
-                </div>
-
-                <div id="top-rated-movies-grid">
-                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                        @for($i = 0; $i < 6; $i++)
-                            <div class="group relative bg-viewlix-gray rounded-xl overflow-hidden border border-viewlix-border">
-                                <div class="aspect-[2/3] bg-gradient-to-br from-gray-800 to-gray-700 animate-pulse" aria-hidden="true"></div>
-                                <div class="md:hidden p-2">
-                                    <div class="h-3 bg-gray-700 rounded w-3/4 mb-2 animate-pulse"></div>
-                                    <div class="h-2 bg-gray-700 rounded w-1/4 animate-pulse"></div>
-                                </div>
-                            </div>
-                        @endfor
-                    </div>
-                </div>
-            </div>
-        </section>
-        
-        {{-- Trending TV Shows (rendered client-side) --}}
-        <section class="py-8">
-            <div class="max-w-6xl mx-auto px-4">
-                <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-2xl font-bold text-white">Trending TV Shows</h2>
-                    <a href="{{ route('tv-shows') }}" class="text-sm text-viewlix-red hover:text-viewlix-red-light transition-colors">View All</a>
-                </div>
-
-                <div id="trending-tv-grid">
-                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                        @for($i = 0; $i < 6; $i++)
-                            <div class="group relative bg-viewlix-gray rounded-xl overflow-hidden border border-viewlix-border">
-                                <div class="aspect-[2/3] bg-gradient-to-br from-gray-800 to-gray-700 animate-pulse" aria-hidden="true"></div>
-                                <div class="md:hidden p-2">
-                                    <div class="h-3 bg-gray-700 rounded w-3/4 mb-2 animate-pulse"></div>
-                                    <div class="h-2 bg-gray-700 rounded w-1/4 animate-pulse"></div>
-                                </div>
-                            </div>
-                        @endfor
-                    </div>
-                </div>
-            </div>
-        </section>
-        
-        {{-- Popular Anime (rendered client-side) --}}
-        <section class="py-8">
-            <div class="max-w-6xl mx-auto px-4">
-                <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-2xl font-bold text-white">🎌 Popular Anime</h2>
-                    <a href="{{ route('anime') }}" class="text-sm text-viewlix-red hover:text-viewlix-red-light transition-colors">View All</a>
-                </div>
-
-                <div id="popular-anime-grid">
-                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                        @for($i = 0; $i < 6; $i++)
-                            <div class="group relative bg-viewlix-gray rounded-xl overflow-hidden border border-viewlix-border">
-                                <div class="aspect-[2/3] bg-gradient-to-br from-gray-800 to-gray-700 animate-pulse" aria-hidden="true"></div>
-                                <div class="md:hidden p-2">
-                                    <div class="h-3 bg-gray-700 rounded w-3/4 mb-2 animate-pulse"></div>
-                                    <div class="h-2 bg-gray-700 rounded w-1/4 animate-pulse"></div>
-                                </div>
-                            </div>
-                        @endfor
-                    </div>
-                </div>
-            </div>
-        </section>
         </div>
 
-        
+        <!-- Navigation Arrows -->
+        <button type="button" 
+                id="hero-prev" 
+                class="absolute inset-y-0 start-0 z-20 inline-flex justify-center items-center w-12 sm:w-16 h-full text-white/70 hover:text-white hover:bg-gradient-to-r hover:from-black/50 hover:to-transparent focus:outline-none transition-all duration-200"
+                aria-label="Previous Slide">
+            <div class="w-10 h-10 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center hover:scale-110 transition-transform">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m15 18-6-6 6-6"/>
+                </svg>
+            </div>
+        </button>
 
-        @endsection
+        <button type="button" 
+                id="hero-next" 
+                class="absolute inset-y-0 end-0 z-20 inline-flex justify-center items-center w-12 sm:w-16 h-full text-white/70 hover:text-white hover:bg-gradient-to-l hover:from-black/50 hover:to-transparent focus:outline-none transition-all duration-200"
+                aria-label="Next Slide">
+            <div class="w-10 h-10 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center hover:scale-110 transition-transform">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m9 18 6-6-6-6"/>
+                </svg>
+            </div>
+        </button>
+
+        <!-- Slide Indicators Container (Handled by JS) -->
+        <div id="hero-dots" class="absolute bottom-4 sm:bottom-6 left-6 sm:left-12 lg:left-16 z-30 flex items-center gap-2.5"></div>
+    </section>
+    @endif
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+        {{-- Streaming Providers Section --}}
+        @include('partials.streaming-providers')
+
+        {{-- Continue Watching Section --}}
+        @include('partials.continue-watching')
+        
+        {{-- Trending Movies Shelf --}}
+        <section class="space-y-5">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-2.5 h-6 bg-gradient-to-b from-viewlix-red to-blue-600 rounded-full shadow-md shadow-viewlix-red/30"></div>
+                    <div>
+                        <h2 class="text-xl sm:text-2xl font-extrabold text-white tracking-tight flex items-center gap-2">
+                            <span>Trending Movies</span>
+                            <span class="text-xs px-2 py-0.5 rounded-full bg-viewlix-red/10 border border-viewlix-red/20 text-blue-400 font-semibold uppercase tracking-wider">Top Picks</span>
+                        </h2>
+                        <p class="text-xs text-gray-400 mt-0.5">Most watched blockbusters right now</p>
+                    </div>
+                </div>
+                <a href="{{ route('movies') }}" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-gray-300 hover:text-white transition-all group">
+                    <span>Explore All</span>
+                    <svg class="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </a>
+            </div>
+
+            <div id="trending-movies-grid">
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4.5">
+                    @for($i = 0; $i < 6; $i++)
+                        <div class="bg-[#111116] rounded-2xl overflow-hidden border border-white/5 animate-pulse">
+                            <div class="aspect-[2/3] bg-zinc-900"></div>
+                            <div class="p-3 space-y-2">
+                                <div class="h-3 bg-white/10 rounded w-3/4"></div>
+                                <div class="h-2.5 bg-white/5 rounded w-1/3"></div>
+                            </div>
+                        </div>
+                    @endfor
+                </div>
+            </div>
+        </section>
+        
+        {{-- Top Rated Movies Shelf --}}
+        <section class="space-y-5">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-2.5 h-6 bg-gradient-to-b from-amber-500 to-orange-500 rounded-full shadow-md shadow-amber-500/30"></div>
+                    <div>
+                        <h2 class="text-xl sm:text-2xl font-extrabold text-white tracking-tight flex items-center gap-2">
+                            <span>Top Rated Movies</span>
+                            <span class="text-xs px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 font-semibold uppercase tracking-wider">Critically Acclaimed</span>
+                        </h2>
+                        <p class="text-xs text-gray-400 mt-0.5">Highest rated films by audiences worldwide</p>
+                    </div>
+                </div>
+                <a href="{{ route('movies', ['filter' => 'top_rated']) }}" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-gray-300 hover:text-white transition-all group">
+                    <span>Explore All</span>
+                    <svg class="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </a>
+            </div>
+
+            <div id="top-rated-movies-grid">
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4.5">
+                    @for($i = 0; $i < 6; $i++)
+                        <div class="bg-[#111116] rounded-2xl overflow-hidden border border-white/5 animate-pulse">
+                            <div class="aspect-[2/3] bg-zinc-900"></div>
+                            <div class="p-3 space-y-2">
+                                <div class="h-3 bg-white/10 rounded w-3/4"></div>
+                                <div class="h-2.5 bg-white/5 rounded w-1/3"></div>
+                            </div>
+                        </div>
+                    @endfor
+                </div>
+            </div>
+        </section>
+        
+        {{-- Trending TV Shows Shelf --}}
+        <section class="space-y-5">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-2.5 h-6 bg-gradient-to-b from-indigo-500 to-purple-600 rounded-full shadow-md shadow-indigo-500/30"></div>
+                    <div>
+                        <h2 class="text-xl sm:text-2xl font-extrabold text-white tracking-tight flex items-center gap-2">
+                            <span>Binge-Worthy TV Shows</span>
+                            <span class="text-xs px-2 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 font-semibold uppercase tracking-wider">Series</span>
+                        </h2>
+                        <p class="text-xs text-gray-400 mt-0.5">Stream the latest seasons and trending series</p>
+                    </div>
+                </div>
+                <a href="{{ route('tv-shows') }}" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-gray-300 hover:text-white transition-all group">
+                    <span>Explore All</span>
+                    <svg class="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </a>
+            </div>
+
+            <div id="trending-tv-grid">
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4.5">
+                    @for($i = 0; $i < 6; $i++)
+                        <div class="bg-[#111116] rounded-2xl overflow-hidden border border-white/5 animate-pulse">
+                            <div class="aspect-[2/3] bg-zinc-900"></div>
+                            <div class="p-3 space-y-2">
+                                <div class="h-3 bg-white/10 rounded w-3/4"></div>
+                                <div class="h-2.5 bg-white/5 rounded w-1/3"></div>
+                            </div>
+                        </div>
+                    @endfor
+                </div>
+            </div>
+        </section>
+        
+        {{-- Popular Anime Shelf --}}
+        <section class="space-y-5">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-2.5 h-6 bg-gradient-to-b from-pink-500 to-rose-600 rounded-full shadow-md shadow-pink-500/30"></div>
+                    <div>
+                        <h2 class="text-xl sm:text-2xl font-extrabold text-white tracking-tight flex items-center gap-2">
+                            <span>Popular Anime</span>
+                            <span class="text-xs px-2 py-0.5 rounded-full bg-pink-500/10 border border-pink-500/20 text-pink-400 font-semibold uppercase tracking-wider">Simulcasts</span>
+                        </h2>
+                        <p class="text-xs text-gray-400 mt-0.5">Top-rated anime series and movies with sub &amp; dub</p>
+                    </div>
+                </div>
+                <a href="{{ route('anime') }}" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-gray-300 hover:text-white transition-all group">
+                    <span>Explore All</span>
+                    <svg class="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </a>
+            </div>
+
+            <div id="popular-anime-grid">
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4.5">
+                    @for($i = 0; $i < 6; $i++)
+                        <div class="bg-[#111116] rounded-2xl overflow-hidden border border-white/5 animate-pulse">
+                            <div class="aspect-[2/3] bg-zinc-900"></div>
+                            <div class="p-3 space-y-2">
+                                <div class="h-3 bg-white/10 rounded w-3/4"></div>
+                                <div class="h-2.5 bg-white/5 rounded w-1/3"></div>
+                            </div>
+                        </div>
+                    @endfor
+                </div>
+            </div>
+        </section>
+    </div>
+
+</div>
+@endsection

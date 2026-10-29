@@ -19,7 +19,7 @@ class SendWelcomeNotification
         $user = $event->user;
         \Log::info('SendWelcomeNotification: handling Registered for user id ' . ($user->id ?? 'unknown') . ' (' . ($user->email ?? 'unknown') . ')');
 
-        $credentials = config('services.firebase.credentials');
+        $credentials = \App\Services\FirebaseService::getCredentials();
         $databaseUrl = config('services.firebase.database_url');
 
         // Always attempt to send a welcome email regardless of Firebase
@@ -29,10 +29,9 @@ class SendWelcomeNotification
             \Log::warning('Failed to send welcome email: ' . $e->getMessage());
         }
 
-        // If Firebase is not configured or the service account file doesn't
-        // exist, skip the Firebase-specific actions but do not abort the
-        // welcome email flow.
-        if (!$credentials || !file_exists($credentials)) {
+        // If Firebase is not configured, skip the Firebase-specific actions
+        // but do not abort the welcome email flow.
+        if (!$credentials) {
             \Log::info('Firebase credentials not found; skipping welcome push/DB notification.');
             return;
         }

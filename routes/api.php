@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AuthController;
 use App\Services\TMDBService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -372,6 +373,15 @@ Route::middleware(['web'])->get('/firebase-token', function (Request $request, \
     return response()->json(['token' => $token]);
 });
 
+// Watch Progress Endpoints (backed by Firebase Realtime Database and SQL)
+Route::middleware(['web'])->group(function () {
+    Route::post('/watch-progress', [\App\Http\Controllers\WatchProgressController::class, 'save'])->name('api.watch-progress.save');
+    Route::get('/watch-progress/all', [\App\Http\Controllers\WatchProgressController::class, 'all'])->name('api.watch-progress.all');
+    Route::get('/watch-progress/{mediaId}', [\App\Http\Controllers\WatchProgressController::class, 'get'])->name('api.watch-progress.get');
+    Route::delete('/watch-progress/{mediaId}', [\App\Http\Controllers\WatchProgressController::class, 'destroy'])->name('api.watch-progress.destroy');
+    Route::delete('/watch-progress', [\App\Http\Controllers\WatchProgressController::class, 'clear'])->name('api.watch-progress.clear');
+});
+
 // Development-only helper: create a Firebase custom token for user id 1
 // This route is intentionally only active in the local environment to aid testing.
 Route::get('/firebase-token-debug', function (\App\Services\FirebaseService $firebase) {
@@ -430,3 +440,67 @@ Route::get('/debug-session', function () {
         'cookies' => array_keys(request()->cookies->all()),
     ]);
 });
+
+// Streaming Providers list (JSON)
+Route::get('/streaming-providers', function (\Illuminate\Http\Request $request, TMDBService $tmdb) {
+    $provider = (string) $request->get('provider', 'netflix');
+    $type = (string) $request->get('type', 'movie');
+    $page = (int) $request->get('page', 1);
+
+    $posterSize = $request->get('poster_size', 'w342');
+    $backdropSize = $request->get('backdrop_size', 'w780');
+
+    try {
+        $data = $tmdb->getProviderContent($provider, $type, $page);
+
+        if (!empty($data['results']) && is_array($data['results'])) {
+            $data['results'] = array_map(function ($item) use ($tmdb, $type, $posterSize, $backdropSize) {
+                $poster = $tmdb->getImageUrl($item['poster_path'] ?? null, $posterSize, true);
+                $backdrop = $tmdb->getImageUrl($item['backdrop_path'] ?? null, $backdropSize, true);
+
+                return [
+                    'id' => $item['id'] ?? null,
+                    'title' => $item['title'] ?? $item['name'] ?? 'Untitled',
+                    'name' => $item['name'] ?? $item['title'] ?? 'Untitled',
+                    'overview' => $item['overview'] ?? '',
+                    'release_date' => $item['release_date'] ?? $item['first_air_date'] ?? null,
+                    'first_air_date' => $item['first_air_date'] ?? $item['release_date'] ?? null,
+                    'vote_average' => $item['vote_average'] ?? 0,
+                    'poster_path' => $item['poster_path'] ?? null,
+                    'backdrop_path' => $item['backdrop_path'] ?? null,
+                    'poster_url' => $poster,
+                    'backdrop_url' => $backdrop,
+                    'media_type' => $type === 'tv' ? 'tv' : 'movie',
+                ];
+            }, $data['results']);
+        }
+
+        return response()->json($data);
+    } catch (\Throwable $e) {
+        \Log::error("Failed to fetch streaming provider data for {$provider} ({$type}): " . $e->getMessage());
+        return response()->json(['error' => 'Failed to fetch provider content'], 500);
+    }
+});
+
+// Support & Live Chat Endpoints (public)
+Route::post('/support/ticket', [\App\Http\Controllers\SupportController::class, 'submitTicket']);
+Route::get('/support/tickets', [\App\Http\Controllers\SupportController::class, 'getTickets']);
+Route::post('/support/chat/send', [\App\Http\Controllers\SupportController::class, 'sendChatMessage']);
+Route::get('/support/chat/history', [\App\Http\Controllers\SupportController::class, 'getChatHistory']);
+Route::post('/support/ticket/reopen-request', [\App\Http\Controllers\SupportController::class, 'requestTicketReopen']);
+
+// V3 Authentication Endpoints (for proxy authorization and API consumers)
+Route::prefix('v3/auth')->group(function () {
+    // If accessed via GET in browser or misconfigured OAuth URL, redirect to authorization page
+    Route::get('/login', function (Request $request) {
+        return redirect()->route('oauth.authorize', $request->query());
+    });
+
+    // API Login endpoint (handles form submission and redirect)
+    Route::post('/login', [AuthController::class, 'login']);
+
+    // Token verification endpoint (Protected by Sanctum)
+    Route::middleware('auth:sanctum')->get('/me', [AuthController::class, 'me']);
+});
+
+

@@ -13,3 +13,4 @@ Artisan::command('storage:link-safe', function () {
     $exit = $cmd->handle();
     return $exit === 0 ? 0 : 1;
 })->purpose('Create public/storage symlink or fall back to copying when symlink() is disabled');
+

@@ -305,52 +305,22 @@ async function startDownload(downloadUrl, filename, mediaType, mediaTitle) {
 /**
  * Download file with referrer header
  */
-async function downloadWithReferrer(downloadUrl, filename) {
+function downloadWithReferrer(downloadUrl, filename) {
     try {
-        console.log('Fetching with referrer:', { downloadUrl, filename });
-        
-            const response = await fetch(downloadUrl, {
-                method: 'GET',
-                // NOTE: Browsers forbid setting certain headers (like 'Referer' or 'User-Agent')
-                // directly via fetch(). We can request a specific referrer by using the
-                // `referrer` option and an appropriate `referrerPolicy`. This will ask the
-                // browser to send the given value as the Referer header. If the remote
-                // server blocks hotlinking, the server-side proxy is the reliable fallback.
-                referrer: DOWNLOAD_REFERRER,
-                // 'unsafe-url' sends the full URL as referrer even on downgrade; use
-                // with caution — servers may still ignore or block it.
-                referrerPolicy: 'unsafe-url',
-                mode: 'cors',
-                credentials: 'omit',
-                cache: 'no-store'
-            });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP Error: ${response.status}`);
+        let finalUrl = downloadUrl;
+        if (!downloadUrl.includes('localhost:4001') && !downloadUrl.includes('content.viewlix.online')) {
+            finalUrl = "/download/proxy?url=" + encodeURIComponent(downloadUrl) + "&filename=" + encodeURIComponent(filename || "");
         }
         
-        // Get the blob
-        const blob = await response.blob();
-        console.log('Blob received:', { size: blob.size, type: blob.type });
-        
-        // Create blob URL and trigger download
-        const blobUrl = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = blobUrl;
-        link.download = filename || 'download';
-        link.style.display = 'none';
-        
+        const link = document.createElement("a");
+        link.href = finalUrl;
+        link.download = filename || "download";
+        link.target = "_blank";
         document.body.appendChild(link);
         link.click();
+        setTimeout(() => document.body.removeChild(link), 100);
         
-        // Clean up
-        setTimeout(() => {
-            document.body.removeChild(link);
-            URL.revokeObjectURL(blobUrl);
-        }, 100);
-        
-        console.log('Download triggered successfully');
-        
+        console.log("Download triggered successfully");
     } catch (error) {
         console.error('Fetch download error:', error);
         // Try server-side proxy as a reliable fallback (server will set Referer)

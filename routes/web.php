@@ -12,10 +12,16 @@ use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\Admin\MobileAppController;
+use App\Http\Controllers\Admin\SupportAdminController;
 use App\Models\MobileApp;
 use App\Http\Controllers\SitemapController;
 use Illuminate\Support\Facades\Route;
 use RalphJSmit\Laravel\SEO\Support\SEOData;
+
+// OAuth Proxy Authorization Route (public login view for proxy authorization)
+Route::get('/oauth/authorize', function (\Illuminate\Http\Request $request) {
+    return view('auth.authorize', ['redirect_uri' => $request->query('redirect_uri')]);
+})->name('oauth.authorize');
 
 // Google OAuth Routes (public)
 Route::get('/auth/google', [GoogleController::class, 'redirect'])->name('auth.google');
@@ -40,6 +46,7 @@ Route::get('/tv-shows', [TvShowController::class, 'index'])->name('tv-shows');
 // Use slug format: {tmdbId}-{slugified-name}
 Route::get('/tv-show/{slug}', [TvShowController::class, 'show'])->name('tv-show.show');
 Route::get('/tv-show/{slug}/season/{season}', [TvShowController::class, 'season'])->name('tv-show.season');
+Route::get('/tv-show/{slug}/season/{season}/episodes.json', [TvShowController::class, 'seasonEpisodesJson'])->name('tv-show.season-episodes');
 // Terms and Privacy Pages
 Route::get('/terms', function () {
     return view('pages.terms', [
@@ -112,17 +119,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return redirect()->route('home');
     })->name('dashboard');
     
-    // Profile
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    // Profile Showcase & Overview
+    Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
+    
+    // Profile Edit & Settings
+    Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::patch('/profile/settings', [ProfileController::class, 'updateSettings'])->name('profile.settings.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     
-    // Avatar upload
+    // Avatar upload and delete (Cloudflare R2)
     Route::post('/profile/avatar', [ProfileController::class, 'updateAvatar'])->name('profile.avatar');
+    Route::delete('/profile/avatar', [ProfileController::class, 'deleteAvatar'])->name('profile.avatar.delete');
     
-    // Account page
+    // Account page redirect (backwards compatibility)
     Route::get('/account', function () {
-        return view('pages.account');
+        return redirect()->route('profile.show');
     })->name('account');
     
     // Google Account Linking
@@ -155,6 +167,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('firebase.token');
 });
 
+// Admin access entry point (generates on-click single-use token and redirects to /admin?[param]=[token], aborts 404 for non-admin/guest)
+Route::get('/admin-access', [AdminController::class, 'generateGateToken'])->name('admin.gate.enter');
+
 // Public endpoint to get user avatar by user id
 Route::get('/avatar/{user}', function (\App\Models\User $user) {
     if ($user->avatar) {
@@ -172,8 +187,8 @@ Route::get('/sitemap-tv-shows.xml', [SitemapController::class, 'tvShows'])->name
 Route::get('/sitemap-anime.xml', [SitemapController::class, 'anime'])->name('sitemap.anime');
 Route::get('/robots.txt', [SitemapController::class, 'robots'])->name('robots');
 
-// Admin Routes
-Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+// Admin Routes (Protected with stealth secret gate and admin privileges)
+Route::middleware(['admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
     Route::get('/analytics', [AdminController::class, 'analytics'])->name('analytics');
     Route::get('/analytics/data', [AdminController::class, 'analyticsData'])->name('analytics.data');
@@ -209,6 +224,26 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     // Banner management
     Route::resource('banners', \App\Http\Controllers\Admin\BannerController::class);
     Route::post('/banners/{banner}/toggle', [\App\Http\Controllers\Admin\BannerController::class, 'toggle'])->name('banners.toggle');
+
+    // Video Sources management
+    Route::resource('video-sources', \App\Http\Controllers\Admin\VideoSourceController::class);
+    Route::post('/video-sources/{videoSource}/toggle', [\App\Http\Controllers\Admin\VideoSourceController::class, 'toggle'])->name('video-sources.toggle');
+    Route::post('/video-sources/set-default', [\App\Http\Controllers\Admin\VideoSourceController::class, 'setDefault'])->name('video-sources.set-default');
+
+    Route::post('/settings/toggle-rtdb-egress', function () {
+        $key = 'optimize_rtdb_egress';
+        $current = \App\Models\AppSetting::getVal($key, true);
+        \App\Models\AppSetting::setVal($key, !$current, 'boolean');
+        return redirect()->back()->with('success', 'RTDB Egress optimization ' . (!$current ? 'enabled' : 'disabled') . '.');
+    })->name('settings.toggle-rtdb-egress');
+
+    // Live Support & Chat Inbox
+    Route::get('/support', [SupportAdminController::class, 'index'])->name('support.index');
+    Route::get('/support/chat-poll', [SupportAdminController::class, 'pollChatUpdates'])->name('support.chat.poll');
+    Route::get('/support/chat/{sessionId?}', [SupportAdminController::class, 'getChatThread'])->name('support.chat.thread');
+    Route::post('/support/chat/reply', [SupportAdminController::class, 'sendChatReply'])->name('support.chat.reply');
+    Route::post('/support/ticket/{ticket}/status', [SupportAdminController::class, 'updateTicketStatus'])->name('support.ticket.status');
+    Route::post('/support/ticket/{ticket}/reopen-decision', [SupportAdminController::class, 'handleReopenDecision'])->name('support.ticket.reopen-decision');
 }); // Closes admin group
 
 // Developer Portfolio (static page)
@@ -220,10 +255,6 @@ Route::get('/developer/profile/isoy', function () {
 // NOTE: This endpoint is available at /logo.png but returns SVG content (Content-Type: image/svg+xml).
 // If you need a true raster PNG, we can generate and serve a PNG either by pre-generating
 // `public/logo.png` or using Imagick/Intervention on the server.
-Route::get('/logo.png', function () {
-    $svg = '<svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M4 4h4l4 12 4-12h4L12 22 4 4z"/></svg>';
 
-    return response($svg, 200)
-        ->header('Content-Type', 'image/svg+xml')
-        ->header('Content-Disposition', 'inline; filename="logo.png"');
-})->name('logo');
+
+

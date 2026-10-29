@@ -33,46 +33,60 @@ export function initFirebase(config) {
     });
 }
 
+let signInPromise = null;
+
 /**
  * Sign in to Firebase using custom token from Laravel
  */
 export async function signInWithLaravelToken() {
+    if (typeof window !== 'undefined' && !window.isUserLoggedIn) {
+        return false;
+    }
+
     if (!auth) {
         console.error('Firebase not initialized');
         return false;
     }
     
-    try {
-        // Get custom token from Laravel backend
-        const response = await fetch('/api/firebase-token', {
-            headers: {
-                'Accept': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content
-            },
-            // Use include so cookies are sent when using local vhosts or different ports
-            credentials: 'include'
-        });
-        
-        if (!response.ok) {
-            throw new Error('Failed to get Firebase token');
-        }
-        
-        const data = await response.json();
-        
-        // If the backend returned debug information instead of a token, surface it locally
-        if (!data || !data.token) {
-            console.warn('No Firebase token returned from backend', data?.debug ?? data);
-            return false;
-        }
+    if (signInPromise) return signInPromise;
+    
+    signInPromise = (async () => {
+        try {
+            // Get custom token from Laravel backend
+            const response = await fetch('/api/firebase-token', {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content
+                },
+                // Use include so cookies are sent when using local vhosts or different ports
+                credentials: 'include'
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to get Firebase token');
+            }
+            
+            const data = await response.json();
+            
+            // If the backend returned debug information instead of a token, surface it locally
+            if (!data || !data.token) {
+                console.warn('No Firebase token returned from backend', data?.debug ?? data);
+                return false;
+            }
 
-        // Sign in to Firebase with the custom token
-        await signInWithCustomToken(auth, data.token);
-        return true;
-        
-    } catch (error) {
-        console.error('Firebase sign in failed:', error);
-        return false;
-    }
+            // Sign in to Firebase with the custom token
+            await signInWithCustomToken(auth, data.token);
+            return true;
+            
+        } catch (error) {
+            console.error('Firebase sign in failed:', error);
+            return false;
+        } finally {
+            signInPromise = null;
+        }
+    })();
+    
+    return signInPromise;
 }
 
 /**

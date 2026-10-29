@@ -5,6 +5,7 @@ import Alpine from 'alpinejs';
 // Preline UI - Import all components
 import { HSDropdown, HSOverlay, HSCarousel } from 'preline/preline';
 import './overlays';
+import './chat-support';
 
 // Firebase imports - Realtime Database + Messaging
 import { initializeApp } from 'firebase/app';
@@ -390,6 +391,13 @@ window.initFirebase = function(config) {
         firebaseApp = initializeApp(config);
         firebaseAuth = getAuth(firebaseApp);
         firebaseDb = getDatabase(firebaseApp);
+
+        // Expose globally for submodules like chat-support and admin support console
+        window.firebaseApp = firebaseApp;
+        window.firebaseAuth = firebaseAuth;
+        window.firebaseDb = firebaseDb;
+        window.FirebaseDbOps = { ref, set, get, remove, query, orderByChild, limitToLast, onValue, update, push: firebasePush };
+        window.dispatchEvent(new CustomEvent('firebase:ready', { detail: { app: firebaseApp, db: firebaseDb, ops: window.FirebaseDbOps } }));
         
         // Initialize Firebase Cloud Messaging
         try {
@@ -415,6 +423,15 @@ window.initFirebase = function(config) {
             }
         });
         
+        // If user is authenticated in Laravel session, auto sign-in to Firebase
+        if (window.isUserLoggedIn && !currentFirebaseUser) {
+            setTimeout(() => {
+                if (typeof window.signInToFirebase === 'function') {
+                    window.signInToFirebase().catch(e => console.debug('auto signInToFirebase error', e));
+                }
+            }, 100);
+        }
+
         console.log('🔥 Firebase initialized (Realtime Database)');
     } catch (error) {
         console.error('Firebase init error:', error);
@@ -471,44 +488,61 @@ if (document.readyState === 'loading') {
     ensureFirebaseConfigFromApi();
 }
 
+let signInPromise = null;
+
 /**
  * Sign in to Firebase using custom token from Laravel backend
  */
 window.signInToFirebase = async function() {
+    if (!window.isUserLoggedIn) {
+        return false;
+    }
+
     if (!firebaseAuth) {
         console.error('Firebase not initialized');
         return false;
     }
     
-    try {
-        // Use web route (not API) for session-based auth
-        const response = await fetch('/api/firebase-token', {
-            headers: {
-                'Accept': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content
-            },
-            // send cookies for sanctum/session authentication
-            credentials: 'include'
-        });
-        
-        if (!response.ok) {
-            console.error('Failed to get Firebase token');
-            return false;
-        }
-        
-        const data = await response.json();
-        if (!data || !data.token) {
-            console.warn('No Firebase token returned from backend', data?.debug ?? data);
-            return false;
-        }
-
-        await signInWithCustomToken(firebaseAuth, data.token);
-        return true;
-        
-    } catch (error) {
-        console.error('Firebase sign in failed:', error);
-        return false;
+    // Prevent multiple concurrent sign-in requests
+    if (signInPromise) {
+        return signInPromise;
     }
+    
+    signInPromise = (async () => {
+        try {
+            // Use web route (not API) for session-based auth
+            const response = await fetch('/api/firebase-token', {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content
+                },
+                // send cookies for sanctum/session authentication
+                credentials: 'include'
+            });
+            
+            if (!response.ok) {
+                console.error('Failed to get Firebase token');
+                return false;
+            }
+            
+            const data = await response.json();
+            if (!data || !data.token) {
+                console.warn('No Firebase token returned from backend', data?.debug ?? data);
+                return false;
+            }
+
+            await signInWithCustomToken(firebaseAuth, data.token);
+            return true;
+            
+        } catch (error) {
+            console.error('Firebase sign in failed:', error);
+            return false;
+        } finally {
+            signInPromise = null;
+        }
+    })();
+    
+    return signInPromise;
 };
 
 /**
@@ -532,11 +566,12 @@ window.isFirebaseAuthenticated = function() {
 // ============================================
 
 /**
- * Save watch progress to Firebase Realtime Database only
+ * Save watch progress to Firebase Realtime Database (dual client & server pipeline)
  */
 window.saveWatchProgress = async function(mediaId, progressData) {
     const mediaKey = String(mediaId);
 
+    // 1. Instantly update localStorage for offline/immediate response
     try {
         const localProgress = JSON.parse(localStorage.getItem('vidLinkProgress') || '{}');
         localProgress[mediaKey] = {
@@ -548,136 +583,322 @@ window.saveWatchProgress = async function(mediaId, progressData) {
         console.error('Local watch progress save error:', error);
     }
 
-    // Firebase sync is best effort; localStorage remains available offline.
-    if (!firebaseDb || !currentFirebaseUser) {
-        return;
+    // 2. Client-side Realtime Database direct write
+    if (firebaseDb && currentFirebaseUser) {
+        try {
+            const progressRef = ref(firebaseDb, `users/${currentFirebaseUser.uid}/watchProgress/${mediaId}`);
+            await set(progressRef, {
+                ...progressData,
+                last_updated: Date.now()
+            });
+        } catch (error) {
+            console.error('Client RTDB save error:', error);
+        }
+    } else if (window.isUserLoggedIn && typeof window.signInToFirebase === 'function') {
+        window.signInToFirebase().catch(() => {});
     }
-    
+
+    // 3. Server-side Realtime Database write via Laravel Admin SDK (guaranteed persistence)
     try {
-        const progressRef = ref(firebaseDb, `users/${currentFirebaseUser.uid}/watchProgress/${mediaId}`);
-        
-        await set(progressRef, {
-            ...progressData,
-            last_updated: Date.now()
-        });
-        
-    } catch (error) {
-        console.error('Firebase save error:', error);
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.content;
+        const sanctumToken = localStorage.getItem('auth_token') || localStorage.getItem('token') || sessionStorage.getItem('auth_token') || '';
+        const headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        };
+        if (csrf) headers['X-CSRF-TOKEN'] = csrf;
+        if (sanctumToken) headers['Authorization'] = `Bearer ${sanctumToken}`;
+
+        fetch('/api/watch-progress', {
+            method: 'POST',
+            headers: headers,
+            credentials: 'include',
+            body: JSON.stringify({
+                id: mediaId,
+                type: progressData.type || 'movie',
+                title: progressData.title || 'Unknown',
+                poster_path: progressData.poster_path || null,
+                backdrop_path: progressData.backdrop_path || null,
+                progress: progressData.progress,
+                last_season_watched: progressData.last_season_watched || null,
+                last_episode_watched: progressData.last_episode_watched || null,
+                show_progress: progressData.show_progress || null,
+                last_updated: Date.now()
+            })
+        }).catch(err => console.debug('Backend RTDB sync error:', err));
+    } catch (err) {
+        console.debug('Failed to trigger backend watch progress sync:', err);
     }
 };
 
 /**
- * Get watch progress from Firebase only
+ * Get watch progress (Client RTDB + Backend RTDB fallback + localStorage sync)
  */
 window.getWatchProgress = async function(mediaId) {
-    // Only get from Firebase when authenticated
-    if (!firebaseDb || !currentFirebaseUser) {
-        return null;
-    }
-    
+    const mediaKey = String(mediaId);
+    let localData = null;
     try {
-        const progressRef = ref(firebaseDb, `users/${currentFirebaseUser.uid}/watchProgress/${mediaId}`);
-        const snapshot = await get(progressRef);
-        
-        if (snapshot.exists()) {
-            return snapshot.val();
+        const localProgress = JSON.parse(localStorage.getItem('vidLinkProgress') || '{}');
+        localData = localProgress[mediaKey] || null;
+    } catch (e) {}
+
+    // 1. Try client-side Firebase RTDB if authenticated
+    if (firebaseDb && currentFirebaseUser) {
+        try {
+            const progressRef = ref(firebaseDb, `users/${currentFirebaseUser.uid}/watchProgress/${mediaId}`);
+            const snapshot = await get(progressRef);
+            
+            if (snapshot.exists()) {
+                const remoteData = snapshot.val();
+                if (localData && (localData.last_updated || 0) > (remoteData.last_updated || 0)) {
+                    return localData;
+                }
+                try {
+                    const localProgress = JSON.parse(localStorage.getItem('vidLinkProgress') || '{}');
+                    localProgress[mediaKey] = remoteData;
+                    localStorage.setItem('vidLinkProgress', JSON.stringify(localProgress));
+                } catch (e) {}
+                return remoteData;
+            }
+        } catch (error) {
+            console.error('Firebase get error:', error);
         }
-    } catch (error) {
-        console.error('Firebase get error:', error);
     }
-    
-    return null;
+
+    // 2. Query server API directly (reads from RTDB via Admin SDK) - only if authenticated
+    if (window.isUserLoggedIn) {
+        try {
+            const resp = await fetch(`/api/watch-progress/${encodeURIComponent(mediaId)}`, {
+                headers: { 'Accept': 'application/json' },
+                credentials: 'include'
+            });
+            if (resp.ok) {
+                const json = await resp.json();
+                if (json && json.data) {
+                    const remoteData = json.data;
+                    if (localData && (localData.last_updated || 0) > (remoteData.last_updated || 0)) {
+                        return localData;
+                    }
+                    try {
+                        const localProgress = JSON.parse(localStorage.getItem('vidLinkProgress') || '{}');
+                        localProgress[mediaKey] = remoteData;
+                        localStorage.setItem('vidLinkProgress', JSON.stringify(localProgress));
+                    } catch (e) {}
+                    return remoteData;
+                }
+            }
+        } catch (e) {
+            console.debug('API watch progress fetch error:', e);
+        }
+    }
+
+    return localData;
 };
 
 /**
- * Get all continue watching items (Firebase only)
+ * Get all continue watching items (RTDB + API + localStorage fallback)
  */
 window.getContinueWatching = async function(maxItems = 10) {
-    // Only get from Firebase when authenticated
-    if (!firebaseDb || !currentFirebaseUser) {
-        return [];
+    // 1. Try client-side RTDB
+    if (firebaseDb && currentFirebaseUser) {
+        try {
+            const progressRef = ref(firebaseDb, `users/${currentFirebaseUser.uid}/watchProgress`);
+            const snapshot = await get(progressRef);
+            
+            if (snapshot.exists()) {
+                const data = snapshot.val();
+                return Object.entries(data)
+                    .map(([id, item]) => ({ id, ...item }))
+                    .filter(item => {
+                        if (!item.progress) return false;
+                        const watched = Number(item.progress.watched) || 0;
+                        const duration = Number(item.progress.duration) || 0;
+                        if (duration <= 0) return false;
+                        const percent = (watched / duration) * 100;
+                        return percent >= 1 && percent < 95;
+                    })
+                    .sort((a, b) => (b.last_updated || 0) - (a.last_updated || 0))
+                    .slice(0, maxItems);
+            }
+        } catch (error) {
+            console.error('Firebase continue watching query error:', error);
+        }
     }
-    
+
+    // 2. Query backend API - only if authenticated
+    if (window.isUserLoggedIn) {
+        try {
+            const resp = await fetch('/api/watch-progress/all', {
+                headers: { 'Accept': 'application/json' },
+                credentials: 'include'
+            });
+            if (resp.ok) {
+                const json = await resp.json();
+                if (json && json.data && typeof json.data === 'object') {
+                    return Object.entries(json.data)
+                        .map(([id, item]) => ({ id, ...item }))
+                        .filter(item => {
+                            if (!item.progress) return false;
+                            const watched = Number(item.progress.watched) || 0;
+                            const duration = Number(item.progress.duration) || 0;
+                            if (duration <= 0) return false;
+                            const percent = (watched / duration) * 100;
+                            return percent >= 1 && percent < 95;
+                        })
+                        .sort((a, b) => (b.last_updated || 0) - (a.last_updated || 0))
+                        .slice(0, maxItems);
+                }
+            }
+        } catch (e) {}
+    }
+
+    // 3. Fallback to localStorage
     try {
-        const progressRef = ref(firebaseDb, `users/${currentFirebaseUser.uid}/watchProgress`);
-        const snapshot = await get(progressRef);
-        
-        if (snapshot.exists()) {
-            const data = snapshot.val();
+        const stored = localStorage.getItem('vidLinkProgress');
+        if (stored) {
+            const data = JSON.parse(stored);
             return Object.entries(data)
                 .map(([id, item]) => ({ id, ...item }))
                 .filter(item => {
                     if (!item.progress) return false;
-                    const percent = (item.progress.watched / item.progress.duration) * 100;
+                    const watched = Number(item.progress.watched) || 0;
+                    const duration = Number(item.progress.duration) || 0;
+                    if (duration <= 0) return false;
+                    const percent = (watched / duration) * 100;
                     return percent >= 1 && percent < 95;
                 })
                 .sort((a, b) => (b.last_updated || 0) - (a.last_updated || 0))
                 .slice(0, maxItems);
         }
-    } catch (error) {
-        console.error('Firebase query error:', error);
-    }
-    
+    } catch (e) {}
+
     return [];
 };
 
 /**
- * Remove item from watch progress (Firebase only)
+ * Remove item from watch progress (RTDB + Backend API + localStorage)
  */
 window.removeWatchProgress = async function(mediaId) {
-    // Only remove from Firebase when authenticated
-    if (!firebaseDb || !currentFirebaseUser) {
-        return;
-    }
-    
+    // 1. Remove from localStorage
     try {
-        const progressRef = ref(firebaseDb, `users/${currentFirebaseUser.uid}/watchProgress/${mediaId}`);
-        await remove(progressRef);
-    } catch (error) {
-        console.error('Firebase delete error:', error);
+        const allProgress = JSON.parse(localStorage.getItem('vidLinkProgress') || '{}');
+        delete allProgress[String(mediaId)];
+        localStorage.setItem('vidLinkProgress', JSON.stringify(allProgress));
+    } catch (e) {}
+
+    // 2. Remove from client RTDB
+    if (firebaseDb && currentFirebaseUser) {
+        try {
+            const progressRef = ref(firebaseDb, `users/${currentFirebaseUser.uid}/watchProgress/${mediaId}`);
+            await remove(progressRef);
+        } catch (error) {
+            console.error('Firebase delete error:', error);
+        }
+    }
+
+    // 3. Remove via Backend API - only if authenticated
+    if (window.isUserLoggedIn) {
+        try {
+            const csrf = document.querySelector('meta[name="csrf-token"]')?.content;
+            fetch(`/api/watch-progress/${encodeURIComponent(mediaId)}`, {
+                method: 'DELETE',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrf || ''
+                },
+                credentials: 'include'
+            }).catch(() => {});
+        } catch (e) {}
     }
 };
 
 /**
- * Clear all watch progress (Firebase only)
+ * Clear all watch progress (RTDB + Backend API + localStorage)
  */
 window.clearAllWatchProgress = async function() {
-    // Only clear from Firebase when authenticated
-    if (!firebaseDb || !currentFirebaseUser) {
-        return;
-    }
-    
+    // 1. Clear localStorage
     try {
-        const progressRef = ref(firebaseDb, `users/${currentFirebaseUser.uid}/watchProgress`);
-        await remove(progressRef);
-    } catch (error) {
-        console.error('Firebase clear error:', error);
+        localStorage.removeItem('vidLinkProgress');
+    } catch (e) {}
+
+    // 2. Clear client RTDB
+    if (firebaseDb && currentFirebaseUser) {
+        try {
+            const progressRef = ref(firebaseDb, `users/${currentFirebaseUser.uid}/watchProgress`);
+            await remove(progressRef);
+        } catch (error) {
+            console.error('Firebase clear error:', error);
+        }
+    }
+
+    // 3. Clear via Backend API - only if authenticated
+    if (window.isUserLoggedIn) {
+        try {
+            const csrf = document.querySelector('meta[name="csrf-token"]')?.content;
+            fetch('/api/watch-progress', {
+                method: 'DELETE',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrf || ''
+                },
+                credentials: 'include'
+            }).catch(() => {});
+        } catch (e) {}
     }
 };
 
 /**
- * Get ALL watch history items (Firebase only)
+ * Get ALL watch history items (RTDB + Backend API + localStorage)
  */
 window.getAllWatchHistory = async function() {
-    // Only get from Firebase when authenticated
-    if (!firebaseDb || !currentFirebaseUser) {
-        return [];
+    // 1. Try client RTDB
+    if (firebaseDb && currentFirebaseUser) {
+        try {
+            const progressRef = ref(firebaseDb, `users/${currentFirebaseUser.uid}/watchProgress`);
+            const snapshot = await get(progressRef);
+            
+            if (snapshot.exists()) {
+                const data = snapshot.val();
+                return Object.entries(data)
+                    .map(([id, item]) => ({ id, ...item }))
+                    .sort((a, b) => (b.last_updated || 0) - (a.last_updated || 0));
+            }
+        } catch (error) {
+            console.error('Firebase get all error:', error);
+        }
     }
-    
+
+    // 2. Query backend API - only if authenticated
+    if (window.isUserLoggedIn) {
+        try {
+            const resp = await fetch('/api/watch-progress/all', {
+                headers: { 'Accept': 'application/json' },
+                credentials: 'include'
+            });
+            if (resp.ok) {
+                const json = await resp.json();
+                if (json && json.data && typeof json.data === 'object') {
+                    return Object.entries(json.data)
+                        .map(([id, item]) => ({ id, ...item }))
+                        .sort((a, b) => (b.last_updated || 0) - (a.last_updated || 0));
+                }
+            }
+        } catch (e) {
+            console.debug('Failed to fetch watch history from API:', e);
+        }
+    }
+
+    // 3. Fallback to localStorage
     try {
-        const progressRef = ref(firebaseDb, `users/${currentFirebaseUser.uid}/watchProgress`);
-        const snapshot = await get(progressRef);
-        
-        if (snapshot.exists()) {
-            const data = snapshot.val();
+        const stored = localStorage.getItem('vidLinkProgress');
+        if (stored) {
+            const data = JSON.parse(stored);
             return Object.entries(data)
                 .map(([id, item]) => ({ id, ...item }))
                 .sort((a, b) => (b.last_updated || 0) - (a.last_updated || 0));
         }
-    } catch (error) {
-        console.error('Firebase get all error:', error);
-    }
-    
+    } catch (e) {}
+
     return [];
 };
 

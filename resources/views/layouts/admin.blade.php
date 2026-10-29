@@ -9,7 +9,27 @@
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
+    <!-- Firebase Initialization -->
+    <script>
+        window.firebaseConfig = {
+            apiKey: "{{ config('services.firebase.api_key') }}",
+            authDomain: "{{ config('services.firebase.auth_domain') }}",
+            databaseURL: "{{ config('services.firebase.database_url') }}",
+            projectId: "{{ config('services.firebase.project_id') }}",
+            storageBucket: "{{ config('services.firebase.storage_bucket') }}",
+            messagingSenderId: "{{ config('services.firebase.messaging_sender_id') }}",
+            appId: "{{ config('services.firebase.app_id') }}",
+            measurementId: "{{ config('services.firebase.measurement_id') }}"
+        };
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof window.initFirebase === 'function' && window.firebaseConfig.apiKey) {
+                window.initFirebase(window.firebaseConfig);
+            }
+        });
+    </script>
+
     <style>
+        [x-cloak] { display: none !important; }
         /* Mini sidebar transitions */
         .sidebar-mini {
             width: 5rem;
@@ -131,6 +151,20 @@
                         </svg>
                         Banners
                     </a>
+                    <a href="{{ route('admin.video-sources.index') }}" 
+                       class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm {{ request()->routeIs('admin.video-sources*') ? 'bg-viewlix-red text-white' : 'text-gray-300 hover:bg-viewlix-gray hover:text-white' }}">
+                        <svg class="size-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="5 3 19 12 5 21 5 3"/>
+                        </svg>
+                        Video Sources
+                    </a>
+                    <a href="{{ route('admin.support.index') }}" 
+                       class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm {{ request()->routeIs('admin.support*') ? 'bg-viewlix-red text-white' : 'text-gray-300 hover:bg-viewlix-gray hover:text-white' }}">
+                        <svg class="size-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                        </svg>
+                        Live Support
+                    </a>
                     <div class="pt-3 mt-3 border-t border-viewlix-border">
                         <a href="{{ route('home') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-300 hover:bg-viewlix-gray hover:text-white">
                             <svg class="size-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -241,6 +275,24 @@
                             </svg>
                             <span class="nav-text">Banners</span>
                         </a>
+
+                        <a href="{{ route('admin.video-sources.index') }}" 
+                           class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors {{ request()->routeIs('admin.video-sources*') ? 'bg-viewlix-red text-white' : 'text-gray-300 hover:bg-viewlix-gray hover:text-white' }}"
+                           title="Video Sources">
+                            <svg class="nav-icon shrink-0 size-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polygon points="5 3 19 12 5 21 5 3"/>
+                            </svg>
+                            <span class="nav-text">Video Sources</span>
+                        </a>
+
+                        <a href="{{ route('admin.support.index') }}" 
+                           class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors {{ request()->routeIs('admin.support*') ? 'bg-viewlix-red text-white' : 'text-gray-300 hover:bg-viewlix-gray hover:text-white' }}"
+                           title="Live Support & Tickets">
+                            <svg class="nav-icon shrink-0 size-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                            </svg>
+                            <span class="nav-text">Live Support</span>
+                        </a>
                     </div>
 
                     {{-- Quick Links --}}
@@ -290,6 +342,14 @@
                          x-transition:leave-start="opacity-100 scale-100"
                          x-transition:leave-end="opacity-0 scale-95"
                          class="absolute bottom-full left-0 w-full mb-2 bg-viewlix-darker border border-viewlix-border shadow-lg rounded-xl p-1 z-50">
+                        <a class="flex items-center gap-3 py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-viewlix-gray hover:text-white" href="{{ route('home') }}">
+                            <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M15 3h6v6"/>
+                                <path d="M10 14 21 3"/>
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                            </svg>
+                            <span>Back to Site</span>
+                        </a>
                         <a class="flex items-center gap-3 py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-viewlix-gray hover:text-white" href="{{ route('account') }}">
                             <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <circle cx="12" cy="12" r="10"/>

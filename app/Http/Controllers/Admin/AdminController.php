@@ -11,9 +11,38 @@ use App\Services\FirebaseService;
 use App\Services\GoogleAnalyticsService;
 use Illuminate\Support\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Cache;
 
 class AdminController extends Controller
 {
+    /**
+     * Generate dynamic one-time gate token and redirect to admin dashboard
+     * Triggered when the admin clicks the Admin Panel button
+     */
+    public function generateGateToken(Request $request)
+    {
+        if (!$request->user() || !$request->user()->isAdmin()) {
+            abort(404);
+        }
+
+        $param = config('admin.secret_param', 'token');
+        $lifetime = (int) config('admin.token_lifetime', 60);
+
+        // Generate cryptographically secure random one-time token
+        $token = Str::random(40);
+
+        // Store in Cache for the configured lifetime bound to this admin user's ID
+        Cache::put('admin_gate_token:' . $token, $request->user()->id, now()->addSeconds($lifetime));
+
+        $targetRoute = $request->query('redirect', 'admin.dashboard');
+        if (!\Illuminate\Support\Facades\Route::has($targetRoute)) {
+            $targetRoute = 'admin.dashboard';
+        }
+
+        return redirect()->route($targetRoute, [$param => $token]);
+    }
+
     /**
      * Admin Dashboard
      */

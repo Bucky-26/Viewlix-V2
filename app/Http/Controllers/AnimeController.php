@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\TMDBService;
+use App\Models\VideoSource;
 use Illuminate\Http\Request;
 use RalphJSmit\Laravel\SEO\Support\SEOData;
 
@@ -88,8 +89,37 @@ class AnimeController extends Controller
 
         $seasonData = $this->tmdb->getTvSeasonDetails($id, $season);
 
-        // VidLink embed URL for anime (same as TV): https://vidlink.pro/tv/{tmdb_id}/{season}/{episode}
-        $embedUrl = config('services.vidlink.base_url') . "/tv/{$id}/{$season}/{$episode}";
+        // Dynamic Video Sources from Database
+        $sourceData = VideoSource::getSourcesForContent('anime', $id, $season, $episode);
+        $sources = $sourceData['sources'];
+        $embedUrl = $sourceData['default_embed'] ?? ($sources[0]['embed'] ?? '');
+
+        // Valid seasons list
+        $seasons = array_values(array_filter($anime['seasons'] ?? [], function ($s) {
+            return ($s['season_number'] ?? 0) > 0;
+        }));
+
+        $episodesList = $seasonData['episodes'] ?? [];
+        $currentEpisode = null;
+        $prevEpisode = null;
+        $nextEpisode = null;
+
+        foreach ($episodesList as $idx => $ep) {
+            if ((int) ($ep['episode_number'] ?? 0) === (int) $episode) {
+                $currentEpisode = $ep;
+                $prevEpisode = $episodesList[$idx - 1] ?? null;
+                $nextEpisode = $episodesList[$idx + 1] ?? null;
+                break;
+            }
+        }
+
+        if (!$currentEpisode && !empty($episodesList)) {
+            $currentEpisode = $episodesList[0];
+            $nextEpisode = $episodesList[1] ?? null;
+        }
+
+        $credits = $this->tmdb->getTvCredits($id);
+        $similar = $this->tmdb->getSimilarTvShows($id);
 
         return view('pages.watch', [
             'type' => 'anime',
@@ -98,8 +128,16 @@ class AnimeController extends Controller
             'media' => $anime,
             'season' => $season,
             'episode' => $episode,
-            'episodes' => $seasonData['episodes'] ?? [],
+            'seasons' => $seasons,
+            'currentSeason' => $seasonData,
+            'episodes' => $episodesList,
+            'currentEpisode' => $currentEpisode,
+            'prevEpisode' => $prevEpisode,
+            'nextEpisode' => $nextEpisode,
+            'credits' => $credits ?? [],
+            'similar' => $similar['results'] ?? [],
             'embedUrl' => $embedUrl,
+            'sources' => $sources,
             'tmdb' => $this->tmdb,
         ]);
     }

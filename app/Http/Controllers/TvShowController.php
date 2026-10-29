@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\TMDBService;
+use App\Models\VideoSource;
 use Illuminate\Http\Request;
 use RalphJSmit\Laravel\SEO\Support\SEOData;
 use Illuminate\Support\Str;
@@ -61,6 +62,19 @@ class TvShowController extends Controller
             abort(404);
         }
 
+        $episodes = [];
+        $firstSeasonNumber = 1;
+        if (!empty($tvShow['seasons'])) {
+            foreach ($tvShow['seasons'] as $s) {
+                if (($s['season_number'] ?? 0) > 0) {
+                    $firstSeasonNumber = $s['season_number'];
+                    break;
+                }
+            }
+            $seasonData = $this->tmdb->getTvSeasonDetails($id, $firstSeasonNumber);
+            $episodes = $seasonData['episodes'] ?? [];
+        }
+
         $credits = $this->tmdb->getTvCredits($id);
         $similar = $this->tmdb->getSimilarTvShows($id);
 
@@ -71,6 +85,8 @@ class TvShowController extends Controller
 
         return view('pages.tv-show-detail', [
             'tvShow' => $tvShow,
+            'episodes' => $episodes,
+            'firstSeasonNumber' => $firstSeasonNumber,
             'credits' => $credits ?? [],
             'similar' => $similar['results'] ?? [],
             'posterUrl' => $imageUrl,
@@ -110,6 +126,26 @@ class TvShowController extends Controller
         ]);
     }
 
+    public function seasonEpisodesJson(string $slug, int $seasonNumber)
+    {
+        $parts = explode('-', $slug);
+        $id = (int) ($parts[0] ?? 0);
+
+        if ($id <= 0) {
+            return response()->json(['error' => 'Invalid ID'], 400);
+        }
+
+        $season = $this->tmdb->getTvSeasonDetails($id, $seasonNumber);
+
+        if (!$season) {
+            return response()->json(['error' => 'Not found'], 404);
+        }
+
+        return response()->json([
+            'episodes' => $season['episodes'] ?? []
+        ]);
+    }
+
     public function watch(string $slug, int $season = 1, int $episode = 1)
     {
         $parts = explode('-', $slug);
@@ -126,26 +162,55 @@ class TvShowController extends Controller
             abort(404);
         }
 
-        // VidLink embed URL for TV: https://vidlink.pro/tv/{tmdb_id}/{season}/{episode}
-        $embedUrl = config('services.vidlink.base_url') . "/tv/{$id}/{$season}/{$episode}";
+        // Dynamic Video Sources from Database
+        $sourceData = VideoSource::getSourcesForContent('tv', $id, $season, $episode, $slug);
+        $sources = $sourceData['sources'];
+        $embedUrl = $sourceData['default_embed'] ?? ($sources[0]['embed'] ?? '');
 
-        // Build multiple sources: VidLink (primary) + Vidsrcme API as an alternate source.
-        // Assumption: Vidsrcme accepts a tv endpoint like: https://vidsrcme.ru/api/tv/{tmdb_id}/{season}/{episode}
-        $sources = [
-                        ['name' => 'Viewlix (ad-free)', 'embed' => "https://content.viewlix.online/embed/tv/{$id}/{$season}/{$episode}"],
-            ['name' => 'VidLink', 'embed' => $embedUrl],
-            ['name' => 'FilMex (Ad-Free) Suggested', 'embed' => "https://fmovies4u.com/embed/tv/{$id}/{$season}/{$episode}?autoPlay=true&hideTitle=true"],
-            ['name' => 'Vidsrcme', 'embed' => "https://vidsrcme.ru/embed/tv?tmdb={$id}&season={$season}&episode={$episode}"],
-        ];
+        // Valid seasons list
+        $seasons = array_values(array_filter($tvShow['seasons'] ?? [], function ($s) {
+            return ($s['season_number'] ?? 0) > 0;
+        }));
+
+        // Locate current, previous, and next episode objects
+        $episodesList = $seasonData['episodes'] ?? [];
+        $currentEpisode = null;
+        $prevEpisode = null;
+        $nextEpisode = null;
+
+        foreach ($episodesList as $idx => $ep) {
+            if ((int) ($ep['episode_number'] ?? 0) === (int) $episode) {
+                $currentEpisode = $ep;
+                $prevEpisode = $episodesList[$idx - 1] ?? null;
+                $nextEpisode = $episodesList[$idx + 1] ?? null;
+                break;
+            }
+        }
+
+        if (!$currentEpisode && !empty($episodesList)) {
+            $currentEpisode = $episodesList[0];
+            $nextEpisode = $episodesList[1] ?? null;
+        }
+
+        $credits = $this->tmdb->getTvCredits($id);
+        $similar = $this->tmdb->getSimilarTvShows($id);
 
         return view('pages.watch', [
             'type' => 'tv',
             'id' => $id,
+            'slug' => $slug,
             'title' => $tvShow['name'] ?? 'Unknown',
             'media' => $tvShow,
             'season' => $season,
             'episode' => $episode,
-            'episodes' => $seasonData['episodes'] ?? [],
+            'seasons' => $seasons,
+            'currentSeason' => $seasonData,
+            'episodes' => $episodesList,
+            'currentEpisode' => $currentEpisode,
+            'prevEpisode' => $prevEpisode,
+            'nextEpisode' => $nextEpisode,
+            'credits' => $credits ?? [],
+            'similar' => $similar['results'] ?? [],
             'embedUrl' => $embedUrl,
             'sources' => $sources,
             'tmdb' => $this->tmdb,

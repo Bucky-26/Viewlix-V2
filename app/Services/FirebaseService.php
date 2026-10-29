@@ -219,11 +219,117 @@ class FirebaseService
 
         try {
             $ref = $db->getReference($path);
-            $value = $ref->getValue();
-            return $value;
+            return $ref->getValue();
         } catch (\Throwable $e) {
             \Log::error('Firebase getDatabasePath failed for ' . $path . ': ' . $e->getMessage());
             return null;
+        }
+    }
+
+    /**
+     * Set a path in the Realtime Database
+     */
+    public function setDatabasePath(string $path, $value): bool
+    {
+        $db = $this->getDatabase();
+
+        if (!$db) {
+            return false;
+        }
+
+        try {
+            $db->getReference($path)->set($value);
+            return true;
+        } catch (\Throwable $e) {
+            \Log::error('Firebase setDatabasePath failed for ' . $path . ': ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Save user watch progress to Realtime Database
+     */
+    public function saveUserWatchProgress(string $firebaseUuid, string|int $mediaId, array $data): bool
+    {
+        $db = $this->getDatabase();
+        if (!$db) {
+            return false;
+        }
+
+        $path = "users/{$firebaseUuid}/watchProgress/{$mediaId}";
+
+        try {
+            // Fetch existing data for merge of show_progress if present
+            $existing = $db->getReference($path)->getValue();
+            if (is_array($existing) && !empty($existing['show_progress']) && !empty($data['show_progress'])) {
+                $data['show_progress'] = array_merge($existing['show_progress'], $data['show_progress']);
+            }
+
+            $data['last_updated'] = $data['last_updated'] ?? (int) (microtime(true) * 1000);
+
+            $db->getReference($path)->set($data);
+            return true;
+        } catch (\Throwable $e) {
+            \Log::error('Firebase saveUserWatchProgress failed: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Get user watch progress for a specific media from Realtime Database
+     */
+    public function getUserWatchProgress(string $firebaseUuid, string|int $mediaId): ?array
+    {
+        $path = "users/{$firebaseUuid}/watchProgress/{$mediaId}";
+        $data = $this->getDatabasePath($path);
+        return is_array($data) ? $data : null;
+    }
+
+    /**
+     * Get all watch progress entries for a user from Realtime Database
+     */
+    public function getUserAllWatchProgress(string $firebaseUuid): ?array
+    {
+        $path = "users/{$firebaseUuid}/watchProgress";
+        $data = $this->getDatabasePath($path);
+        return is_array($data) ? $data : null;
+    }
+
+    /**
+     * Delete user watch progress for a specific media from Realtime Database
+     */
+    public function deleteUserWatchProgress(string $firebaseUuid, string|int $mediaId): bool
+    {
+        $db = $this->getDatabase();
+        if (!$db) {
+            return false;
+        }
+
+        try {
+            $db->getReference("users/{$firebaseUuid}/watchProgress/{$mediaId}")->remove();
+            return true;
+        } catch (\Throwable $e) {
+            \Log::error('Firebase deleteUserWatchProgress failed: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Clear all watch progress entries for a user from Realtime Database
+     */
+    public function clearUserWatchProgress(string $firebaseUuid): bool
+    {
+        $db = $this->getDatabase();
+        if (!$db) {
+            return false;
+        }
+
+        try {
+            $db->getReference("users/{$firebaseUuid}/watchProgress")->remove();
+            return true;
+        } catch (\Throwable $e) {
+            \Log::error('Firebase clearUserWatchProgress failed: ' . $e->getMessage());
+            return false;
         }
     }
 

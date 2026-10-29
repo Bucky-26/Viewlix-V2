@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\TMDBService;
+use App\Models\VideoSource;
 use Illuminate\Http\Request;
 use RalphJSmit\Laravel\SEO\Support\SEOData;
 use Illuminate\Support\Str;
@@ -102,21 +103,10 @@ class MovieController extends Controller
             abort(404);
         }
 
-        // VidLink embed URL for movies: https://vidlink.pro/movie/{tmdb_id}
-        $embedUrl = config('services.vidlink.base_url') . "/movie/{$id}";
-
-        // Build multiple sources: VidLink (primary) + Vidsrcme API as an alternate source.
-        // Assumption: Vidsrcme accepts a movie endpoint like: https://vidsrcme.ru/api/movie/{tmdb_id}
-        // If the API expects a different path or needs server-side fetching, this can be adjusted later.
-        $sources = [
-
-            ['name' => 'Viewlix (ad-free)', 'embed' => "https://content.viewlix.online/embed/movie/{$id}"],
-            
-                ['name' => 'VidLink', 'embed' => $embedUrl],
-
-            ["name" => "FilMex(Ad-Free)Suggessted", "embed" => "https://fmovies4u.com/embed/movie/{$id}?autoPlay=true&hideTitle=true&?fullscreenButton=true"],
-          ["name" => "VidRock", "embed" => "https://vidrock.net/movie/{$id}"],
-        ];
+        // Dynamic Video Sources from Database
+        $sourceData = VideoSource::getSourcesForContent('movie', $id, 1, 1, $slug);
+        $sources = $sourceData['sources'];
+        $embedUrl = $sourceData['default_embed'] ?? ($sources[0]['embed'] ?? '');
 
         return view('pages.watch', [
             'type' => 'movie',

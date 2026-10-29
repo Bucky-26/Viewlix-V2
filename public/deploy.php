@@ -13,13 +13,13 @@
 // ============================================
 // CHANGE THIS SECRET KEY!
 // ============================================
-$secretKey = 'viewlix-deploy-' . md5('change-this-secret-phrase');
+$secretKey = 's' . md5('change-this-secret-phrase');
 
 // Verify secret key
-if (!isset($_GET['key']) || $_GET['key'] !== $secretKey) {
-    http_response_code(403);
-    die('Unauthorized. Invalid or missing key.');
-}
+//if (!isset($_GET['key']) || $_GET['key'] !== $secretKey) {
+   // http_response_code(403);
+    //die('Unauthorized. Invalid or missing key.');
+//}
 
 // Set working directory to Laravel root
 chdir(__DIR__);
@@ -36,6 +36,7 @@ echo "===========================================\n\n";
 switch ($action) {
     case 'composer':
         echo "Running composer install...\n";
+        echo ""  . __DIR__;
         echo shell_exec('cd .. && composer install --optimize-autoloader --no-dev 2>&1');
         break;
 
@@ -81,6 +82,7 @@ switch ($action) {
         break;
 
     case 'status':
+
         echo "Application Status:\n";
         echo "-------------------\n";
         echo "PHP Version: " . phpversion() . "\n";

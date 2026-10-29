@@ -18,6 +18,10 @@ class GoogleController extends Controller
      */
     public function redirect(): RedirectResponse
     {
+        if (Auth::check()) {
+            return redirect()->route('auth.google.link');
+        }
+
         return Socialite::driver('google')->redirect();
     }
 
@@ -60,33 +64,31 @@ class GoogleController extends Controller
                 'avatar' => $googleUser->getAvatar(),
                 'password' => bcrypt(Str::random(24)), // Random password for Google users
                 'firebase_uuid' => Str::uuid()->toString(),
-                // email will be marked verified via markEmailAsVerified()
             ]);
-            
 
-            // Mark the user as verified using the framework method which will
-            // set the timestamp and dispatch the Verified event (so listeners
-            // like SendVerifiedEmail will run correctly). Do this BEFORE
-            // firing Registered so Laravel's default Registered listeners
-            // (which may send verification emails) see the user as verified.
+            // Mark the user as verified using the framework method
             if (method_exists($user, 'markEmailAsVerified')) {
                 $user->markEmailAsVerified();
             } else {
-                // Fallback: set the timestamp manually if method isn't available
                 $user->email_verified_at = now();
                 $user->save();
                 event(new \Illuminate\Auth\Events\Verified($user));
             }
 
             // Fire Registered so listeners (welcome notification) run
-            event(new Registered($user));
-            Log::info('GoogleController: dispatched Registered for user id ' . $user->id . ' (' . $user->email . ')');
+            try {
+                event(new Registered($user));
+                Log::info('GoogleController: dispatched Registered for user id ' . $user->id . ' (' . $user->email . ')');
+            } catch (\Throwable $notifEx) {
+                Log::warning('GoogleController: welcome notification failed for user id ' . $user->id . ': ' . $notifEx->getMessage());
+            }
 
             Auth::login($user, true);
 
             return redirect('/')->with('success', 'Account created successfully!');
             
         } catch (\Exception $e) {
+            Log::error('Google authentication failed: ' . $e->getMessage(), ['exception' => $e]);
             return redirect('/login')->with('error', 'Google authentication failed. Please try again.');
         }
     }
@@ -96,7 +98,9 @@ class GoogleController extends Controller
      */
     public function link(): RedirectResponse
     {
-        return Socialite::driver('google')->redirect();
+        return Socialite::driver('google')
+            ->redirectUrl(route('auth.google.link.callback'))
+            ->redirect();
     }
 
     /**
@@ -105,8 +109,14 @@ class GoogleController extends Controller
     public function linkCallback(): RedirectResponse
     {
         try {
-            $googleUser = Socialite::driver('google')->user();
+            $googleUser = Socialite::driver('google')
+                ->redirectUrl(route('auth.google.link.callback'))
+                ->user();
             $user = Auth::user();
+
+            if (!$user) {
+                return redirect('/login')->with('error', 'Please log in before linking your account.');
+            }
             
             // Check if this Google account is already linked to another user
             $existingUser = User::where('google_id', $googleUser->getId())
@@ -126,6 +136,7 @@ class GoogleController extends Controller
             return redirect('/account')->with('success', 'Google account linked successfully!');
             
         } catch (\Exception $e) {
+            Log::error('Failed to link Google account: ' . $e->getMessage(), ['exception' => $e]);
             return redirect('/account')->with('error', 'Failed to link Google account.');
         }
     }

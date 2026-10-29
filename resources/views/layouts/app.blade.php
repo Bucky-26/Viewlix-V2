@@ -47,14 +47,53 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />
     
     <!-- Styles / Scripts -->
+    <style>[x-cloak] { display: none !important; }</style>
     @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     @endif
+
+    <!-- Firebase Initialization Config -->
+    <script>
+        window.isUserLoggedIn = {{ Auth::check() ? 'true' : 'false' }};
+        window.userFirebaseUuid = "{{ Auth::check() ? Auth::user()->getFirebaseUuid() : '' }}";
+        window.firebaseConfig = {
+            apiKey: "{{ config('services.firebase.api_key') }}",
+            authDomain: "{{ config('services.firebase.auth_domain') }}",
+            databaseURL: "{{ config('services.firebase.database_url') }}",
+            projectId: "{{ config('services.firebase.project_id') }}",
+            storageBucket: "{{ config('services.firebase.storage_bucket') }}",
+            messagingSenderId: "{{ config('services.firebase.messaging_sender_id') }}",
+            appId: "{{ config('services.firebase.app_id') }}",
+            measurementId: "{{ config('services.firebase.measurement_id') }}"
+        };
+        window.firebaseVapidKey = "{{ config('services.firebase.vapid_key') }}";
+
+        function setupFirebaseAuthOnReady() {
+            if (window.isUserLoggedIn && typeof window.signInToFirebase === 'function' && typeof window.isFirebaseAuthenticated === 'function' && !window.isFirebaseAuthenticated()) {
+                window.signInToFirebase().catch(function(e) { console.debug('Firebase auto-sign-in error', e); });
+            }
+        }
+
+        window.addEventListener('firebase:ready', setupFirebaseAuthOnReady);
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof window.initFirebase === 'function' && window.firebaseConfig && window.firebaseConfig.apiKey) {
+                window.initFirebase(window.firebaseConfig);
+            }
+            setupFirebaseAuthOnReady();
+        });
+    </script>
     
     @stack('styles')
 </head>
 
-<body class="bg-viewlix-dark min-h-screen">
+<body class="bg-[#08080a] text-gray-100 min-h-screen relative antialiased selection:bg-viewlix-red selection:text-white overflow-x-hidden">
+    <!-- Ambient Cinematic Lighting -->
+    <div class="fixed inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true">
+        <div class="absolute -top-40 left-1/3 w-[50rem] h-[30rem] bg-gradient-to-b from-[#004aad]/15 via-[#004aad]/5 to-transparent blur-3xl rounded-full"></div>
+        <div class="absolute top-1/2 -right-40 w-96 h-96 bg-indigo-600/10 blur-[130px] rounded-full"></div>
+        <div class="absolute bottom-10 left-10 w-96 h-96 bg-blue-600/10 blur-[130px] rounded-full"></div>
+    </div>
+
     <!-- Header Banners (Very Top) -->
     @php
         try {
@@ -91,16 +130,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     
     <!-- Mobile App Popup -->
     
-    <!-- Mini Sidebar (hidden on mobile) -->
-    @include('partials.sidebar')
-    
     <!-- Main Content -->
-    <main class="md:pl-[72px] min-h-screen pb-20 md:pb-0 @if($headerBanners->count() > 0) mt-20 @endif">
+    <main class="relative z-10 min-h-screen flex flex-col justify-between pb-24 md:pb-0 @if($headerBanners->count() > 0) mt-20 @endif">
         <!-- Header -->
         @include('partials.header')
         
         <!-- Page Content -->
-        <div class="p-4 lg:p-6">
+        <div class="p-4 lg:p-6 flex-1">
             @hasSection('content')
                 @yield('content')
             @else
@@ -112,7 +148,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         @include('partials.footer')
     
         <!-- Overlay Backdrop (placed before offcanvas elements so offcanvas sits above it) -->
-        <div id="overlay-backdrop" class="hidden pointer-events-none fixed inset-0 bg-black/30 z-[70] transition-opacity" onclick="closeAllOverlays()"></div>
+        <div id="overlay-backdrop" class="hidden pointer-events-none fixed inset-0 bg-black/50 backdrop-blur-sm z-[70] transition-opacity" onclick="closeAllOverlays()"></div>
     </main>
     
     <!-- Mobile Bottom Navigation -->
@@ -137,38 +173,20 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     @RegisterServiceWorkerScript
     @endproduction
     
-    <!-- Firebase Initialization (for authenticated users) -->
-    @auth
+    <!-- Firebase Initialization Fallback -->
     <script>
-        // Set VAPID key for FCM
-        window.firebaseVapidKey = "{{ config('services.firebase.vapid_key') }}";
-        
-        // Wait for app.js to load, then initialize Firebase
         document.addEventListener('DOMContentLoaded', function() {
-            if (typeof window.initFirebase === 'function') {
-                window.initFirebase({
-                    apiKey: "{{ config('services.firebase.api_key') }}",
-                    authDomain: "{{ config('services.firebase.auth_domain') }}",
-                    databaseURL: "{{ config('services.firebase.database_url') }}",
-                    projectId: "{{ config('services.firebase.project_id') }}",
-                    storageBucket: "{{ config('services.firebase.storage_bucket') }}",
-                    messagingSenderId: "{{ config('services.firebase.messaging_sender_id') }}",
-                    appId: "{{ config('services.firebase.app_id') }}",
-                    measurementId: "{{ config('services.firebase.measurement_id') }}"
-                });
-                
-                window.signInToFirebase();
+            if (typeof window.setupFirebaseAuthOnReady === 'function') {
+                window.setupFirebaseAuthOnReady();
             }
         });
     </script>
-    @endauth
     <!-- Google tag (gtag.js) -->
 
     <!-- Pull-to-refresh (PWA) - swipe down to reload on touch devices -->
     <script src="{{ asset('js/pull-to-refresh.js') }}"></script>
     
     <!-- Download Manager -->
-    <script src="{{ asset('js/download-manager.js') }}"></script>
       
     <script src="{{ asset('js/main.js') }}"></script>
 
@@ -176,15 +194,30 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <script>
         function showBannerPopup(bannerId) {
             const popup = document.getElementById(`banner-popup-${bannerId}`);
+            const inner = document.getElementById(`banner-popup-inner-${bannerId}`);
             if (popup) {
                 popup.classList.remove('hidden');
+                // Small delay to allow display block to apply before transition
+                setTimeout(() => {
+                    if (inner) {
+                        inner.classList.remove('opacity-0', 'scale-95');
+                        inner.classList.add('opacity-100', 'scale-100');
+                    }
+                }, 10);
             }
         }
 
         function closeBannerPopup(bannerId) {
             const popup = document.getElementById(`banner-popup-${bannerId}`);
+            const inner = document.getElementById(`banner-popup-inner-${bannerId}`);
+            if (inner) {
+                inner.classList.remove('opacity-100', 'scale-100');
+                inner.classList.add('opacity-0', 'scale-95');
+            }
             if (popup) {
-                popup.classList.add('hidden');
+                setTimeout(() => {
+                    popup.classList.add('hidden');
+                }, 300); // Wait for transition
                 // Save to localStorage that this banner has been shown
                 localStorage.setItem(`banner-shown-${bannerId}`, 'true');
             }
@@ -264,6 +297,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             }
         });
     </script>
+
+    {{-- Floating Live Chat & Support Ticket System --}}
+    @include('partials.chat-support')
 
     @stack('scripts')
 </body>

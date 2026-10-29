@@ -1,3 +1,42 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+[x-cloak] {
+    display: none !important;
+}
+
+@layer utilities {
+    /* Modern sleek streaming provider scrollbar */
+    .modern-scrollbar {
+        --scrollbar-thumb: rgba(255, 255, 255, 0.25);
+        --scrollbar-thumb-hover: rgba(255, 255, 255, 0.5);
+        --scrollbar-track: rgba(255, 255, 255, 0.05);
+
+        scrollbar-width: thin;
+        scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+    }
+
+    .modern-scrollbar::-webkit-scrollbar {
+        height: 5px;
+        width: 5px;
+    }
+
+    .modern-scrollbar::-webkit-scrollbar-track {
+        background: var(--scrollbar-track);
+        border-radius: 9999px;
+        margin: 0 4px;
+    }
+
+    .modern-scrollbar::-webkit-scrollbar-thumb {
+        background: var(--scrollbar-thumb);
+        border-radius: 9999px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
+
+    .modern-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: var(--scrollbar-thumb-hover);
+        border-color: rgba(255, 255, 255, 0.2);
+    }
+}

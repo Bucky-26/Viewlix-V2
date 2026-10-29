@@ -30,6 +30,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'google_id',
         'avatar',
         'is_admin',
+        'settings',
     ];
 
     /**
@@ -54,6 +55,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_admin' => 'boolean',
+            'settings' => 'array',
         ];
     }
 
@@ -140,4 +142,34 @@ class User extends Authenticatable implements MustVerifyEmail
             return null;
         }
     }
+
+    /**
+     * Get avatar URL or null.
+     */
+    public function getAvatarUrlAttribute(): ?string
+    {
+        return $this->avatar;
+    }
+
+    /**
+     * Check if user has an active custom avatar.
+     */
+    public function hasAvatar(): bool
+    {
+        return !empty($this->avatar);
+    }
+
+    /**
+     * Check if user avatar is hosted on Cloudflare R2 (cdn.viewlix.online).
+     */
+    public function isR2Avatar(): bool
+    {
+        if (empty($this->avatar)) {
+            return false;
+        }
+
+        $r2Url = config('filesystems.disks.r2.url', 'https://cdn.viewlix.online');
+        return str_contains($this->avatar, $r2Url) || str_contains($this->avatar, 'cdn.viewlix.online') || str_contains($this->avatar, 'r2.cloudflarestorage.com');
+    }
 }
+

@@ -64,7 +64,11 @@ return [
     'google' => [
         'client_id' => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
-        'redirect' => env('GOOGLE_REDIRECT_URI', '/auth/google/callback'),
+        // Use GOOGLE_REDIRECT_URI if explicitly set (production), otherwise
+        // fall back to the APP_URL-relative path so local dev works automatically.
+        // For local: http://127.0.0.1:8000/auth/google/callback
+        // For prod:  https://viewlix.online/auth/google/callback (via GOOGLE_REDIRECT_URI)
+        'redirect' => env('GOOGLE_REDIRECT_URI') ?: '/auth/google/callback',
         'refresh_token' => env('GOOGLE_REFRESH_TOKEN'),
         'email' => env('MAIL_USERNAME', 'viewlix.site@gmail.com'),
     ],

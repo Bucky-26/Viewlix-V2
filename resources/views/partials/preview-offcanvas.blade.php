@@ -1,98 +1,99 @@
 {{-- Preview Offcanvas - Shows quick preview of media --}}
-<div id="preview-offcanvas" class="hidden translate-y-full fixed bottom-0 inset-x-0 transition-all duration-300 transform h-auto max-h-[90vh] w-full z-[90] bg-viewlix-darker border-t border-viewlix-border rounded-t-2xl" role="dialog" tabindex="-1" aria-labelledby="preview-offcanvas-label">
+<div id="preview-offcanvas" class="hidden translate-y-full fixed bottom-0 inset-x-0 transition-all duration-300 transform h-auto max-h-[90vh] w-full z-[90] bg-[#0d0e17]/95 backdrop-blur-3xl border-t border-white/10 rounded-t-[2rem] shadow-[0_-25px_60px_rgba(0,0,0,0.9)]" role="dialog" tabindex="-1" aria-labelledby="preview-offcanvas-label">
     {{-- Drag Handle --}}
-    <div class="flex justify-center pt-3 pb-2 touch-none" id="preview-drag-handle">
-        <span class="w-12 h-1.5 bg-viewlix-gray rounded-full cursor-pointer" onclick="closeOverlay('#preview-offcanvas', false)"></span>
+    <div class="flex justify-center pt-3 pb-1 touch-none" id="preview-drag-handle">
+        <span class="w-12 h-1 bg-white/20 hover:bg-white/40 rounded-full cursor-pointer transition-colors" onclick="closeOverlay('#preview-offcanvas', false)"></span>
     </div>
     
     {{-- Preview Content Container --}}
     <div class="flex flex-col overflow-hidden" id="preview-container" style="max-height: calc(90vh - 3rem); height: calc(90vh - 3rem);">
-        <div class="p-4 overflow-y-auto flex-1 overscroll-contain" id="preview-content" style="min-height: 0;">
+        <div class="p-4 sm:p-6 overflow-y-auto flex-1 overscroll-contain" id="preview-content" style="min-height: 0;">
             {{-- Content will be loaded dynamically via JavaScript --}}
-            <div class="flex items-center justify-center py-12">
-                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-viewlix-red"></div>
+            <div class="flex items-center justify-center py-16">
+                <div class="animate-spin rounded-full h-9 w-9 border-2 border-viewlix-red border-t-transparent shadow-[0_0_12px_rgba(229,9,20,0.5)]"></div>
             </div>
         </div>
         
         {{-- Expanded Detail View --}}
-        <div class="hidden p-4 overflow-y-auto flex-1 overscroll-contain" id="preview-detail-content" style="min-height: 0;">
+        <div class="hidden p-4 sm:p-6 overflow-y-auto flex-1 overscroll-contain" id="preview-detail-content" style="min-height: 0;">
             {{-- Full details will be loaded here when expanded --}}
         </div>
     </div>
 </div>
 
 {{-- Share Offcanvas --}}
-<div id="share-offcanvas" class="hidden translate-y-full fixed bottom-0 inset-x-0 transition-all duration-300 transform h-auto w-full z-[90] bg-viewlix-darker border-t border-viewlix-border rounded-t-2xl" role="dialog" tabindex="-1" aria-labelledby="share-offcanvas-label">
-    <div class="flex justify-center pt-3 pb-2">
-        <span class="w-12 h-1.5 bg-viewlix-gray rounded-full cursor-pointer" onclick="closeOverlay('#share-offcanvas', false)"></span>
+<div id="share-offcanvas" class="hidden translate-y-full fixed bottom-0 inset-x-0 transition-all duration-300 transform h-auto w-full z-[90] bg-[#0d0e17]/95 backdrop-blur-3xl border-t border-white/10 rounded-t-[2rem] shadow-[0_-25px_60px_rgba(0,0,0,0.9)]" role="dialog" tabindex="-1" aria-labelledby="share-offcanvas-label">
+    <div class="flex justify-center pt-3 pb-1">
+        <span class="w-12 h-1 bg-white/20 hover:bg-white/40 rounded-full cursor-pointer transition-colors" onclick="closeOverlay('#share-offcanvas', false)"></span>
     </div>
     
-    <div class="p-4">
-        <h3 id="share-offcanvas-label" class="text-lg font-bold text-white text-center mb-4">Share</h3>
+    <div class="p-6">
+        <h3 id="share-offcanvas-label" class="text-xl font-bold text-white text-center mb-5 tracking-tight">Share Title</h3>
         
-        <div id="share-content" class="mb-4">
+        <div id="share-content" class="mb-5">
             {{-- Share info will be populated dynamically --}}
         </div>
         
         {{-- Share Options --}}
-        <div class="grid grid-cols-4 gap-4 mb-6">
+        <div class="grid grid-cols-4 gap-3 mb-6">
             {{-- Copy Link --}}
-            <button type="button" onclick="copyShareLink()" class="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-viewlix-gray transition-colors">
-                <div class="w-12 h-12 rounded-full bg-gray-600 flex items-center justify-center">
-                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <button type="button" onclick="copyShareLink()" class="flex flex-col items-center gap-2 p-3 rounded-2xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.08] hover:border-white/15 transition-all group">
+                <div class="w-11 h-11 rounded-xl bg-gray-700/50 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/>
                     </svg>
                 </div>
-                <span class="text-xs text-gray-400">Copy</span>
+                <span class="text-xs text-gray-300 font-medium">Copy</span>
             </button>
             
             {{-- WhatsApp --}}
-            <a href="#" id="share-whatsapp" target="_blank" class="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-viewlix-gray transition-colors">
-                <div class="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center">
-                    <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+            <a href="#" id="share-whatsapp" target="_blank" class="flex flex-col items-center gap-2 p-3 rounded-2xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.08] hover:border-white/15 transition-all group">
+                <div class="w-11 h-11 rounded-xl bg-emerald-600/80 flex items-center justify-center group-hover:scale-110 transition-transform shadow-[0_0_10px_rgba(16,185,129,0.3)]">
+                    <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
                     </svg>
                 </div>
-                <span class="text-xs text-gray-400">WhatsApp</span>
+                <span class="text-xs text-gray-300 font-medium">WhatsApp</span>
             </a>
             
             {{-- Twitter/X --}}
-            <a href="#" id="share-twitter" target="_blank" class="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-viewlix-gray transition-colors">
-                <div class="w-12 h-12 rounded-full bg-black flex items-center justify-center border border-viewlix-border">
-                    <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+            <a href="#" id="share-twitter" target="_blank" class="flex flex-col items-center gap-2 p-3 rounded-2xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.08] hover:border-white/15 transition-all group">
+                <div class="w-11 h-11 rounded-xl bg-black flex items-center justify-center border border-white/10 group-hover:scale-110 transition-transform">
+                    <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
                     </svg>
                 </div>
-                <span class="text-xs text-gray-400">X</span>
+                <span class="text-xs text-gray-300 font-medium">X</span>
             </a>
             
             {{-- Facebook --}}
-            <a href="#" id="share-facebook" target="_blank" class="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-viewlix-gray transition-colors">
-                <div class="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center">
-                    <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+            <a href="#" id="share-facebook" target="_blank" class="flex flex-col items-center gap-2 p-3 rounded-2xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.08] hover:border-white/15 transition-all group">
+                <div class="w-11 h-11 rounded-xl bg-blue-600/80 flex items-center justify-center group-hover:scale-110 transition-transform shadow-[0_0_10px_rgba(37,99,235,0.3)]">
+                    <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
                     </svg>
                 </div>
-                <span class="text-xs text-gray-400">Facebook</span>
+                <span class="text-xs text-gray-300 font-medium">Facebook</span>
             </a>
         </div>
         
         {{-- URL Display --}}
-        <div class="flex items-center gap-2 p-3 bg-viewlix-gray rounded-xl">
-            <input type="text" id="share-url" readonly class="flex-1 bg-transparent text-sm text-gray-300 border-0 focus:ring-0 p-0" value="">
-            <button type="button" onclick="copyShareLink()" class="text-viewlix-red hover:text-viewlix-red-light text-sm font-medium">
+        <div class="flex items-center gap-2 p-3 bg-white/[0.04] border border-white/10 rounded-xl">
+            <input type="text" id="share-url" readonly class="flex-1 bg-transparent text-xs text-gray-300 border-0 focus:ring-0 p-0 selection:bg-viewlix-red selection:text-white" value="">
+            <button type="button" onclick="copyShareLink()" class="text-viewlix-red hover:text-red-400 text-xs font-bold px-2 py-1 rounded hover:bg-viewlix-red/10 transition-colors">
                 Copy
             </button>
         </div>
         
         {{-- Copy Success Message --}}
-        <div id="copy-success" class="hidden mt-3 p-2 bg-green-500/20 text-green-400 text-sm text-center rounded-lg">
+        <div id="copy-success" class="hidden mt-3 p-2.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold text-center rounded-xl">
             Link copied to clipboard!
         </div>
     </div>
 </div>
 
 @push('scripts')
+
 <script>
 // Swipe gesture handling for preview offcanvas
 document.addEventListener('DOMContentLoaded', function() {

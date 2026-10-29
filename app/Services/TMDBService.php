@@ -557,4 +557,64 @@ class TMDBService
         $encoded = rawurlencode($tmdbUrl);
         return "https://wsrv.nl/?url={$encoded}&w=280&output=webp&q=80";
     }
+
+    /**
+     * Get content by streaming provider/network for movies or TV shows.
+     *
+     * @param string $provider Slug of provider (e.g. netflix, disney, hbo, prime, apple, paramount, hulu, crunchyroll, peacock, vivamax)
+     * @param string $type     'movie' or 'tv'
+     * @param int    $page
+     * @return array|null
+     */
+    public function getProviderContent(string $provider, string $type = 'movie', int $page = 1): ?array
+    {
+        $provider = strtolower(trim($provider));
+        $type = in_array(strtolower($type), ['tv', 'tv-show', 'series']) ? 'tv' : 'movie';
+
+        return Cache::remember("streaming.provider.{$provider}.{$type}.{$page}", 3600, function () use ($provider, $type, $page) {
+            $params = [
+                'sort_by' => 'popularity.desc',
+                'page' => $page,
+            ];
+
+            if ($provider === 'vivamax') {
+                $params['with_original_language'] = 'tl';
+            } elseif ($provider === 'crunchyroll') {
+                if ($type === 'tv') {
+                    $params['with_networks'] = '1112';
+                } else {
+                    $params['with_watch_providers'] = '283';
+                    $params['watch_region'] = 'US';
+                }
+            } elseif ($provider === 'paramount') {
+                if ($type === 'tv') {
+                    $params['with_networks'] = '4330';
+                } else {
+                    $params['with_companies'] = '4';
+                }
+            } else {
+                $providerMap = [
+                    'netflix' => ['provider' => '8', 'network' => '213'],
+                    'disney' => ['provider' => '337', 'network' => '2739'],
+                    'hbo' => ['provider' => '1899|384', 'network' => '49|3186'],
+                    'prime' => ['provider' => '9|119', 'network' => '1024'],
+                    'apple' => ['provider' => '350', 'network' => '2552'],
+                    'hulu' => ['provider' => '15', 'network' => '453'],
+                    'peacock' => ['provider' => '386|387', 'network' => '3353'],
+                ];
+
+                $conf = $providerMap[$provider] ?? $providerMap['netflix'];
+
+                if ($type === 'tv' && !empty($conf['network'])) {
+                    $params['with_networks'] = $conf['network'];
+                } elseif (!empty($conf['provider'])) {
+                    $params['with_watch_providers'] = $conf['provider'];
+                    $params['watch_region'] = 'US';
+                }
+            }
+
+            $endpoint = $type === 'tv' ? '/discover/tv' : '/discover/movie';
+            return $this->request($endpoint, $params);
+        });
+    }
 }

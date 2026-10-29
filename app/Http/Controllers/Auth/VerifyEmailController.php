@@ -18,10 +18,9 @@ class VerifyEmailController extends Controller
             return redirect()->intended(route('dashboard', absolute: false).'?verified=1');
         }
 
-        // markEmailAsVerified() will already fire the Verified event internally
-        // (Illuminate\Foundation\Auth\EmailVerificationRequest triggers it),
-        // so we just call the method and avoid dispatching the event twice.
-        $request->user()->markEmailAsVerified();
+        if ($request->user()->markEmailAsVerified()) {
+            event(new Verified($request->user()));
+        }
 
         return redirect()->intended(route('dashboard', absolute: false).'?verified=1');
     }
