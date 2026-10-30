@@ -533,6 +533,8 @@ Route::prefix('v1')->group(function () {
     Route::prefix('auth')->group(function () {
         Route::post('/register', [V1AuthController::class, 'register']);
         Route::post('/login', [V1AuthController::class, 'login']);
+        Route::post('/google', [V1AuthController::class, 'googleAuth']);
+        Route::post('/google/login', [V1AuthController::class, 'googleAuth']);
     });
 
     // Movies
@@ -574,6 +576,7 @@ Route::prefix('v1')->group(function () {
             Route::put('/password', [V1AuthController::class, 'updatePassword']);
             Route::post('/avatar', [V1AuthController::class, 'uploadAvatar']);
             Route::get('/firebase-token', [V1AuthController::class, 'firebaseToken']);
+            Route::post('/google/link', [V1AuthController::class, 'linkGoogle']);
             Route::post('/logout', [V1AuthController::class, 'logout']);
             Route::delete('/delete-account', [V1AuthController::class, 'deleteAccount']);
         });

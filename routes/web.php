@@ -218,6 +218,7 @@ Route::middleware(['admin'])->prefix('admin')->name('admin.')->group(function ()
 
     // Mobile App management (Android)
     Route::get('/mobile-app', [MobileAppController::class, 'index'])->name('mobile-app.index');
+    Route::post('/mobile-app/sync-rtdb', [MobileAppController::class, 'syncRtdb'])->name('mobile-app.sync-rtdb');
     Route::post('/mobile-app/{platform}', [MobileAppController::class, 'store'])->name('mobile-app.store');
     Route::get('/mobile-app/{platform}/download', [MobileAppController::class, 'download'])->name('mobile-app.download');
 

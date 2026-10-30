@@ -53,6 +53,7 @@ return [
     */
 
     'url' => env('APP_URL', 'http://localhost'),
+    'player_url' => env('PLAYER_URL', 'https://content1.viewlix.online/'),
 
     /*
     |--------------------------------------------------------------------------

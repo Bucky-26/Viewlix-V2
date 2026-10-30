@@ -50,16 +50,28 @@ class AppController extends BaseApiController
                 ];
             });
             $maintenanceMode = (bool) AppSetting::getVal('maintenance_mode', false);
+            $forceUpdate = (bool) AppSetting::getVal('force_update', false);
+            $playerUrl = AppSetting::getVal('player_url', config('app.player_url', 'https://content1.viewlix.online/'));
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::warning('AppConfig DB warning: ' . $e->getMessage());
+            $forceUpdate = false;
+            $playerUrl = config('app.player_url', 'https://content1.viewlix.online/');
         }
+
+        $androidDownloadUrl = $latestAndroid?->play_store_url ?: url('/download/android');
+        $androidLatestApk = ($latestAndroid && $latestAndroid->file_path)
+            ? asset('storage/' . $latestAndroid->file_path)
+            : url('/download/android');
 
         return $this->success([
             'app' => [
                 'name'             => config('app.name', 'Viewlix'),
                 'url'              => config('app.url'),
+                'player_url'       => $playerUrl,
                 'maintenance_mode' => $maintenanceMode,
+                'force_update'     => $forceUpdate,
             ],
+            'player_url' => $playerUrl,
             'images' => [
                 'tmdb_base_url'    => config('services.tmdb.image_base_url', 'https://image.tmdb.org/t/p'),
                 'poster_sizes'     => ['w92', 'w154', 'w185', 'w342', 'w500', 'w780', 'original'],
@@ -71,14 +83,18 @@ class AppController extends BaseApiController
                 'vapidKey' => $fb['vapid_key'] ?? null,
             ],
             'mobile_versions' => [
-                'android' => $latestAndroid ? [
-                    'version'        => $latestAndroid->version,
-                    'play_store_url' => $latestAndroid->play_store_url,
-                    'file_size'      => $latestAndroid->file_size,
-                ] : null,
+                'android' => [
+                    'version'        => $latestAndroid?->version ?? '1.0.0',
+                    'download_url'   => $androidDownloadUrl,
+                    'latest_apk'     => $androidLatestApk,
+                    'play_store_url' => $latestAndroid?->play_store_url,
+                    'file_size'      => $latestAndroid?->file_size,
+                    'force_update'   => $forceUpdate,
+                ],
                 'ios' => $latestIos ? [
                     'version'       => $latestIos->version,
                     'app_store_url' => $latestIos->app_store_url,
+                    'force_update'  => $forceUpdate,
                 ] : null,
             ],
             'banners' => $banners,

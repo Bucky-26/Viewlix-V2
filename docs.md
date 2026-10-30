@@ -144,6 +144,60 @@ Authenticate using email and password.
 
 ---
 
+### `POST /auth/google` (Android & Mobile Google Sign-In)
+Unified endpoint to login or register a user via Google Sign-In on Android.
+- If the Google account has not signed up before, it **registers** a new account (email marked verified automatically).
+- If the user already exists (matches `google_id` or existing `email`), it links the Google ID and **logs them in**.
+- Returns a Sanctum Bearer token and an optional Firebase custom token for instant RTDB sync.
+
+**Request Body:**
+```json
+{
+  "id_token": "eyJhbGciOiJSUzI1NiIsImtpZCI6Ij...",
+  "device_name": "Google Pixel 8"
+}
+```
+*Note: Also accepts `token` or `access_token`.*
+
+**Response (200 OK for login, 201 Created for register):**
+```json
+{
+  "success": true,
+  "message": "Login with Google successful",
+  "data": {
+    "token": "2|AbCdEf123456...",
+    "token_type": "Bearer",
+    "is_new_user": false,
+    "firebase_token": "eyJhbGciOiJSUzI1NiIs...",
+    "user": {
+      "id": 12,
+      "name": "Jane Doe",
+      "email": "jane@gmail.com",
+      "avatar": "https://lh3.googleusercontent.com/a/...",
+      "avatar_url": "https://lh3.googleusercontent.com/a/...",
+      "firebase_uuid": "c76a9be8-d218-4a69-a1b7-a859e9a4f48b",
+      "is_admin": false,
+      "settings": {},
+      "created_at": "2026-10-30T12:00:00Z"
+    }
+  }
+}
+```
+
+---
+
+### `POST /auth/google/link` *(Auth Required)*
+Link a Google account to an already logged-in user profile.
+
+**Request Body:**
+```json
+{
+  "id_token": "eyJhbGciOiJSUzI1NiIsImtpZCI6Ij..."
+}
+```
+
+---
+
 ### `GET /auth/me` *(Auth Required)*
 Retrieve profile details and library stats for the logged-in user.
 
@@ -253,8 +307,29 @@ Permanently deletes the account and all associated watch history and favorites.
 
 ## 2. App Configuration & Updates
 
+### Realtime App Configuration via Firebase RTDB
+The mobile app can listen to real-time configurations via Firebase Realtime Database at `/app_config` (or `/mobile_app_config`). This allows instant, remote updates to player URLs, maintenance mode, and force updates without requiring an app store release.
+
+**RTDB Path:** `/app_config`
+
+**JSON Payload in RTDB:**
+```json
+{
+  "app_name": "Viewlix",
+  "version": "1.0.0",
+  "download_url": "https://viewlix.online/download/android",
+  "latest_apk": "https://viewlix.online/download/android",
+  "player_url": "https://content1.viewlix.online/",
+  "maintenance_mode": false,
+  "force_update": false,
+  "updated_at": 1793392533
+}
+```
+
+---
+
 ### `GET /app/config`
-Call this during mobile app launch to bootstrap configurations.
+Call this during mobile app launch to bootstrap configurations over REST API.
 
 **Response (200 OK):**
 ```json
@@ -264,8 +339,11 @@ Call this during mobile app launch to bootstrap configurations.
     "app": {
       "name": "Viewlix",
       "url": "https://viewlix.online",
-      "maintenance_mode": false
+      "player_url": "https://content1.viewlix.online/",
+      "maintenance_mode": false,
+      "force_update": false
     },
+    "player_url": "https://content1.viewlix.online/",
     "images": {
       "tmdb_base_url": "https://image.tmdb.org/t/p",
       "poster_sizes": ["w92", "w154", "w185", "w342", "w500", "w780", "original"],
@@ -885,6 +963,23 @@ class ViewlixApi {
   Future<Map<String, dynamic>> getAppConfig() async {
     final response = await http.get(Uri.parse('$baseUrl/app/config'), headers: headers);
     return jsonDecode(response.body)['data'];
+  }
+
+  // 1b. Google Sign-In (Unified Login & Register for Android)
+  Future<Map<String, dynamic>> signInWithGoogle(String idToken, {String deviceName = 'Android App'}) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/auth/google'),
+      headers: headers,
+      body: jsonEncode({
+        'id_token': idToken,
+        'device_name': deviceName,
+      }),
+    );
+    final json = jsonDecode(response.body);
+    if (json['success'] == true) {
+      authToken = json['data']['token'];
+    }
+    return json;
   }
 
   // 2. Home Feed

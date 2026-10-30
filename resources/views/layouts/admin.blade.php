@@ -65,6 +65,20 @@
                 margin-left: 0;
             }
         }
+        /* Hide scrollbars completely on navigation */
+        .no-scrollbar::-webkit-scrollbar,
+        .sidebar-mini::-webkit-scrollbar,
+        .sidebar-mini *::-webkit-scrollbar {
+            display: none !important;
+            width: 0 !important;
+            height: 0 !important;
+        }
+        .no-scrollbar,
+        .sidebar-mini,
+        .sidebar-mini * {
+            -ms-overflow-style: none !important; /* IE and Edge */
+            scrollbar-width: none !important;    /* Firefox */
+        }
     </style>
 </head>
 <body class="bg-viewlix-darker text-gray-200">
@@ -165,6 +179,14 @@
                         </svg>
                         Live Support
                     </a>
+                    <a href="{{ route('admin.mobile-app.index') }}" 
+                       class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm {{ request()->routeIs('admin.mobile-app*') ? 'bg-viewlix-red text-white' : 'text-gray-300 hover:bg-viewlix-gray hover:text-white' }}">
+                        <svg class="size-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect width="14" height="20" x="5" y="2" rx="2" ry="2"/>
+                            <path d="M12 18h.01"/>
+                        </svg>
+                        Mobile App
+                    </a>
                     <div class="pt-3 mt-3 border-t border-viewlix-border">
                         <a href="{{ route('home') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-300 hover:bg-viewlix-gray hover:text-white">
                             <svg class="size-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -208,8 +230,8 @@
             </div>
 
             {{-- Navigation --}}
-            <div class="flex-1 overflow-y-auto overflow-x-hidden p-3">
-                <nav class="space-y-1">
+            <div class="flex-1 overflow-y-auto overflow-x-hidden p-3 no-scrollbar">
+                <nav class="space-y-1 no-scrollbar">
                     {{-- Dashboard --}}
                     <a href="{{ route('admin.dashboard') }}" 
                        class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors {{ request()->routeIs('admin.dashboard') ? 'bg-viewlix-red text-white' : 'text-gray-300 hover:bg-viewlix-gray hover:text-white' }}"
@@ -292,6 +314,16 @@
                                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
                             </svg>
                             <span class="nav-text">Live Support</span>
+                        </a>
+
+                        <a href="{{ route('admin.mobile-app.index') }}" 
+                           class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors {{ request()->routeIs('admin.mobile-app*') ? 'bg-viewlix-red text-white' : 'text-gray-300 hover:bg-viewlix-gray hover:text-white' }}"
+                           title="Mobile App Management">
+                            <svg class="nav-icon shrink-0 size-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect width="14" height="20" x="5" y="2" rx="2" ry="2"/>
+                                <path d="M12 18h.01"/>
+                            </svg>
+                            <span class="nav-text">Mobile App</span>
                         </a>
                     </div>
 

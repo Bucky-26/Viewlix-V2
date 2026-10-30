@@ -334,6 +334,62 @@ class FirebaseService
     }
 
     /**
+     * Get mobile app configuration payload
+     */
+    public function getMobileAppConfigData(): array
+    {
+        $androidApp = \App\Models\MobileApp::android();
+        $version = $androidApp?->version ?? \App\Models\AppSetting::getVal('app_version', '1.0.0');
+
+        $downloadUrl = $androidApp?->play_store_url ?: url('/download/android');
+
+        $latestApk = ($androidApp && $androidApp->file_path)
+            ? asset('storage/' . $androidApp->file_path)
+            : url('/download/android');
+
+        $playerUrl = \App\Models\AppSetting::getVal(
+            'player_url',
+            config('app.player_url', 'https://content1.viewlix.online/')
+        );
+
+        $maintenanceMode = (bool) \App\Models\AppSetting::getVal('maintenance_mode', false);
+        $forceUpdate = (bool) \App\Models\AppSetting::getVal('force_update', false);
+
+        return [
+            'app_name'         => config('app.name', 'Viewlix'),
+            'version'          => $version,
+            'download_url'     => $downloadUrl,
+            'latest_apk'       => $latestApk,
+            'player_url'       => $playerUrl,
+            'maintenance_mode' => $maintenanceMode,
+            'force_update'     => $forceUpdate,
+            'updated_at'       => time(),
+        ];
+    }
+
+    /**
+     * Sync mobile app config to Firebase Realtime Database
+     */
+    public function syncMobileAppConfig(?array $customConfig = null): bool
+    {
+        $data = $customConfig ?? $this->getMobileAppConfigData();
+
+        // Save at both 'app_config' and 'mobile_app_config' for broad client compatibility
+        $saved1 = $this->setDatabasePath('app_config', $data);
+        $saved2 = $this->setDatabasePath('mobile_app_config', $data);
+
+        return $saved1 || $saved2;
+    }
+
+    /**
+     * Retrieve current mobile app config from Firebase Realtime Database
+     */
+    public function getMobileAppConfigFromDatabase(): ?array
+    {
+        return $this->getDatabasePath('app_config') ?? $this->getDatabasePath('mobile_app_config');
+    }
+
+    /**
      * Check if Firebase is configured
      */
     public function isConfigured(): bool
