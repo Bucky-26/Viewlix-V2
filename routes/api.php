@@ -1,6 +1,16 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\V1\AnimeController as V1AnimeController;
+use App\Http\Controllers\Api\V1\AppController as V1AppController;
+use App\Http\Controllers\Api\V1\AuthController as V1AuthController;
+use App\Http\Controllers\Api\V1\FavoriteController as V1FavoriteController;
+use App\Http\Controllers\Api\V1\HomeController as V1HomeController;
+use App\Http\Controllers\Api\V1\MovieController as V1MovieController;
+use App\Http\Controllers\Api\V1\SearchController as V1SearchController;
+use App\Http\Controllers\Api\V1\SupportController as V1SupportController;
+use App\Http\Controllers\Api\V1\TvShowController as V1TvShowController;
+use App\Http\Controllers\Api\V1\WatchHistoryController as V1WatchHistoryController;
 use App\Services\TMDBService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -502,5 +512,99 @@ Route::prefix('v3/auth')->group(function () {
     // Token verification endpoint (Protected by Sanctum)
     Route::middleware('auth:sanctum')->get('/me', [AuthController::class, 'me']);
 });
+
+/*
+|--------------------------------------------------------------------------
+| Mobile App API (v1)
+|--------------------------------------------------------------------------
+| Dedicated, standardized RESTful endpoints designed for the mobile app
+| (Flutter / React Native / Kotlin / Swift).
+*/
+Route::prefix('v1')->group(function () {
+    // App & Metadata
+    Route::get('/app/config', [V1AppController::class, 'config']);
+    Route::get('/app/check-update', [V1AppController::class, 'checkUpdate']);
+    Route::get('/banners', [V1AppController::class, 'banners']);
+
+    // Home Aggregated Feed
+    Route::get('/home', [V1HomeController::class, 'index']);
+
+    // Public Authentication
+    Route::prefix('auth')->group(function () {
+        Route::post('/register', [V1AuthController::class, 'register']);
+        Route::post('/login', [V1AuthController::class, 'login']);
+    });
+
+    // Movies
+    Route::prefix('movies')->group(function () {
+        Route::get('/', [V1MovieController::class, 'index']);
+        Route::get('/{id}', [V1MovieController::class, 'show'])->whereNumber('id');
+        Route::get('/{id}/sources', [V1MovieController::class, 'sources'])->whereNumber('id');
+    });
+
+    // TV Shows
+    Route::prefix('tv-shows')->group(function () {
+        Route::get('/', [V1TvShowController::class, 'index']);
+        Route::get('/{id}', [V1TvShowController::class, 'show'])->whereNumber('id');
+        Route::get('/{id}/seasons/{season}', [V1TvShowController::class, 'season'])->whereNumber(['id', 'season']);
+        Route::get('/{id}/seasons/{season}/episodes/{episode}/sources', [V1TvShowController::class, 'episodeSources'])->whereNumber(['id', 'season', 'episode']);
+    });
+
+    // Anime
+    Route::prefix('anime')->group(function () {
+        Route::get('/', [V1AnimeController::class, 'index']);
+        Route::get('/{id}', [V1AnimeController::class, 'show'])->whereNumber('id');
+        Route::get('/{id}/seasons/{season}', [V1AnimeController::class, 'season'])->whereNumber(['id', 'season']);
+        Route::get('/{id}/seasons/{season}/episodes/{episode}/sources', [V1AnimeController::class, 'episodeSources'])->whereNumber(['id', 'season', 'episode']);
+    });
+
+    // Search, Discovery, Genres & Streaming Providers
+    Route::get('/search', [V1SearchController::class, 'search']);
+    Route::get('/search/suggestions', [V1SearchController::class, 'suggestions']);
+    Route::get('/genres', [V1SearchController::class, 'genres']);
+    Route::get('/discover', [V1SearchController::class, 'discover']);
+    Route::get('/providers', [V1SearchController::class, 'providers']);
+
+    // Authenticated Mobile Routes
+    Route::middleware('auth:sanctum')->group(function () {
+        // Auth & Profile Management
+        Route::prefix('auth')->group(function () {
+            Route::get('/me', [V1AuthController::class, 'me']);
+            Route::put('/profile', [V1AuthController::class, 'updateProfile']);
+            Route::put('/password', [V1AuthController::class, 'updatePassword']);
+            Route::post('/avatar', [V1AuthController::class, 'uploadAvatar']);
+            Route::get('/firebase-token', [V1AuthController::class, 'firebaseToken']);
+            Route::post('/logout', [V1AuthController::class, 'logout']);
+            Route::delete('/delete-account', [V1AuthController::class, 'deleteAccount']);
+        });
+
+        // Favorites / Watchlist
+        Route::prefix('favorites')->group(function () {
+            Route::get('/', [V1FavoriteController::class, 'index']);
+            Route::post('/toggle', [V1FavoriteController::class, 'toggle']);
+            Route::get('/check/{mediaId}', [V1FavoriteController::class, 'check'])->whereNumber('mediaId');
+            Route::delete('/{mediaId}', [V1FavoriteController::class, 'destroy'])->whereNumber('mediaId');
+        });
+
+        // Watch History & Progress (Syncs local SQL & Firebase RTDB)
+        Route::prefix('watch-history')->group(function () {
+            Route::get('/', [V1WatchHistoryController::class, 'index']);
+            Route::post('/', [V1WatchHistoryController::class, 'save']);
+            Route::get('/{mediaId}', [V1WatchHistoryController::class, 'show'])->whereNumber('mediaId');
+            Route::delete('/{mediaId}', [V1WatchHistoryController::class, 'destroy'])->whereNumber('mediaId');
+            Route::delete('/', [V1WatchHistoryController::class, 'clear']);
+        });
+
+        // In-App Support Tickets & Chat
+        Route::prefix('support')->group(function () {
+            Route::get('/tickets', [V1SupportController::class, 'index']);
+            Route::post('/tickets', [V1SupportController::class, 'store']);
+            Route::get('/tickets/{ticketId}', [V1SupportController::class, 'show']);
+            Route::post('/tickets/{ticketId}/messages', [V1SupportController::class, 'sendMessage']);
+            Route::post('/tickets/{ticketId}/reopen', [V1SupportController::class, 'requestReopen']);
+        });
+    });
+});
+
 
 

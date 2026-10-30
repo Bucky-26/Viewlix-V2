@@ -617,4 +617,17 @@ class TMDBService
             return $this->request($endpoint, $params);
         });
     }
+
+    /**
+     * Discover movies or TV shows with custom filters (genre, sort, year, etc.)
+     */
+    public function discover(string $type = 'movie', array $params = []): ?array
+    {
+        $endpoint = $type === 'tv' ? '/discover/tv' : '/discover/movie';
+        $cacheKey = "discover.{$type}." . md5(serialize($params));
+
+        return Cache::remember($cacheKey, 1800, function () use ($endpoint, $params) {
+            return $this->request($endpoint, $params);
+        });
+    }
 }
